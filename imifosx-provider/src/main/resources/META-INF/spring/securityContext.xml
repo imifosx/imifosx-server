@@ -146,7 +146,7 @@
 					<beans:bean
 						class="org.springframework.security.web.access.expression.WebExpressionVoter" />
 					<beans:bean
-						class="org.apache.fineract.infrastructure.security.vote.SelfServiceUserAccessVote" />
+						class="org.ideoholic.imifosx.infrastructure.security.vote.SelfServiceUserAccessVote" />
 				</beans:list>
 			</beans:constructor-arg>
 		</beans:bean>

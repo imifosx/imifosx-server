@@ -13,8 +13,8 @@
     <!--  =========================================================================
             web.xml is no longer used since the switch to Spring Boot.
 
-            org.apache.fineract.infrastructure.core.boot.war.WebApplicationInitializerConfiguration
-            and org.apache.fineract.infrastructure.core.boot.WebXmlConfiguration take its place now.
+            org.ideoholic.imifosx.infrastructure.core.boot.war.WebApplicationInitializerConfiguration
+            and org.ideoholic.imifosx.infrastructure.core.boot.WebXmlConfiguration take its place now.
           =========================================================================
       -->
 

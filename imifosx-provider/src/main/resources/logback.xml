@@ -39,7 +39,7 @@
 
 
 	<logger name="org.fineract.platform" level="debug" />
-	<logger name="org.apache.fineract.infrastructure.security.filter"
+	<logger name="org.ideoholic.imifosx.infrastructure.security.filter"
 		level="info" />
 	<logger name="org.apache.fineract" level="debug" />
 	<logger name="org.springframework.web" level="info" />
