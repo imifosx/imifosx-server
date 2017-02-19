@@ -16,11 +16,12 @@ import javax.ws.rs.core.UriInfo;
 import org.ideoholic.imifosx.infrastructure.core.api.ApiRequestParameterHelper;
 import org.ideoholic.imifosx.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.ideoholic.imifosx.portfolio.charge.data.ChargeData;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-@Path(ServiceChargeApiConstants.serviceChargeRESTString)
+@Path(ServiceChargeApiConstants.SERVICE_CHARGE_REST_CALL)
 @Component
 @Scope("singleton")
 public class ServiceChargeApiResource {
