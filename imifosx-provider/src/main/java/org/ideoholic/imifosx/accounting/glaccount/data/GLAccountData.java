@@ -194,5 +194,9 @@ public class GLAccountData {
         if (this.type != null) { return this.type.getId().intValue(); }
         return null;
     }
+    
+    public CodeValueData getTagId(){
+    	return tagId;
+    }
 
 }
