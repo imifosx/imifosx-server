@@ -14,7 +14,7 @@ public class ServiceChargeOperationUtils {
 		if (divisor != null && !divisor.equals(BigDecimal.ZERO)) {
 			operand = operand.divide(divisor, RoundingMode.HALF_UP);
 		}
-		if (multiplicand != null && !multiplicand.equals(BigDecimal.ZERO)) {
+		if (multiplicand != null) {
 			operand = operand.multiply(multiplicand);
 		}
 		return operand;

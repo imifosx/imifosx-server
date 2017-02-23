@@ -65,22 +65,12 @@ public enum QuarterDateRange {
 
 	// Find better way to do this
 	public static QuarterDateRange getCurrentQuarter() {
-		int quarter = LocalDate.now().get(IsoFields.QUARTER_OF_YEAR);
 		QuarterDateRange q = Q1;
-		switch (quarter) {
-		case 1:
-			q = Q1;
-			break;
-		case 2:
-			q = Q2;
-			break;
-		case 3:
-			q = Q3;
-			break;
-		case 4:
-			q = Q4;
-			break;
-		}
+		Calendar c = Calendar.getInstance(Locale.getDefault());
+		int month = c.get(Calendar.MONTH);
+
+		q = (month >= Calendar.JANUARY && month <= Calendar.MARCH) ? Q1
+				: (month >= Calendar.APRIL && month <= Calendar.JUNE) ? Q2 : (month >= Calendar.JULY && month <= Calendar.SEPTEMBER) ? Q3 : Q4;
 		return q;
 	}
 

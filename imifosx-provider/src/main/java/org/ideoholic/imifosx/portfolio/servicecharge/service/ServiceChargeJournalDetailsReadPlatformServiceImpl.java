@@ -85,89 +85,29 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 	}
 
 	public Map<String, List<String>> generateFinalTableOfJournalEntries(Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder) {
-		BigDecimal amount = null;
-		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultList = null;
-		List<String> columnEntries = null;
-		BigDecimal totalMobilizationAmount = resultDataHolder.get(GLExpenseTagsForServiceCharge.MOBILIZATION);
-		BigDecimal totalServicingAmount = resultDataHolder.get(GLExpenseTagsForServiceCharge.SERVICING);
-		BigDecimal totalInvestmentAmount = resultDataHolder.get(GLExpenseTagsForServiceCharge.INVESTMENT);
-		BigDecimal totalOverHeadsAmount = resultDataHolder.get(GLExpenseTagsForServiceCharge.OVERHEADS);
-		BigDecimal totalProvisionsAmount = resultDataHolder.get(GLExpenseTagsForServiceCharge.PROVISIONS);
-
 		Map<String, List<String>> result = new LinkedHashMap<>();
-		columnEntries = new ArrayList<>(5);
-		columnEntries.add("Mobilisation");
-		columnEntries.add("Loan Servicing");
-		columnEntries.add("Investment");
-		columnEntries.add("Overheads");
-		columnEntries.add("Total");
-		result.put("Expenses Allocation Categaories", columnEntries);
+		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultList = null;
 
-		BigDecimal totalAmount = new BigDecimal(0);
+		result = populateResultMapRow(result, 1, resultDataHolder);
+		result = populateResultMapRow(result, 2, resultDataHolder);
+
 		/*
 		 * TODO: Check if rounding is necessary, and if necessary then what type
-		 * of rounding needs to be done and when totalMobilizationAmount =
-		 * totalMobilizationAmount.round(new MathContext(3,
-		 * RoundingMode.HALF_UP)); totalServicingAmount =
-		 * totalServicingAmount.round(new MathContext(3, RoundingMode.HALF_UP));
-		 * totalInvestmentAmount = totalInvestmentAmount.round(new
-		 * MathContext(3, RoundingMode.HALF_UP)); totalOverHeadsAmount =
-		 * totalOverHeadsAmount.round(new MathContext(3, RoundingMode.HALF_UP));
+		 * of rounding needs to be done
 		 */
-		totalAmount = totalAmount.add(totalMobilizationAmount).add(totalServicingAmount).add(totalInvestmentAmount).add(totalOverHeadsAmount);
 
-		columnEntries = new ArrayList<>(5);
-		columnEntries.add(totalMobilizationAmount.toPlainString());
-		columnEntries.add(totalServicingAmount.toPlainString());
-		columnEntries.add(totalInvestmentAmount.toPlainString());
-		columnEntries.add(totalOverHeadsAmount.toPlainString());
-		columnEntries.add(totalAmount.toPlainString());
-		result.put("Sub Total", columnEntries);
-
-		columnEntries = new ArrayList<>(5);
 		resultList = apportionOverHeads(resultDataHolder);
-		columnEntries.add(resultList.get(GLExpenseTagsForServiceCharge.MOBILIZATION).toPlainString());
-		columnEntries.add(resultList.get(GLExpenseTagsForServiceCharge.SERVICING).toPlainString());
-		columnEntries.add(resultList.get(GLExpenseTagsForServiceCharge.INVESTMENT).toPlainString());
-		columnEntries.add(StringUtils.EMPTY);
-		columnEntries.add(StringUtils.EMPTY);
-		result.put("Allocation-I (Overheads)", columnEntries);
+		result = populateResultMapRow(result, 3, resultList);
+		
+		resultDataHolder = addSingleRowToMapEntries(resultDataHolder, resultList);
+		result = populateResultMapRow(result, 4, resultDataHolder);
 
-		columnEntries = new ArrayList<>(5);
-		amount = new BigDecimal(0).add(totalMobilizationAmount).add(resultList.get(GLExpenseTagsForServiceCharge.MOBILIZATION));
-		resultDataHolder.put(GLExpenseTagsForServiceCharge.MOBILIZATION, amount);
-		totalMobilizationAmount = totalMobilizationAmount.add(amount);
-		columnEntries.add(amount.toPlainString());
-		amount = new BigDecimal(0).add(totalServicingAmount).add(resultList.get(GLExpenseTagsForServiceCharge.SERVICING));
-		resultDataHolder.put(GLExpenseTagsForServiceCharge.SERVICING, amount);
-		totalServicingAmount = totalServicingAmount.add(amount);
-		columnEntries.add(amount.toPlainString());
-		amount = new BigDecimal(0).add(totalInvestmentAmount).add(resultList.get(GLExpenseTagsForServiceCharge.INVESTMENT));
-		resultDataHolder.put(GLExpenseTagsForServiceCharge.INVESTMENT, amount);
-		totalInvestmentAmount = totalInvestmentAmount.add(amount);
-		columnEntries.add(amount.toPlainString());
-		columnEntries.add(StringUtils.EMPTY);
-		columnEntries.add(StringUtils.EMPTY);
-		result.put("Sub Total after Overheads Allocation", columnEntries);
 
-		columnEntries = new ArrayList<>(5);
 		resultList = apportionMobilization(resultDataHolder);
-		columnEntries.add(StringUtils.EMPTY);
-		columnEntries.add(totalServicingAmount.toPlainString());
-		columnEntries.add(totalInvestmentAmount.toPlainString());
-		columnEntries.add(StringUtils.EMPTY);
-		columnEntries.add(StringUtils.EMPTY);
-		result.put("Allocation-II (Mobilisation Cost)", columnEntries);
-
-		columnEntries = new ArrayList<>(5);
-		columnEntries.add(StringUtils.EMPTY);
-		amount = new BigDecimal(0).add(totalServicingAmount).add(resultList.get(GLExpenseTagsForServiceCharge.SERVICING));
-		columnEntries.add(amount.toPlainString());
-		amount = new BigDecimal(0).add(totalInvestmentAmount).add(resultList.get(GLExpenseTagsForServiceCharge.INVESTMENT));
-		columnEntries.add(amount.toPlainString());
-		columnEntries.add(StringUtils.EMPTY);
-		columnEntries.add(StringUtils.EMPTY);
-		result.put("Total Activity-wise Segrigated Cost", columnEntries);
+		result = populateResultMapRow(result, 5, resultList);
+		
+		resultDataHolder = addSingleRowToMapEntries(resultDataHolder, resultList);
+		result = populateResultMapRow(result, 6, resultDataHolder);
 
 		return result;
 	}
@@ -240,4 +180,101 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		} // End of outer if-condition
 		return finalAmount;
 	}
+
+	private Map<GLExpenseTagsForServiceCharge, BigDecimal> addSingleRowToMapEntries(Map<GLExpenseTagsForServiceCharge, BigDecimal> fullDataMap,
+			Map<GLExpenseTagsForServiceCharge, BigDecimal> singleRow) {
+		BigDecimal totalMobilizationAmount = readValueFromMap(fullDataMap, GLExpenseTagsForServiceCharge.MOBILIZATION);
+		BigDecimal totalServicingAmount = readValueFromMap(fullDataMap, GLExpenseTagsForServiceCharge.SERVICING);
+		BigDecimal totalInvestmentAmount = readValueFromMap(fullDataMap, GLExpenseTagsForServiceCharge.INVESTMENT);
+		BigDecimal totalOverHeadsAmount = readValueFromMap(fullDataMap, GLExpenseTagsForServiceCharge.OVERHEADS);
+
+		totalMobilizationAmount = totalMobilizationAmount.add(readValueFromMap(singleRow, GLExpenseTagsForServiceCharge.MOBILIZATION));
+		fullDataMap.put(GLExpenseTagsForServiceCharge.MOBILIZATION, totalMobilizationAmount);
+
+		totalServicingAmount = totalServicingAmount.add(readValueFromMap(singleRow, GLExpenseTagsForServiceCharge.SERVICING));
+		fullDataMap.put(GLExpenseTagsForServiceCharge.SERVICING, totalServicingAmount);
+		
+		totalInvestmentAmount = totalInvestmentAmount.add(readValueFromMap(singleRow, GLExpenseTagsForServiceCharge.INVESTMENT));
+		fullDataMap.put(GLExpenseTagsForServiceCharge.INVESTMENT, totalInvestmentAmount);
+		
+		totalOverHeadsAmount = totalInvestmentAmount.add(readValueFromMap(singleRow, GLExpenseTagsForServiceCharge.INVESTMENT));
+		fullDataMap.put(GLExpenseTagsForServiceCharge.INVESTMENT, totalOverHeadsAmount);
+		
+		return fullDataMap;
+	}
+
+	private BigDecimal readValueFromMap(Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap, GLExpenseTagsForServiceCharge key) {
+		BigDecimal value = dataMap.get(key);
+		if (value == null) {
+			return BigDecimal.ZERO;
+		}
+		return value;
+	}
+
+	private Map<String, List<String>> populateResultMapRow(Map<String, List<String>> resultMap, int rowNum, Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap) {
+		List<String> columnEntries = new ArrayList<>(5);
+		BigDecimal totalAmount = BigDecimal.ZERO;
+
+		BigDecimal mobilizationAmount = readValueFromMap(dataMap, GLExpenseTagsForServiceCharge.MOBILIZATION);
+		BigDecimal servicingAmount = readValueFromMap(dataMap, GLExpenseTagsForServiceCharge.SERVICING);
+		BigDecimal investmentAmount = readValueFromMap(dataMap, GLExpenseTagsForServiceCharge.INVESTMENT);
+		BigDecimal overHeadsAmount = readValueFromMap(dataMap, GLExpenseTagsForServiceCharge.OVERHEADS);
+		switch (rowNum) {
+		case 1: // Populate the header of the table
+			columnEntries.add("Mobilisation");
+			columnEntries.add("Loan Servicing");
+			columnEntries.add("Investment");
+			columnEntries.add("Overheads");
+			columnEntries.add("Total");
+			resultMap.put("Expenses Allocation Categaories", columnEntries);
+			break;
+		case 2: // Populate total values fetched from the DB
+			totalAmount = totalAmount.add(mobilizationAmount).add(servicingAmount).add(investmentAmount).add(overHeadsAmount);
+			columnEntries.add(mobilizationAmount.toPlainString());
+			columnEntries.add(servicingAmount.toPlainString());
+			columnEntries.add(investmentAmount.toPlainString());
+			columnEntries.add(overHeadsAmount.toPlainString());
+			columnEntries.add(totalAmount.toPlainString());
+			resultMap.put("Sub Total", columnEntries);
+			break;
+		case 3: // Populate overheads apportioned values
+			totalAmount = totalAmount.add(mobilizationAmount).add(servicingAmount).add(investmentAmount);
+			columnEntries.add(mobilizationAmount.toPlainString());
+			columnEntries.add(servicingAmount.toPlainString());
+			columnEntries.add(investmentAmount.toPlainString());
+			columnEntries.add(StringUtils.EMPTY);
+			columnEntries.add(totalAmount.toPlainString());
+			resultMap.put("Allocation-I (Overheads)", columnEntries);
+			break;
+		case 4: // Populate overheads apportioned + original total values
+			totalAmount = totalAmount.add(mobilizationAmount).add(servicingAmount).add(investmentAmount);
+			columnEntries.add(mobilizationAmount.toPlainString());
+			columnEntries.add(servicingAmount.toPlainString());
+			columnEntries.add(investmentAmount.toPlainString());
+			columnEntries.add(StringUtils.EMPTY);
+			columnEntries.add(totalAmount.toPlainString());
+			resultMap.put("Sub Total after Overheads Allocation", columnEntries);
+			break;
+		case 5: // Populate mobilization apportioned values
+			totalAmount = totalAmount.add(servicingAmount).add(investmentAmount);
+			columnEntries.add(StringUtils.EMPTY);
+			columnEntries.add(servicingAmount.toPlainString());
+			columnEntries.add(investmentAmount.toPlainString());
+			columnEntries.add(StringUtils.EMPTY);
+			columnEntries.add(totalAmount.toPlainString());
+			resultMap.put("Allocation-II (Mobilization Cost)", columnEntries);
+			break;
+		case 6: // Populate mobilization apportioned + original total values
+			totalAmount = totalAmount.add(servicingAmount).add(investmentAmount);
+			columnEntries.add(StringUtils.EMPTY);
+			columnEntries.add(servicingAmount.toPlainString());
+			columnEntries.add(investmentAmount.toPlainString());
+			columnEntries.add(StringUtils.EMPTY);
+			columnEntries.add(totalAmount.toPlainString());
+			resultMap.put("Total Activity-wise Segrigated Cost", columnEntries);
+			break;
+		}
+		return resultMap;
+	}
+
 }
