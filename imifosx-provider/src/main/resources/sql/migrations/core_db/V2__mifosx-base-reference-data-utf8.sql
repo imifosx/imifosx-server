@@ -250,7 +250,7 @@ VALUES
 -- ======== end of currencies ==
 
 INSERT INTO `m_organisation_currency` (`id`, `code`, `decimal_places`, `name`, `display_symbol`, `internationalized_name_code`)
-VALUES (21,'USD',2,'US Dollar','$','currency.USD');
+VALUES (21,'INR',2,'Indian Rupee','₹','currency.INR');
 
 INSERT INTO `m_office` (`id`, `parent_id`, `hierarchy`, `external_id`, `name`, `opening_date`)
 VALUES
