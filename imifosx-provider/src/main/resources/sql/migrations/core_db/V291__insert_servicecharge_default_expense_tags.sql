@@ -3,5 +3,4 @@ INSERT INTO `m_code_value`(`code_id`, `code_value`, `code_description`, `order_p
 ('11', 'Servicing', 'Servicing Expense Accounting Tag', '2', NULL, '1'),
 ('11', 'Investment', 'Investment Expense Accounting Tag', '3', NULL, '1'),
 ('11', 'Overheads', 'Overheads Expense Accounting Tag', '4', NULL, '1'),
-('11', 'Provisions', 'Provisions Expense Accounting Tag', '5', NULL, '1'),
-('11', 'ServicingBF', 'Loan Servicing Cost on Account BF Expense Accounting Tag', '5', NULL, '1');
+('11', 'Provisions', 'Provisions Expense Accounting Tag', '5', NULL, '1');
