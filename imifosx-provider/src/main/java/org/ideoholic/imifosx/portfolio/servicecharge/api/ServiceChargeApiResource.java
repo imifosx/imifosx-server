@@ -58,6 +58,8 @@ public class ServiceChargeApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String retrieveServiceCharge(@Context final UriInfo uriInfo) {
+		BigDecimal totalRepayment = scLoanDetailsReadPlatformService.getAllLoansRepaymentData();
+		System.out.println("************Total Repayment****************** "+totalRepayment);
 		return "NOT YET IMPLEMENTED";
 	}
 

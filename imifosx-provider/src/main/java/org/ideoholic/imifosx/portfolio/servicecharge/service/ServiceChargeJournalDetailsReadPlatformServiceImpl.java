@@ -34,14 +34,16 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 
 	private final JournalEntryReadPlatformService journalEntryReadPlatformService;
 	private final GLAccountReadPlatformService glAccountReadPlatformService;
+	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
 	private final BigDecimal lsCostOnACBf = HUNDRED;
 
 	@Autowired
 	public ServiceChargeJournalDetailsReadPlatformServiceImpl(JournalEntryReadPlatformService journalEntryReadPlatformService,
-			GLAccountReadPlatformService glAccountReadPlatformService) {
+			GLAccountReadPlatformService glAccountReadPlatformService,ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService) {
 		// Initialize the class level final autowired variables
 		this.journalEntryReadPlatformService = journalEntryReadPlatformService;
 		this.glAccountReadPlatformService = glAccountReadPlatformService;
+		this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
 	}
 
 	@Override
@@ -118,7 +120,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			result.put("Loan Servicing Cost p.a.", columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			totalNoDlLoans = BigDecimal.ONE;
+			totalNoDlLoans = scLoanDetailsReadPlatformService.getTotalLoans();
 			columnEntry.add(totalNoDlLoans);
 			result.put("Total No.of DL Loans for the Period", columnEntry);
 
@@ -132,7 +134,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			result.put("LS Cost on A/c BF", columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			reForPeriod = BigDecimal.ONE;
+			reForPeriod = scLoanDetailsReadPlatformService.getAllLoansRepaymentData();
 			columnEntry.add(reForPeriod);
 			result.put("Total Repyament for the Period", columnEntry);
 

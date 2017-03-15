@@ -2013,4 +2013,28 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         }
     }
 
+	@Override
+	public Collection<LoanTransactionData> retrieveLoanTransactionsMonthlyPayments(
+			Long loanId) {
+	    try {
+            this.context.authenticatedUser();
+
+            final LoanTransactionsMapper rm = new LoanTransactionsMapper();
+
+            // retrieve all loan transactions that are not invalid and have not
+            // been 'contra'ed by another transaction
+            // repayments at time of disbursement (e.g. charges)
+
+            /***
+             * TODO Vishwas: Remove references to "Contra" from the codebase
+             ***/
+            final String sql = "select "
+                    + rm.LoanPaymentsSchema()
+                    + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order by tr.transaction_date ASC,id ";
+            return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
+        } catch (final EmptyResultDataAccessException e) {
+            return null;
+        }
+	}
+
 }

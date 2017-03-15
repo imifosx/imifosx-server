@@ -1512,4 +1512,8 @@ public class LoanAccountData {
         return BigDecimal.ZERO;
     }
 
+	public Long getId() {
+		return id;
+	}
+
 }
