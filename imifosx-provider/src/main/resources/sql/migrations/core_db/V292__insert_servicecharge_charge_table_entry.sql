@@ -1,3 +1,8 @@
+INSERT INTO `m_organisation_currency` (`id`, `code`, `decimal_places`, `name`, `display_symbol`, `internationalized_name_code`)
+SELECT (SELECT MAX(id) + 1 from `m_organisation_currency`),'INR',2,'Indian Rupee','₹','currency.INR'
+FROM `m_organisation_currency`
+WHERE NOT('INR' IN (SELECT code FROM `m_organisation_currency`));
+
 INSERT INTO m_charge(id, name, currency_code, charge_applies_to_enum, charge_time_enum, charge_calculation_enum, charge_payment_mode_enum, amount, fee_on_day, fee_interval, fee_on_month, is_penalty, is_active, is_deleted, min_cap, max_cap, fee_frequency, income_or_liability_account_id) VALUES
 (1, 'Service Charge', 'INR', 1, 8, 1, 0, 0.000000, NULL, NULL, NULL, 0, 1, 0, NULL, NULL, NULL, NULL);
 
