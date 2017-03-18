@@ -6,5 +6,5 @@ public interface ServiceChargeLoanDetailsReadPlatformService {
 	// Add Loan related Service Charge methods here 
 	
 	BigDecimal getTotalLoans();
-	BigDecimal getAllLoansRepaymentData();
+	BigDecimal getAllLoansRepaymentData() throws Exception;
 }

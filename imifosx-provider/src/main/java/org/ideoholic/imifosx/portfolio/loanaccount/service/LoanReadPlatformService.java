@@ -128,5 +128,5 @@ public interface LoanReadPlatformService {
     Collection<InterestRatePeriodData> retrieveLoanInterestRatePeriodData(Long loanId);
 
 	Collection<LoanTransactionData> retrieveLoanTransactionsMonthlyPayments(
-			Long id);
+			Long id, String startDate, String endDate);
 }

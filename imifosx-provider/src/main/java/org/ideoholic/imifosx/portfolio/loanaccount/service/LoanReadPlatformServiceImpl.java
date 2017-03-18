@@ -2015,7 +2015,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
 	@Override
 	public Collection<LoanTransactionData> retrieveLoanTransactionsMonthlyPayments(
-			Long loanId) {
+			Long loanId,String startDate, String endDate) {
 	    try {
             this.context.authenticatedUser();
 
@@ -2030,7 +2030,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
              ***/
             final String sql = "select "
                     + rm.LoanPaymentsSchema()
-                    + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order by tr.transaction_date ASC,id ";
+                   // + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order by tr.transaction_date ASC,id ";
+                     + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) and tr.transaction_date between '"+startDate+"' and '"+endDate+"'  order by tr.transaction_date ASC,id";
             return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
         } catch (final EmptyResultDataAccessException e) {
             return null;

@@ -408,4 +408,8 @@ public class LoanChargeData {
     public BigDecimal getAmountUnrecognized() {
         return this.amountUnrecognized;
     }
+
+	public String getName() {
+		return name;
+	}
 }
