@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import org.ideoholic.imifosx.accounting.journalentry.api.DateParam;
+import org.ideoholic.imifosx.infrastructure.core.service.DateUtils;
 
 public enum QuarterDateRange {
 	Q1("01 Jan ", "31 Mar "), Q2("01 Apr ", "30 Jun "), Q3("01 Jul ", "30 Sep "), Q4("30 Sep ", "31 Dec ");
@@ -70,6 +71,14 @@ public enum QuarterDateRange {
 		q = (month >= Calendar.JANUARY && month <= Calendar.MARCH) ? Q1
 				: (month >= Calendar.APRIL && month <= Calendar.JUNE) ? Q2 : (month >= Calendar.JULY && month <= Calendar.SEPTEMBER) ? Q3 : Q4;
 		return q;
+	}
+	
+	public String getFormattedFromDateString() {
+		return DateUtils.formatToSqlDate(getFromDateForCurrentYear());
+	}
+	
+	public String getFormattedToDateString() {
+		return DateUtils.formatToSqlDate(getToDateForCurrentYear());
 	}
 
 	@Override
