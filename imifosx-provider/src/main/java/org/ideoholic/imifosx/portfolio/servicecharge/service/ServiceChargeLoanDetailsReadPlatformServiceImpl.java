@@ -83,6 +83,11 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 					// perform add operation on bg1 with augend bg2 and context mc
 					totalRepayment = totalRepayment.add(loanTransactionData.getAmount(), mc);
 				}
+				
+				// Get Loan Charge Name
+				String loanCharges = getLoanChargeName(loanAccountData.getPageItems().get(i).getId());
+		        	System.out.println("********** Loan Charge Name ************** "+loanCharges);	
+		        	
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
