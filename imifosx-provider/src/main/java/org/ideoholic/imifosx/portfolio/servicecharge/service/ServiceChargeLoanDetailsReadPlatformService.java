@@ -5,6 +5,6 @@ import java.math.BigDecimal;
 public interface ServiceChargeLoanDetailsReadPlatformService {
 	// Add Loan related Service Charge methods here 
 	
-	BigDecimal getTotalLoans();
+	BigDecimal getTotalLoansForCurrentQuarter();
 	BigDecimal getAllLoansRepaymentData() throws Exception;
 }

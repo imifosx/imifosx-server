@@ -32,12 +32,18 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		this.loanChargeReadPlatformService = loanChargeReadPlatformService;
 	}
 
-	public BigDecimal getTotalLoans() {
+	public BigDecimal getTotalLoansForCurrentQuarter() {
 		BigDecimal totalLoans = BigDecimal.ZERO;
+		
+		// Get the dates
+		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+		String startDate = quarter.getFormattedFromDateString();
+		String endDate = quarter.getFormattedToDateString();
+		
 		final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
 		Page<LoanAccountData> loanAccountData = null;
 
-		loanAccountData = loanReadPlatformService.retrieveAll(searchParameters);
+		loanAccountData = loanReadPlatformService.retrieveLoansForCurrentQuarter(searchParameters,startDate,endDate);
 
 		if (loanAccountData != null) {
 			int totalNumberLoans = loanAccountData.getPageItems().size();
@@ -51,9 +57,9 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		logger.debug("entered into getAllLoansRepaymentData");
 
 		BigDecimal totalRepayment = BigDecimal.ZERO;
-
-		// create MathContext object with 4 precision
-		MathContext mc = new MathContext(4);
+		
+		// create MathContext object with 2 precision
+		MathContext mc = new MathContext(2);
 
 		// Get the dates
 		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
@@ -69,6 +75,8 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			e.printStackTrace();
 		}
 
+		getLoansOutstandingAmount();
+		
 		for (int i = 0; i < loanAccountData.getPageItems().size(); i++) {
 			logger.debug("Total number of accounts" + loanAccountData.getPageItems().size());
 			logger.debug("Monthly Payments");
@@ -92,7 +100,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 				e.printStackTrace();
 			}
 		}
-
+		
 		return totalRepayment;
 	}
 
@@ -107,5 +115,49 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 		return loanChargeData;
 	}
+	
+	
+	public BigDecimal getLoansOutstandingAmount() throws Exception {
+		logger.debug("entered into getLoansOutstandingAmount");
+
+		
+		BigDecimal totalOutstandingAmount = BigDecimal.ZERO;
+		// create MathContext object with 2 precision
+		MathContext mc = new MathContext(2);
+
+		// Get the dates
+		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+		String startDate = quarter.getFormattedFromDateString();
+		String endDate = quarter.getFormattedToDateString();
+
+		final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
+		Page<LoanAccountData> loanAccountDataForOutstandingAmount = null;
+		try {
+			loanAccountDataForOutstandingAmount = loanReadPlatformService.retrieveLoanDisbursementDetailsQuarterly(searchParameters,startDate,endDate);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		
+		
+		for (int i = 0; i < loanAccountDataForOutstandingAmount.getPageItems().size(); i++) {
+			
+			
+			System.out.println("Total Outstanding Amount "+loanAccountDataForOutstandingAmount.getPageItems().get(i).getTotalOutstandingAmount());
+			logger.debug("outstanding Amount");
+			logger.debug("Account Loan id "+loanAccountDataForOutstandingAmount.getPageItems().get(i).getId());
+			logger.debug("Outstanding Amount: "+loanAccountDataForOutstandingAmount.getPageItems().get(i).getTotalOutstandingAmount());
+			totalOutstandingAmount = totalOutstandingAmount.add(loanAccountDataForOutstandingAmount.getPageItems().get(i).getTotalOutstandingAmount(), mc);
+			
+		}
+		
+
+
+		return totalOutstandingAmount;
+	}
+	
+	
+	
 
 }

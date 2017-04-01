@@ -120,7 +120,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			result.put("Loan Servicing Cost p.a.", columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			totalNoDlLoans = scLoanDetailsReadPlatformService.getTotalLoans();
+			totalNoDlLoans = scLoanDetailsReadPlatformService.getTotalLoansForCurrentQuarter();
 			columnEntry.add(totalNoDlLoans);
 			result.put("Total No.of DL Loans for the Period", columnEntry);
 
