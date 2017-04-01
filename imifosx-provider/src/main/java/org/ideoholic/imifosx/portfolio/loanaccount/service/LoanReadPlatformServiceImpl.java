@@ -2037,5 +2037,137 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             return null;
         }
 	}
+	
+	 @Override
+	 public Page<LoanAccountData> retrieveLoanDisbursementDetailsQuarterly(final SearchParameters searchParameters, String startDate, String endDate) {
+		
+		        final AppUser currentUser = this.context.authenticatedUser();
+		        final String hierarchy = currentUser.getOffice().getHierarchy();
+		        final String hierarchySearchString = hierarchy + "%";
+
+		        final StringBuilder sqlBuilder = new StringBuilder(200);
+		        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
+		        sqlBuilder.append(this.loaanLoanMapper.loanSchema());
+
+		        // TODO - for time being this will data scope list of loans returned to
+		        // only loans that have a client associated.
+		        // to support senario where loan has group_id only OR client_id will
+		        // probably require a UNION query
+		        // but that at present is an edge case
+		        sqlBuilder.append(" join m_office o on o.id = c.office_id");
+		        sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
+		        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.disbursedon_date between '"+startDate+"' and '"+endDate+"'");
+
+		        int arrayPos = 2;
+		        List<Object> extraCriterias = new ArrayList<>();
+		        extraCriterias.add(hierarchySearchString);
+		        extraCriterias.add(hierarchySearchString);
+
+		        String sqlQueryCriteria = searchParameters.getSqlSearch();
+		        if (StringUtils.isNotBlank(sqlQueryCriteria)) {
+		            sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
+		            sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+		        }
+
+		        if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
+		            sqlBuilder.append(" and l.external_id = ?");
+		            extraCriterias.add(searchParameters.getExternalId());
+		            arrayPos = arrayPos + 1;
+		        }
+
+		        if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
+		            sqlBuilder.append(" and l.account_no = ?");
+		            extraCriterias.add(searchParameters.getAccountNo());
+		            arrayPos = arrayPos + 1;
+		        }
+
+		        if (searchParameters.isOrderByRequested()) {
+		            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+
+		            if (searchParameters.isSortOrderProvided()) {
+		                sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+		            }
+		        }
+
+		        if (searchParameters.isLimited()) {
+		            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+		            if (searchParameters.isOffset()) {
+		                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+		            }
+		        }
+
+		        final Object[] objectArray = extraCriterias.toArray();
+		        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
+		        final String sqlCountRows = "SELECT FOUND_ROWS()";
+		        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray,
+		                this.loaanLoanMapper);
+		    }
+	 
+	 
+	 @Override
+	 public Page<LoanAccountData> retrieveLoansForCurrentQuarter(final SearchParameters searchParameters, String startDate, String endDate) {
+		
+		        final AppUser currentUser = this.context.authenticatedUser();
+		        final String hierarchy = currentUser.getOffice().getHierarchy();
+		        final String hierarchySearchString = hierarchy + "%";
+
+		        final StringBuilder sqlBuilder = new StringBuilder(200);
+		        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
+		        sqlBuilder.append(this.loaanLoanMapper.loanSchema());
+
+		        // TODO - for time being this will data scope list of loans returned to
+		        // only loans that have a client associated.
+		        // to support senario where loan has group_id only OR client_id will
+		        // probably require a UNION query
+		        // but that at present is an edge case
+		        sqlBuilder.append(" join m_office o on o.id = c.office_id");
+		        sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
+		        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.disbursedon_date between '"+startDate+"' and '"+endDate+"'");
+
+		        int arrayPos = 2;
+		        List<Object> extraCriterias = new ArrayList<>();
+		        extraCriterias.add(hierarchySearchString);
+		        extraCriterias.add(hierarchySearchString);
+
+		        String sqlQueryCriteria = searchParameters.getSqlSearch();
+		        if (StringUtils.isNotBlank(sqlQueryCriteria)) {
+		            sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
+		            sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+		        }
+
+		        if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
+		            sqlBuilder.append(" and l.external_id = ?");
+		            extraCriterias.add(searchParameters.getExternalId());
+		            arrayPos = arrayPos + 1;
+		        }
+
+		        if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
+		            sqlBuilder.append(" and l.account_no = ?");
+		            extraCriterias.add(searchParameters.getAccountNo());
+		            arrayPos = arrayPos + 1;
+		        }
+
+		        if (searchParameters.isOrderByRequested()) {
+		            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+
+		            if (searchParameters.isSortOrderProvided()) {
+		                sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+		            }
+		        }
+
+		        if (searchParameters.isLimited()) {
+		            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+		            if (searchParameters.isOffset()) {
+		                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+		            }
+		        }
+
+		        final Object[] objectArray = extraCriterias.toArray();
+		        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
+		        final String sqlCountRows = "SELECT FOUND_ROWS()";
+		        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray,
+		                this.loaanLoanMapper);
+		    }
+
 
 }
