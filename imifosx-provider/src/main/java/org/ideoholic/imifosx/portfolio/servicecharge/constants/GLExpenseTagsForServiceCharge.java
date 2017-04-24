@@ -9,7 +9,8 @@ public enum GLExpenseTagsForServiceCharge {
 	SERVICING(2, "Servicing"),
 	INVESTMENT(3, "Investment"),
     OVERHEADS(4, "Overheads"),
-    PROVISIONS(5, "Provisions");
+    PROVISIONS(5, "Provisions"),
+    BFSERVICING(5, "BF-Servicing");
 
 	private final Integer value;
 	private final String code;

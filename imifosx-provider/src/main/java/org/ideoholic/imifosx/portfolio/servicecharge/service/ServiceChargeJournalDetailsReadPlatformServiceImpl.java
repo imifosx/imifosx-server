@@ -39,7 +39,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 
 	@Autowired
 	public ServiceChargeJournalDetailsReadPlatformServiceImpl(JournalEntryReadPlatformService journalEntryReadPlatformService,
-			GLAccountReadPlatformService glAccountReadPlatformService,ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService) {
+			GLAccountReadPlatformService glAccountReadPlatformService, ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService) {
 		// Initialize the class level final autowired variables
 		this.journalEntryReadPlatformService = journalEntryReadPlatformService;
 		this.glAccountReadPlatformService = glAccountReadPlatformService;
@@ -55,20 +55,23 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			filteredGLAccountMap.put(serviceChargeTag, new ArrayList<GLAccountData>());
 		}
 		for (GLAccountData glAccount : glAccountData) {
-			if (glAccount.getTagId().getName().equals(GLExpenseTagsForServiceCharge.MOBILIZATION.getCode())) {
+			if (checkGLAccountDataCode(glAccount, GLExpenseTagsForServiceCharge.MOBILIZATION)) {
 				List<GLAccountData> filteredGLAccountList = filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.MOBILIZATION);
 				filteredGLAccountList.add(glAccount);
-			} else if (glAccount.getTagId().getName().equals(GLExpenseTagsForServiceCharge.SERVICING.getCode())) {
+			} else if (checkGLAccountDataCode(glAccount, GLExpenseTagsForServiceCharge.SERVICING)) {
 				List<GLAccountData> filteredGLAccountList = filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.SERVICING);
 				filteredGLAccountList.add(glAccount);
-			} else if (glAccount.getTagId().getName().equals(GLExpenseTagsForServiceCharge.INVESTMENT.getCode())) {
+			} else if (checkGLAccountDataCode(glAccount, GLExpenseTagsForServiceCharge.INVESTMENT)) {
 				List<GLAccountData> filteredGLAccountList = filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.INVESTMENT);
 				filteredGLAccountList.add(glAccount);
-			} else if (glAccount.getTagId().getName().equals(GLExpenseTagsForServiceCharge.OVERHEADS.getCode())) {
+			} else if (checkGLAccountDataCode(glAccount, GLExpenseTagsForServiceCharge.OVERHEADS)) {
 				List<GLAccountData> filteredGLAccountList = filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.OVERHEADS);
 				filteredGLAccountList.add(glAccount);
-			} else if (glAccount.getTagId().getName().equals(GLExpenseTagsForServiceCharge.PROVISIONS.getCode())) {
+			} else if (checkGLAccountDataCode(glAccount, GLExpenseTagsForServiceCharge.PROVISIONS)) {
 				List<GLAccountData> filteredGLAccountList = filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.PROVISIONS);
+				filteredGLAccountList.add(glAccount);
+			} else if (checkGLAccountDataCode(glAccount, GLExpenseTagsForServiceCharge.BFSERVICING)) {
+				List<GLAccountData> filteredGLAccountList = filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.BFSERVICING);
 				filteredGLAccountList.add(glAccount);
 			}
 		}
@@ -78,13 +81,22 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		BigDecimal totalInvestmentAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.INVESTMENT));
 		BigDecimal totalOverHeadsAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.OVERHEADS));
 		BigDecimal totalProvisionsAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.PROVISIONS));
+		BigDecimal totalBFServicingAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.BFSERVICING));
 		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder = new HashMap<>();
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.MOBILIZATION, totalMobilizationAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.SERVICING, totalServicingAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.INVESTMENT, totalInvestmentAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.OVERHEADS, totalOverHeadsAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.PROVISIONS, totalProvisionsAmount);
+		resultDataHolder.put(GLExpenseTagsForServiceCharge.BFSERVICING, totalBFServicingAmount);
 		return generateFinalTableOfJournalEntries(resultDataHolder);
+	}
+
+	private boolean checkGLAccountDataCode(GLAccountData glAccount, GLExpenseTagsForServiceCharge expenseTag) {
+		if (glAccount != null && glAccount.getTagId() != null && glAccount.getTagId().getName() != null) {
+			return glAccount.getTagId().getName().equals(expenseTag.getCode());
+		}
+		return false;
 	}
 
 	@Override
@@ -223,7 +235,10 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		BigDecimal dlAmount = BigDecimal.ONE;
 		BigDecimal outstandingLoanAmount = BigDecimal.ONE;
 
-		BigDecimal multiplicand = BigDecimal.ONE.multiply(dlAmount).divide(outstandingLoanAmount, RoundingMode.HALF_UP);
+		BigDecimal multiplicand = BigDecimal.ONE.multiply(dlAmount);
+		if (!outstandingLoanAmount.equals(BigDecimal.ZERO)) {
+			multiplicand = multiplicand.divide(outstandingLoanAmount, RoundingMode.HALF_UP);
+		}
 
 		servicingAmount = mobilizationAmount.multiply(multiplicand);
 		investmentAmount = mobilizationAmount.subtract(servicingAmount);
@@ -251,10 +266,10 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 				for (JournalEntryData journalData : journalEntryDataPage.getPageItems()) {
 					JournalEntryType entryType = JournalEntryType.fromInt(journalData.getEntryType().getId().intValue());
 					switch (entryType) {
-					case CREDIT:
+					case DEBIT:
 						finalAmount = finalAmount.add(journalData.getAmount());
 						break;
-					case DEBIT:
+					case CREDIT:
 						finalAmount = finalAmount.subtract(journalData.getAmount());
 						break;
 					}
