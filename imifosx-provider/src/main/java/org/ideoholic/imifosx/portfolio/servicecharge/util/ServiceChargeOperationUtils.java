@@ -22,6 +22,16 @@ public class ServiceChargeOperationUtils {
 		return operand;
 	}
 
+	public static BigDecimal divideNonZeroValues(BigDecimal operand, BigDecimal divisor) {
+		if (operand == null) {
+			return BigDecimal.ONE;
+		}
+		if (divisor != null && !divisor.equals(BigDecimal.ZERO)) {
+			operand = operand.divide(divisor, RoundingMode.HALF_UP);
+		}
+		return operand;
+	}
+
 	public static String convertMapToHTMLTable(Map<String, List<String>> map) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("<table table style=\"width:100%\" border=5pt>");

@@ -1,11 +1,9 @@
 package org.ideoholic.imifosx.portfolio.servicecharge.service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +19,8 @@ import org.ideoholic.imifosx.infrastructure.core.service.Page;
 import org.ideoholic.imifosx.infrastructure.core.service.SearchParameters;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.GLExpenseTagsForServiceCharge;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
+import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.ideoholic.imifosx.portfolio.servicecharge.util.ServiceChargeOperationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,6 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 	private final JournalEntryReadPlatformService journalEntryReadPlatformService;
 	private final GLAccountReadPlatformService glAccountReadPlatformService;
 	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
-	private final BigDecimal lsCostOnACBf = HUNDRED;
 
 	@Autowired
 	public ServiceChargeJournalDetailsReadPlatformServiceImpl(JournalEntryReadPlatformService journalEntryReadPlatformService,
@@ -45,9 +44,17 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		this.glAccountReadPlatformService = glAccountReadPlatformService;
 		this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
 	}
-
-	@Override
-	public Map<String, List<BigDecimal>> readJournalEntriesForGivenQuarter() {
+	
+	public ServiceChargeFinalSheetData generatefinalSheetData() {
+		ServiceChargeFinalSheetData finalSheetData = new ServiceChargeFinalSheetData();
+		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder = generateExpenseTagsData();
+		generateFinalTableOfJournalEntries(resultDataHolder, finalSheetData);
+		computeFinalCalculations(finalSheetData);
+		return finalSheetData;
+	}
+	
+	private Map<GLExpenseTagsForServiceCharge, BigDecimal> generateExpenseTagsData(){
+		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder = new HashMap<>();
 		List<GLAccountData> glAccountData = glAccountReadPlatformService.retrieveAllEnabledDetailGLAccounts(GLAccountType.EXPENSE);
 
 		Map<GLExpenseTagsForServiceCharge, List<GLAccountData>> filteredGLAccountMap = new HashMap<>();
@@ -75,21 +82,21 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 				filteredGLAccountList.add(glAccount);
 			}
 		}
-
+		
 		BigDecimal totalMobilizationAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.MOBILIZATION));
 		BigDecimal totalServicingAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.SERVICING));
 		BigDecimal totalInvestmentAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.INVESTMENT));
 		BigDecimal totalOverHeadsAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.OVERHEADS));
 		BigDecimal totalProvisionsAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.PROVISIONS));
 		BigDecimal totalBFServicingAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.BFSERVICING));
-		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder = new HashMap<>();
+		
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.MOBILIZATION, totalMobilizationAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.SERVICING, totalServicingAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.INVESTMENT, totalInvestmentAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.OVERHEADS, totalOverHeadsAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.PROVISIONS, totalProvisionsAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.BFSERVICING, totalBFServicingAmount);
-		return generateFinalTableOfJournalEntries(resultDataHolder);
+		return resultDataHolder;
 	}
 
 	private boolean checkGLAccountDataCode(GLAccountData glAccount, GLExpenseTagsForServiceCharge expenseTag) {
@@ -99,93 +106,86 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		return false;
 	}
 
-	@Override
-	public Map<String, List<BigDecimal>> computeFinalCalculations(Map<String, List<BigDecimal>> journalEntriest) {
-		Map<String, List<BigDecimal>> result = new LinkedHashMap<>();
+	public void computeFinalCalculations(ServiceChargeFinalSheetData sheetData) {
 		BigDecimal mobilizationCostPercent, avgDLRePm, lsCostPa, lsCostPerLoan, totalNoDlLoans, reForPeriod, reCostPer100;
 		try {
-			List<BigDecimal> columnEntry = new ArrayList<>(1);
-			columnEntry.add(lsCostOnACBf);
-			// TODO: Need to store and read this value
-			result.put("LS Cost on A/c BF", columnEntry);
+			List<BigDecimal> columnEntry;
+			BigDecimal lsCostOnACBf = sheetData.getColumnValue(ServiceChargeReportTableHeaders.LSCOST_ON_ACCOUNT_BF, 0);
 
 			columnEntry = new ArrayList<>(1);
-			mobilizationCostPercent = journalEntriest.get(row4Header).get(1);
+			mobilizationCostPercent = sheetData.getColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_MOBILIZATION, 1);
 			mobilizationCostPercent = mobilizationCostPercent.multiply(new BigDecimal("4"));
 			columnEntry.add(mobilizationCostPercent);
-			result.put("Total Mobilisation Cost p.a.", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.TOTAL_MOBILIZATION, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			avgDLRePm = HUNDRED;
+			avgDLRePm = scLoanDetailsReadPlatformService.getAllLoansRepaymentData();
 			columnEntry.add(avgDLRePm);
-			result.put("Average OS DL Re.Months", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.AVG_REPAYMENT, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			mobilizationCostPercent = mobilizationCostPercent.divide(avgDLRePm, RoundingMode.HALF_UP).multiply(HUNDRED);
+			mobilizationCostPercent = ServiceChargeOperationUtils.divideNonZeroValues(mobilizationCostPercent, avgDLRePm).multiply(HUNDRED);
 			columnEntry.add(mobilizationCostPercent);
-			result.put("Mobilisation Cost (%)", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.MOBILIZATION_PERCENT, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			lsCostPa = journalEntriest.get(row3Header).get(1);
+			lsCostPa = sheetData.getColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_SUBTOTAL, 1);
 			lsCostPa = lsCostPa.multiply(new BigDecimal("4"));
 			columnEntry.add(lsCostPa);
-			result.put("Loan Servicing Cost p.a.", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PA, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
 			totalNoDlLoans = scLoanDetailsReadPlatformService.getTotalLoansForCurrentQuarter();
 			columnEntry.add(totalNoDlLoans);
-			result.put("Total No.of DL Loans for the Period", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.TOTAL_LOANS, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			lsCostPerLoan = lsCostPa.divide(totalNoDlLoans, RoundingMode.HALF_UP);
+			lsCostPerLoan = ServiceChargeOperationUtils.divideNonZeroValues(lsCostPa, totalNoDlLoans);
 			columnEntry.add(lsCostPerLoan);
-			result.put("Loan Servicing Cost per Loan", columnEntry);
-
-			columnEntry = new ArrayList<>(1);
-			columnEntry.add(lsCostOnACBf);
-			result.put("LS Cost on A/c BF", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
 			reForPeriod = scLoanDetailsReadPlatformService.getAllLoansRepaymentData();
 			columnEntry.add(reForPeriod);
-			result.put("Total Repyament for the Period", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.TOTAL_REPAYMENT, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			reCostPer100 = lsCostOnACBf.divide(reForPeriod, RoundingMode.HALF_UP);
+			reCostPer100 = ServiceChargeOperationUtils.divideNonZeroValues(lsCostOnACBf, reForPeriod);
 			columnEntry.add(reCostPer100);
-			result.put("Repayment Cost per 100 Rupee of Repayment", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
 			columnEntry.add(mobilizationCostPercent);
-			result.put("Equivalent Annualized Cost (%) - I", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			BigDecimal eac2 = lsCostPa.divide(avgDLRePm, RoundingMode.HALF_UP).multiply(HUNDRED);
+			BigDecimal eac2 = ServiceChargeOperationUtils.divideNonZeroValues(lsCostPa, avgDLRePm).multiply(HUNDRED);
 			columnEntry.add(eac2);
-			result.put("Equivalent Annualized Cost (%) - II", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_II, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
-			BigDecimal eac3 = lsCostOnACBf.divide(avgDLRePm, RoundingMode.HALF_UP).multiply(HUNDRED);
+			BigDecimal eac3 = ServiceChargeOperationUtils.divideNonZeroValues(lsCostOnACBf, avgDLRePm).multiply(HUNDRED);
 			columnEntry.add(eac3);
-			result.put("Equivalent Annualized Cost (%) - III", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_III, columnEntry);
 
 			columnEntry = new ArrayList<>(1);
 			BigDecimal total = mobilizationCostPercent.add(eac2).add(eac3);
 			columnEntry.add(total);
-			result.put("Equivalent Annualized Cost (%) - Total", columnEntry);
+			sheetData.setColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_TOTAL, columnEntry);
 
 		} catch (Exception ex) {
 			// Any exception means that input data is wrong so ignoring it
 			logger.error(ex.getMessage(), ex);
 		}
-		return result;
 	}
 
-	private Map<String, List<BigDecimal>> generateFinalTableOfJournalEntries(Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder) {
-		Map<String, List<BigDecimal>> result = new LinkedHashMap<>();
+	private ServiceChargeFinalSheetData generateFinalTableOfJournalEntries(Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder,
+			ServiceChargeFinalSheetData finalSheetData) {
 		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultList = null;
 
-		result = populateResultMapRow(result, 2, resultDataHolder);
+		populateResultMapRow(finalSheetData, 1, resultDataHolder);
+
+		populateResultMapRow(finalSheetData, 2, resultDataHolder);
 
 		/*
 		 * TODO: Check if rounding is necessary, and if necessary then what type
@@ -193,18 +193,18 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		 */
 
 		resultList = apportionOverHeads(resultDataHolder);
-		result = populateResultMapRow(result, 3, resultList);
+		populateResultMapRow(finalSheetData, 3, resultList);
 
 		resultDataHolder = addSingleRowToMapEntries(resultDataHolder, resultList);
-		result = populateResultMapRow(result, 4, resultDataHolder);
+		populateResultMapRow(finalSheetData, 4, resultDataHolder);
 
 		resultList = apportionMobilization(resultDataHolder);
-		result = populateResultMapRow(result, 5, resultList);
+		populateResultMapRow(finalSheetData, 5, resultList);
 
 		resultDataHolder = addSingleRowToMapEntries(resultDataHolder, resultList);
-		result = populateResultMapRow(result, 6, resultDataHolder);
+		populateResultMapRow(finalSheetData, 6, resultDataHolder);
 
-		return result;
+		return finalSheetData;
 	}
 
 	private Map<GLExpenseTagsForServiceCharge, BigDecimal> apportionOverHeads(Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap) {
@@ -236,9 +236,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		BigDecimal outstandingLoanAmount = BigDecimal.ONE;
 
 		BigDecimal multiplicand = BigDecimal.ONE.multiply(dlAmount);
-		if (!outstandingLoanAmount.equals(BigDecimal.ZERO)) {
-			multiplicand = multiplicand.divide(outstandingLoanAmount, RoundingMode.HALF_UP);
-		}
+		multiplicand = ServiceChargeOperationUtils.divideNonZeroValues(multiplicand, outstandingLoanAmount);
 
 		servicingAmount = mobilizationAmount.multiply(multiplicand);
 		investmentAmount = mobilizationAmount.subtract(servicingAmount);
@@ -309,13 +307,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		return value;
 	}
 
-	private String row1Header = "Sub Total";
-	private String row2Header = "Allocation-I (Overheads)";
-	private String row3Header = "Sub Total after Overheads Allocation";
-	private String row4Header = "Allocation-II (Mobilization Cost)";
-	private String row5Header = "Total Activity-wise Segrigated Cost";
-
-	private Map<String, List<BigDecimal>> populateResultMapRow(Map<String, List<BigDecimal>> resultMap, int rowNum, Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap) {
+	private void populateResultMapRow(ServiceChargeFinalSheetData finalSheetData, int rowNum, Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap) {
 		List<BigDecimal> columnEntries = new ArrayList<>(5);
 		BigDecimal totalAmount = BigDecimal.ZERO;
 
@@ -323,7 +315,13 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		BigDecimal servicingAmount = readValueFromMap(dataMap, GLExpenseTagsForServiceCharge.SERVICING);
 		BigDecimal investmentAmount = readValueFromMap(dataMap, GLExpenseTagsForServiceCharge.INVESTMENT);
 		BigDecimal overHeadsAmount = readValueFromMap(dataMap, GLExpenseTagsForServiceCharge.OVERHEADS);
+		BigDecimal bfServicing = readValueFromMap(dataMap, GLExpenseTagsForServiceCharge.BFSERVICING);
 		switch (rowNum) {
+		case 1:
+			List<BigDecimal> bfColumnEntries = new ArrayList<>(1);
+			bfColumnEntries.add(bfServicing);
+			finalSheetData.setColumnValue(ServiceChargeReportTableHeaders.LSCOST_ON_ACCOUNT_BF, bfColumnEntries);
+			break;
 		case 2: // Populate total values fetched from the DB
 			totalAmount = totalAmount.add(mobilizationAmount).add(servicingAmount).add(investmentAmount).add(overHeadsAmount);
 			columnEntries.add(mobilizationAmount);
@@ -331,7 +329,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			columnEntries.add(investmentAmount);
 			columnEntries.add(overHeadsAmount);
 			columnEntries.add(totalAmount);
-			resultMap.put(row1Header, columnEntries);
+			finalSheetData.setColumnValue(ServiceChargeReportTableHeaders.SUBTOTAL, columnEntries);
 			break;
 		case 3: // Populate overheads apportioned values
 			totalAmount = totalAmount.add(mobilizationAmount).add(servicingAmount).add(investmentAmount);
@@ -339,8 +337,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			columnEntries.add(servicingAmount);
 			columnEntries.add(investmentAmount);
 			columnEntries.add(null);
-			columnEntries.add(totalAmount);
-			resultMap.put(row2Header, columnEntries);
+			finalSheetData.setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_OVERHEADS, columnEntries);
 			break;
 		case 4: // Populate overheads apportioned + original total values
 			totalAmount = totalAmount.add(mobilizationAmount).add(servicingAmount).add(investmentAmount);
@@ -349,7 +346,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			columnEntries.add(investmentAmount);
 			columnEntries.add(null);
 			columnEntries.add(totalAmount);
-			resultMap.put(row3Header, columnEntries);
+			finalSheetData.setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_SUBTOTAL, columnEntries);
 			break;
 		case 5: // Populate mobilization apportioned values
 			totalAmount = totalAmount.add(servicingAmount).add(investmentAmount);
@@ -358,7 +355,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			columnEntries.add(investmentAmount);
 			columnEntries.add(null);
 			columnEntries.add(totalAmount);
-			resultMap.put(row4Header, columnEntries);
+			finalSheetData.setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_MOBILIZATION, columnEntries);
 			break;
 		case 6: // Populate mobilization apportioned + original total values
 			totalAmount = totalAmount.add(servicingAmount).add(investmentAmount);
@@ -367,10 +364,9 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			columnEntries.add(investmentAmount);
 			columnEntries.add(null);
 			columnEntries.add(totalAmount);
-			resultMap.put(row5Header, columnEntries);
+			finalSheetData.setColumnValue(ServiceChargeReportTableHeaders.TOTAL_SEGREGATION_COST, columnEntries);
 			break;
 		}
-		return resultMap;
 	}
 
 }

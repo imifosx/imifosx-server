@@ -3,8 +3,6 @@ package org.ideoholic.imifosx.portfolio.servicecharge.api;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.ws.rs.Consumes;
@@ -21,9 +19,9 @@ import org.ideoholic.imifosx.infrastructure.core.api.ApiRequestParameterHelper;
 import org.ideoholic.imifosx.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.ideoholic.imifosx.portfolio.charge.data.ChargeData;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
+import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
 import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
-import org.ideoholic.imifosx.portfolio.servicecharge.util.ServiceChargeOperationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -83,61 +81,14 @@ public class ServiceChargeApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("table") final boolean displayTable) {
-		StringBuffer response = new StringBuffer();
-		response.append(generateTableHeader(1));
-		Map<String, List<BigDecimal>> journalResultMap = scJournalDetailsReadPlatformService.readJournalEntriesForGivenQuarter();
-		if (displayTable) {
-			response.append(ServiceChargeOperationUtils.convertMapToHTMLTable(journalResultMap, response));
+		String result = null;
+		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		if (!displayTable) {
+			result = finalSheetData.getResultsDataMap().toString();
 		} else {
-			response.append(journalResultMap.toString());
+			result = finalSheetData.generateResultAsHTMLTable(false).toString();
 		}
-		Map<String, List<BigDecimal>> calculationsMap = scJournalDetailsReadPlatformService.computeFinalCalculations(journalResultMap);
-		response.append(generateTableHeader(2));
-		if (displayTable) {
-			response.append(ServiceChargeOperationUtils.convertMapToHTMLTable(calculationsMap, response));
-		} else {
-			response.append(calculationsMap.toString());
-		}
-
-		return response.toString();
-	}
-
-	private String generateTableHeader(int tableNumber) {
-		StringBuffer sb = new StringBuffer();
-		if (tableNumber == 1) {
-			sb.append("<table table style=\"width:100%\" border=5pt>");
-			sb.append("<tr>");
-			sb.append("<td>");
-			sb.append("Expenses Allocation Categaories");
-			sb.append("</td>");
-			sb.append("<td>");
-			sb.append("Mobilisation");
-			sb.append("</td>");
-			sb.append("<td>");
-			sb.append("Loan Servicing");
-			sb.append("</td>");
-			sb.append("<td>");
-			sb.append("Investment");
-			sb.append("</td>");
-			sb.append("<td>");
-			sb.append("Overheads");
-			sb.append("</td>");
-			sb.append("<td>");
-			sb.append("Total");
-			sb.append("</td>");
-			sb.append("</tr>");
-		} else if (tableNumber == 2) {
-			sb.append("<table table style=\"width:100%\" border=5pt>");
-			sb.append("<tr>");
-			sb.append("<td>");
-			sb.append("Particulars");
-			sb.append("</td>");
-			sb.append("<td>");
-			sb.append("Value");
-			sb.append("</td>");
-			sb.append("</tr>");
-		}
-		return sb.toString();
+		return result;
 	}
 
 }
