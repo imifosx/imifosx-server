@@ -339,8 +339,8 @@ def qualifyVersionIfNecessary(version) {
 }
 
 springBoot {
-    mainClass = 'org.ideoholic.imifosx.ServerWithMariaDB4jApplication'
+    mainClass = 'org.apache.fineract.ServerWithMariaDB4jApplication'
 }
 bootRepackage {
-    mainClass = 'org.ideoholic.imifosx.ServerWithMariaDB4jApplication'
+    mainClass = 'org.apache.fineract.ServerWithMariaDB4jApplication'
 }

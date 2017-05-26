@@ -37,24 +37,24 @@
 	<tx:annotation-driven />
 
 	<context:component-scan
-		base-package="org.ideoholic.imifosx.accounting.*,
-									      org.ideoholic.imifosx.commands.provider.*,
-									      org.ideoholic.imifosx.commands.handler.*,
-										  org.ideoholic.imifosx.commands.service.*,
-										  org.ideoholic.imifosx.commands.*,
-										  org.ideoholic.imifosx.audit.*,
-										  org.ideoholic.imifosx.infrastructure.*,
-										  org.ideoholic.imifosx.scheduledjobs.*,
-										  org.ideoholic.imifosx.organisation.*,
-										  org.ideoholic.imifosx.portfolio.loanaccount.*,
-										  org.ideoholic.imifosx.portfolio.savingsaccount.*,
-										  org.ideoholic.imifosx.portfolio.*,
-										  org.ideoholic.imifosx.useradministration.*,
-										  org.ideoholic.imifosx.mix.*,
-										  org.ideoholic.imifosx.template.*,
-										  org.ideoholic.imifosx.template.service.*,
-										  org.ideoholic.imifosx.useradministration.*,
-										  org.ideoholic.imifosx.batch">
+		base-package="org.apache.fineract.accounting.*,
+									      org.apache.fineract.commands.provider.*,
+									      org.apache.fineract.commands.handler.*,
+										  org.apache.fineract.commands.service.*,
+										  org.apache.fineract.commands.*,
+										  org.apache.fineract.audit.*,
+										  org.apache.fineract.infrastructure.*,
+										  org.apache.fineract.scheduledjobs.*,
+										  org.apache.fineract.organisation.*,
+										  org.apache.fineract.portfolio.loanaccount.*,
+										  org.apache.fineract.portfolio.savingsaccount.*,
+										  org.apache.fineract.portfolio.*,
+										  org.apache.fineract.useradministration.*,
+										  org.apache.fineract.mix.*,
+										  org.apache.fineract.template.*,
+										  org.apache.fineract.template.service.*,
+										  org.apache.fineract.useradministration.*,
+										  org.apache.fineract.batch">
 		<context:exclude-filter expression="org.springframework.stereotype.Controller"
 			type="annotation" />
 
@@ -67,18 +67,18 @@
 	</context:component-scan>
 
 	<bean id="auditorAware"
-		class="org.ideoholic.imifosx.infrastructure.core.domain.AuditorAwareImpl" />
+		class="org.apache.fineract.infrastructure.core.domain.AuditorAwareImpl" />
 	<jpa:auditing auditor-aware-ref="auditorAware" />
 
-	<jpa:repositories base-package="org.ideoholic.imifosx.commands.domain" />
-	<jpa:repositories base-package="org.ideoholic.imifosx.infrastructure.*.domain" />
-	<jpa:repositories base-package="org.ideoholic.imifosx.accounting.*.domain" />
-	<jpa:repositories base-package="org.ideoholic.imifosx.useradministration.domain" />
-	<jpa:repositories base-package="org.ideoholic.imifosx.organisation.*.domain" />
-	<jpa:repositories base-package="org.ideoholic.imifosx.portfolio.*" />
-	<jpa:repositories base-package="org.ideoholic.imifosx.mix.domain" />
-	<jpa:repositories base-package="org.ideoholic.imifosx.scheduledjobs.domain" />
-	<jpa:repositories base-package="org.ideoholic.imifosx.template.domain" />
+	<jpa:repositories base-package="org.apache.fineract.commands.domain" />
+	<jpa:repositories base-package="org.apache.fineract.infrastructure.*.domain" />
+	<jpa:repositories base-package="org.apache.fineract.accounting.*.domain" />
+	<jpa:repositories base-package="org.apache.fineract.useradministration.domain" />
+	<jpa:repositories base-package="org.apache.fineract.organisation.*.domain" />
+	<jpa:repositories base-package="org.apache.fineract.portfolio.*" />
+	<jpa:repositories base-package="org.apache.fineract.mix.domain" />
+	<jpa:repositories base-package="org.apache.fineract.scheduledjobs.domain" />
+	<jpa:repositories base-package="org.apache.fineract.template.domain" />
 	
 	<import resource="infrastructure.xml" />
 
