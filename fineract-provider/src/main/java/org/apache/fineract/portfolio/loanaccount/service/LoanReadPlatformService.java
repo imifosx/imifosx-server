@@ -134,6 +134,8 @@ public interface LoanReadPlatformService {
 	Collection<LoanTransactionData> retrieveLoanTransactionsMonthlyPayments(
 			Long id, String startDate, String endDate);
 
+	LoanAccountData retrieveLoanByLoanAccount(String loanAccountNumber);
+
 	Page<LoanAccountData> retrieveLoanDisbursementDetailsQuarterly(
 			SearchParameters searchParameters,String startDate, String endDate);
 
