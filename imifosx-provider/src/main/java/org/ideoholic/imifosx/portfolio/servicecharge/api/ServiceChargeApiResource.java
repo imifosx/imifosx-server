@@ -19,6 +19,7 @@ import org.ideoholic.imifosx.infrastructure.core.api.ApiRequestParameterHelper;
 import org.ideoholic.imifosx.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.ideoholic.imifosx.portfolio.charge.data.ChargeData;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
 import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
@@ -56,16 +57,21 @@ public class ServiceChargeApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String retrieveServiceCharge(@Context final UriInfo uriInfo) {
-		BigDecimal totalRepayment;
-		try {
-			totalRepayment = scLoanDetailsReadPlatformService.getAllLoansRepaymentData();
-			System.out.println("************Total Repayment****************** "+totalRepayment);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
 		
-		return "NOT YET IMPLEMENTED";
+		BigDecimal disbursmentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
+		BigDecimal mobilizationCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
+		BigDecimal repaymentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
+		
+		StringBuffer result = new StringBuffer();
+		result.append("{");
+		result.append("Disbursement:").append(disbursmentCost.toPlainString());
+		result.append(",");
+		result.append("Mobilisation:").append(mobilizationCost.toPlainString());
+		result.append(",");
+		result.append("Repayment:").append(repaymentCost.toPlainString());
+		result.append("}");
+		return result.toString();
 	}
 
 	@GET
@@ -73,7 +79,27 @@ public class ServiceChargeApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String retrieveServiceChargeForGivenLoan(@PathParam("loandId") final Long loanId, @Context final UriInfo uriInfo) {
-		return "NOT YET IMPLEMENTED";
+		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		BigDecimal repaymentCostPerRupee = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
+		BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
+		BigDecimal serviceCostPerLoan = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
+		
+		boolean isDisbursed = scLoanDetailsReadPlatformService.findIfLoanDisbursedInCurrentQuarter(loanId);
+		BigDecimal totalRepaymensts = scLoanDetailsReadPlatformService.getTotalRepaymentsForCurrentQuarter(loanId);
+		BigDecimal totalOutstanding = scLoanDetailsReadPlatformService.getTotalOutstandingAmountForCurrentQuarter(loanId);
+		
+		// Adding disbursement charge in case it was disbursed in the current quarter
+		BigDecimal serviceCharge = isDisbursed ? serviceCostPerLoan : BigDecimal.ZERO;
+		
+		BigDecimal mobilization = totalOutstanding.multiply(repaymentCostPerRupee);
+		mobilization = mobilization.divide(ServiceChargeApiConstants.ONE_THOUSAND_TWO_HUNDRED);
+		
+		BigDecimal repayment = totalRepaymensts.multiply(annualizedCost);
+		repayment = repayment.divide(ServiceChargeApiConstants.HUNDRED);
+		
+		serviceCharge = serviceCharge.add(mobilization);
+		
+		return serviceCharge.toPlainString();
 	}
 
 	@GET

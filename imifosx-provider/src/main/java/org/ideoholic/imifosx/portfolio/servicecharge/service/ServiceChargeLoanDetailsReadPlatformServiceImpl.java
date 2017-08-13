@@ -156,8 +156,40 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 		return totalOutstandingAmount;
 	}
+
+	@Override
+	public boolean findIfLoanDisbursedInCurrentQuarter(Long loanId) {
+		return findIfLoanDisbursedInGivenQuarter(loanId, QuarterDateRange.getCurrentQuarter());
+	}
+
+	@Override
+	public BigDecimal getTotalRepaymentsForCurrentQuarter(Long loanId) {
+		return getTotalRepaymentsForGivenQuarter(loanId, QuarterDateRange.getCurrentQuarter());
+	}
+
+	@Override
+	public BigDecimal getTotalOutstandingAmountForCurrentQuarter(Long loanId) {
+		return getTotalOutstandingAmountForGivenQuarter(loanId, QuarterDateRange.getCurrentQuarter());
+	}
 	
 	
-	
+	private boolean findIfLoanDisbursedInGivenQuarter(Long loanId, QuarterDateRange range) {
+		// TODO Musaib: given the load-id, find if the disbursment is in given quarter range
+		return false;
+	}
+
+	private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, QuarterDateRange range) {
+		// TODO Musaib: given the loan-id, find all the repayments in given quarter
+		// final value to be returned is the sum of all the repayments
+		return BigDecimal.ZERO;
+	}
+
+	private BigDecimal getTotalOutstandingAmountForGivenQuarter(Long loanId, QuarterDateRange range) {
+		// TODO Musaib: given the loan-id, find the outstanding loan amount per-month in given quarter
+		// this value is the amount-yet-to-be-paid on the 1st of every month, before any payment is made
+		// or at the end of every month, after all payments are made
+		// final value to be returned is the sum of all these values
+		return BigDecimal.ZERO;
+	}
 
 }

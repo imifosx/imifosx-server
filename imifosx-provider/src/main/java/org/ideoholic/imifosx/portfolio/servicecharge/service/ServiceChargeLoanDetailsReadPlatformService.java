@@ -7,4 +7,7 @@ public interface ServiceChargeLoanDetailsReadPlatformService {
 	
 	BigDecimal getTotalLoansForCurrentQuarter();
 	BigDecimal getAllLoansRepaymentData() throws Exception;
+	boolean findIfLoanDisbursedInCurrentQuarter(Long loanId);
+	BigDecimal getTotalRepaymentsForCurrentQuarter(Long loanId);
+	BigDecimal getTotalOutstandingAmountForCurrentQuarter(Long loanId);
 }
