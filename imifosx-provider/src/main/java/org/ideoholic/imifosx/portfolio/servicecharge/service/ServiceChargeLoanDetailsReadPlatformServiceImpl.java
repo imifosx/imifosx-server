@@ -175,13 +175,48 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	
 	private boolean findIfLoanDisbursedInGivenQuarter(Long loanId, QuarterDateRange range) {
 		// TODO Musaib: given the load-id, find if the disbursment is in given quarter range
-		return false;
+		boolean result=false;
+		// Get the dates
+				
+				String startDate = range.getFormattedFromDateString();
+				String endDate = range.getFormattedToDateString();
+
+		final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
+				
+		LoanAccountData loanAccountData = loanReadPlatformService.retrieveOneLoanForCurrentQuarter(searchParameters, loanId, startDate, endDate);
+		if(loanAccountData!=null){
+			return result=true;
+		}
+		return result;
 	}
 
 	private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, QuarterDateRange range) {
 		// TODO Musaib: given the loan-id, find all the repayments in given quarter
 		// final value to be returned is the sum of all the repayments
-		return BigDecimal.ZERO;
+		
+		BigDecimal totalRepayment = BigDecimal.ZERO;
+		
+		// create MathContext object with 2 precision
+		MathContext mc = new MathContext(2);
+		
+		// Get the dates
+				
+				String startDate = range.getFormattedFromDateString();
+				String endDate = range.getFormattedToDateString();
+			
+			final Collection<LoanTransactionData> currentLoanRepayments = this.loanReadPlatformService
+					.retrieveLoanTransactionsMonthlyPayments(loanId, startDate, endDate);
+
+			for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
+				logger.debug("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getAmount());
+
+				// perform add operation on bg1 with augend bg2 and context mc
+				totalRepayment = totalRepayment.add(loanTransactionData.getAmount(), mc);
+			}
+			
+			
+		
+		return totalRepayment;
 	}
 
 	private BigDecimal getTotalOutstandingAmountForGivenQuarter(Long loanId, QuarterDateRange range) {
@@ -189,7 +224,20 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		// this value is the amount-yet-to-be-paid on the 1st of every month, before any payment is made
 		// or at the end of every month, after all payments are made
 		// final value to be returned is the sum of all these values
-		return BigDecimal.ZERO;
+		
+		BigDecimal totalOutstandingAmount;
+		
+		// Get the dates
+		
+		String startDate = range.getFormattedFromDateString();
+		String endDate = range.getFormattedToDateString();
+
+		final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
+		
+		LoanAccountData loanAccountData = loanReadPlatformService.retrieveOneLoanForCurrentQuarter(searchParameters, loanId, startDate, endDate);
+		
+		logger.debug("Outstanding Amount: "+loanAccountData.getTotalOutstandingAmount());
+		return totalOutstandingAmount=loanAccountData.getTotalOutstandingAmount();
 	}
 
 }

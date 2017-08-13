@@ -135,4 +135,8 @@ public interface LoanReadPlatformService {
 
 	Page<LoanAccountData> retrieveLoansForCurrentQuarter(
 			SearchParameters searchParameters, String startDate, String endDate);
+
+	LoanAccountData retrieveOneLoanForCurrentQuarter(
+			SearchParameters searchParameters, Long loanId, String startDate,
+			String endDate);
 }
