@@ -258,7 +258,6 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 			for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
 				logger.debug("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getOutstandingLoanBalance());
-				System.out.println("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getOutstandingLoanBalance());
 
 				// perform add operation on bg1 with augend bg2 and context mc
 				totalOutstandingAmount = totalOutstandingAmount.add(loanTransactionData.getOutstandingLoanBalance(), mc);

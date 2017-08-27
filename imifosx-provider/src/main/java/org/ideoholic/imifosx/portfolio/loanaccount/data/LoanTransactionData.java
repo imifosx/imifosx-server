@@ -224,4 +224,8 @@ public class LoanTransactionData {
     public BigDecimal getInterestPortion() {
         return this.interestPortion;
     }
+
+	public BigDecimal getOutstandingLoanBalance() {
+		return outstandingLoanBalance;
+	}
 }
