@@ -2171,15 +2171,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
 	 @Override
 	 public LoanAccountData retrieveOneLoanForCurrentQuarter(final SearchParameters searchParameters,Long loanId, String startDate, String endDate) {
-		
+         final AppUser currentUser = this.context.authenticatedUser();
+         final String hierarchy = currentUser.getOffice().getHierarchy();
+         final String hierarchySearchString = hierarchy + "%";
+
+         final LoanMapper rm = new LoanMapper();
+
+         final StringBuilder sqlBuilder = new StringBuilder();
 		 try {
-	            final AppUser currentUser = this.context.authenticatedUser();
-	            final String hierarchy = currentUser.getOffice().getHierarchy();
-	            final String hierarchySearchString = hierarchy + "%";
 
-	            final LoanMapper rm = new LoanMapper();
-
-	            final StringBuilder sqlBuilder = new StringBuilder();
 	            sqlBuilder.append("select ");
 	            sqlBuilder.append(rm.loanSchema());
 	            sqlBuilder.append(" join m_office o on (o.id = c.office_id or o.id = g.office_id) ");
@@ -2189,7 +2189,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 	            return this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, new Object[] { loanId, hierarchySearchString,
 	                    hierarchySearchString });
 	        } catch (final EmptyResultDataAccessException e) {
-	            throw new LoanNotFoundException(loanId);
+	            //throw new LoanNotFoundException(loanId);
+	            return this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, new Object[] { loanId, hierarchySearchString,
+                    hierarchySearchString });
 	        }
 	 }
 }
