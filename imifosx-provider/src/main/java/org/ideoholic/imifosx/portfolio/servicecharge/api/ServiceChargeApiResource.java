@@ -83,22 +83,23 @@ public class ServiceChargeApiResource {
 		BigDecimal repaymentCostPerRupee = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
 		BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
 		BigDecimal serviceCostPerLoan = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
-		
+
 		boolean isDisbursed = scLoanDetailsReadPlatformService.findIfLoanDisbursedInCurrentQuarter(loanId);
 		BigDecimal totalRepaymensts = scLoanDetailsReadPlatformService.getTotalRepaymentsForCurrentQuarter(loanId);
 		BigDecimal totalOutstanding = scLoanDetailsReadPlatformService.getTotalOutstandingAmountForCurrentQuarter(loanId);
-		
+
 		// Adding disbursement charge in case it was disbursed in the current quarter
 		BigDecimal serviceCharge = isDisbursed ? serviceCostPerLoan : BigDecimal.ZERO;
-		
+
 		BigDecimal mobilization = totalOutstanding.multiply(repaymentCostPerRupee);
 		mobilization = mobilization.divide(ServiceChargeApiConstants.ONE_THOUSAND_TWO_HUNDRED);
-		
+
 		BigDecimal repayment = totalRepaymensts.multiply(annualizedCost);
 		repayment = repayment.divide(ServiceChargeApiConstants.HUNDRED);
-		
+
 		serviceCharge = serviceCharge.add(mobilization);
-		
+		serviceCharge = serviceCharge.add(repayment);
+
 		return serviceCharge.toPlainString();
 	}
 
