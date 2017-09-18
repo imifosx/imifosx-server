@@ -45,13 +45,13 @@ public enum QuarterDateRange {
 	public Date getFromDate(int year) {
 		String locale = Locale.getDefault().toString();
 		String fullDateString = getFromDateString(year);
-		return new DateParam(fullDateString).getDate("Service Charge Journal Entries From Date", getDateFormatString(), locale);
+		return new DateParam(fullDateString).getDate("Service Data Entries From Date", getDateFormatString(), locale);
 	}
 
 	public Date getToDate(int year) {
 		String locale = Locale.getDefault().toString();
 		String fullDateString = getToDateString(year);
-		return new DateParam(fullDateString).getDate("Service Charge Journal Entries To Date", getDateFormatString(), locale);
+		return new DateParam(fullDateString).getDate("Service Data Entries To Date", getDateFormatString(), locale);
 	}
 
 	public Date getFromDateForCurrentYear() {
