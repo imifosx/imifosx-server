@@ -12,5 +12,6 @@ public interface ServiceChargeApiConstants {
 	BigDecimal ONE_THOUSAND_TWO_HUNDRED = new BigDecimal("1200");
 	BigDecimal HUNDRED = new BigDecimal("100");
 	MathContext MATHCONTEXT_2 = new MathContext(2);
+	String SERVICE_CHARGE_NAME = "Service Charge";
 
 }
