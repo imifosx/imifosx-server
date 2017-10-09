@@ -2,21 +2,20 @@ package org.ideoholic.imifosx.portfolio.servicecharge.service;
 
 import javax.sql.DataSource;
 
+import org.ideoholic.imifosx.infrastructure.core.service.RoutingDataSource;
 import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ServiceChargeWritePlatformServiceImp implements
-		ServiceChargeWritePlatformService {
+public class ServiceChargeWritePlatformServiceImp implements ServiceChargeWritePlatformService {
 
 	private final JdbcTemplate jdbcTemplate;
 	private final DataSource dataSource;
 
 	@Autowired
-	public ServiceChargeWritePlatformServiceImp(
-			final JdbcTemplate jdbcTemplate, final DataSource dataSource) {
+	public ServiceChargeWritePlatformServiceImp(final RoutingDataSource dataSource) {
 		this.dataSource = dataSource;
 		this.jdbcTemplate = new JdbcTemplate(this.dataSource);
 
@@ -26,8 +25,7 @@ public class ServiceChargeWritePlatformServiceImp implements
 	public ServiceChargeData createCharge(ServiceChargeData serviceChargeData) {
 
 		String transactionSql = "INSERT INTO m_loan_service_charge  (sc_quarter,sc_year,sc_header,sc_amount) VALUES (?, ?, ?, ?)";
-		int result = this.jdbcTemplate.update(transactionSql,
-				serviceChargeData.getQuarter(), serviceChargeData.getYear(),
+		int result = this.jdbcTemplate.update(transactionSql, serviceChargeData.getQuarter(), serviceChargeData.getYear(),
 				serviceChargeData.getHeader(), serviceChargeData.getAmount());
 
 		if (0 < result) {
