@@ -22,6 +22,7 @@ package org.ideoholic.imifosx.portfolio.servicecharge.data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 
 /**
@@ -31,40 +32,41 @@ public class ServiceChargeData implements Comparable<ServiceChargeData>, Seriali
 	private static final long serialVersionUID = 3L;
 
 	private final Long id;
-	private final int scQuarter;
+	private final QuarterDateRange scQuarter;
 	private final int scYear;
-	private final int scHeader;
+	private final ServiceChargeReportTableHeaders scHeader;
 	private final BigDecimal scAmount;
 
-	public static ServiceChargeData template(final int quarter, final int year, final ServiceChargeReportTableHeaders header, final BigDecimal amount) {
+	public static ServiceChargeData template(final QuarterDateRange quarter, final int year, final ServiceChargeReportTableHeaders header,
+			final BigDecimal amount) {
 		return new ServiceChargeData(0L, quarter, year, header, amount);
 	}
 
-	public static ServiceChargeData withTemplate(final Long id, final int quarter, final int year, final ServiceChargeReportTableHeaders header,
-			final BigDecimal amount) {
+	public static ServiceChargeData withTemplate(final Long id, final QuarterDateRange quarter, final int year,
+			final ServiceChargeReportTableHeaders header, final BigDecimal amount) {
 		return new ServiceChargeData(id, quarter, year, header, amount);
 	}
 
-	public static ServiceChargeData instance(final Long id, final int scQuarter, final int scYear, final ServiceChargeReportTableHeaders header,
-			final BigDecimal scAmount) {
+	public static ServiceChargeData instance(final Long id, final QuarterDateRange scQuarter, final int scYear,
+			final ServiceChargeReportTableHeaders header, final BigDecimal scAmount) {
 
 		return new ServiceChargeData(id, scQuarter, scYear, header, scAmount);
 	}
 
 	public static ServiceChargeData lookup(final Long id) {
-		final int scQuarter = 0;
+		final QuarterDateRange scQuarter = QuarterDateRange.Q1;
 		final int scYear = 0;
 		final ServiceChargeReportTableHeaders scHeader = null;
 		final BigDecimal scAmount = null;
 		return new ServiceChargeData(id, scQuarter, scYear, scHeader, scAmount);
 	}
 
-	protected ServiceChargeData(final Long id, final int scQuarter, final int scYear, final ServiceChargeReportTableHeaders scHeader,
+	protected ServiceChargeData(final Long id, final QuarterDateRange scQuarter, final int scYear, final ServiceChargeReportTableHeaders scHeader,
 			final BigDecimal scAmount) {
 		this.id = id;
 		this.scQuarter = scQuarter;
 		this.scYear = scYear;
-		this.scHeader = scHeader.getValue();
+		this.scHeader = scHeader;
 		this.scAmount = scAmount;
 	}
 
@@ -78,7 +80,7 @@ public class ServiceChargeData implements Comparable<ServiceChargeData>, Seriali
 	/**
 	 * @return the Quarter of this Service Charge
 	 */
-	public final int getQuarter() {
+	public final QuarterDateRange getQuarter() {
 		return scQuarter;
 	}
 
@@ -93,11 +95,10 @@ public class ServiceChargeData implements Comparable<ServiceChargeData>, Seriali
 	 * @return the header of this Service Charge component as string mapped to {@link ServiceChargeReportTableHeaders}
 	 */
 	public final String getHeader() {
-		ServiceChargeReportTableHeaders header = ServiceChargeReportTableHeaders.fromInt(scHeader);
-		if (header == null) {
+		if (scHeader == null) {
 			return "UNKNOWN";
 		}
-		return header.getCode();
+		return scHeader.getCode();
 	}
 
 	/**
