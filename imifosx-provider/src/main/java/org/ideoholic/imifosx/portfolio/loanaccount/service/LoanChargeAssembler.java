@@ -40,6 +40,8 @@ import org.ideoholic.imifosx.portfolio.loanaccount.domain.LoanTrancheDisbursemen
 import org.ideoholic.imifosx.portfolio.loanproduct.domain.LoanProduct;
 import org.ideoholic.imifosx.portfolio.loanproduct.domain.LoanProductRepository;
 import org.ideoholic.imifosx.portfolio.loanproduct.exception.LoanProductNotFoundException;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
+import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeCalculationPlatformService;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -55,14 +57,17 @@ public class LoanChargeAssembler {
     private final ChargeRepositoryWrapper chargeRepository;
     private final LoanChargeRepository loanChargeRepository;
     private final LoanProductRepository loanProductRepository;
+    private final ServiceChargeCalculationPlatformService serviceChargeCalculator;
 
     @Autowired
     public LoanChargeAssembler(final FromJsonHelper fromApiJsonHelper, final ChargeRepositoryWrapper chargeRepository,
-            final LoanChargeRepository loanChargeRepository, final LoanProductRepository loanProductRepository) {
+            final LoanChargeRepository loanChargeRepository, final LoanProductRepository loanProductRepository,
+            final ServiceChargeCalculationPlatformService serviceChargeCalculator) {
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.chargeRepository = chargeRepository;
         this.loanChargeRepository = loanChargeRepository;
         this.loanProductRepository = loanProductRepository;
+        this.serviceChargeCalculator = serviceChargeCalculator;
     }
 
     public Set<LoanCharge> fromParsedJson(final JsonElement element, Set<LoanDisbursementDetails> disbursementDetails) {
@@ -110,7 +115,7 @@ public class LoanChargeAssembler {
 
                     final Long id = this.fromApiJsonHelper.extractLongNamed("id", loanChargeElement);
                     final Long chargeId = this.fromApiJsonHelper.extractLongNamed("chargeId", loanChargeElement);
-                    final BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
+                    BigDecimal amount = this.fromApiJsonHelper.extractBigDecimalNamed("amount", loanChargeElement, locale);
                     final Integer chargeTimeType = this.fromApiJsonHelper.extractIntegerNamed("chargeTimeType", loanChargeElement, locale);
                     final Integer chargeCalculationType = this.fromApiJsonHelper.extractIntegerNamed("chargeCalculationType",
                             loanChargeElement, locale);
@@ -140,6 +145,10 @@ public class LoanChargeAssembler {
                         if (chargePaymentMode != null) {
                             chargePaymentModeEnum = ChargePaymentMode.fromInt(chargePaymentMode);
                         }
+                        String chargeName = chargeDefinition.getName();
+						if (ServiceChargeApiConstants.SERVICE_CHARGE_NAME.equals(chargeName)) {
+							amount = serviceChargeCalculator.calculateServiceChargeForPrincipal(principal);
+						}
                         if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
