@@ -2,12 +2,12 @@ package org.ideoholic.imifosx.portfolio.servicecharge.service;
 
 import javax.sql.DataSource;
 
-import org.ideoholic.imifosx.infrastructure.core.service.DateUtils;
-import org.ideoholic.imifosx.portfolio.loanaccount.domain.LoanTransactionType;
 import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
 
+@Service
 public class ServiceChargeWritePlatformServiceImp implements
 		ServiceChargeWritePlatformService {
 
