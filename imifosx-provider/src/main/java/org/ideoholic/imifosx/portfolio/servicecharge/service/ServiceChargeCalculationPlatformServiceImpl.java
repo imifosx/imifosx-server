@@ -1,9 +1,13 @@
 package org.ideoholic.imifosx.portfolio.servicecharge.service;
 
 import java.math.BigDecimal;
+import java.util.Calendar;
+import java.util.Collection;
 
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
+import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeData;
 import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +21,15 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 
 	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
 	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
+	private final ServiceChargeReadPlatformService scChargeReadPlatformService;
 
 	@Autowired
 	public ServiceChargeCalculationPlatformServiceImpl(final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
-			final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService) {
+			final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService,
+			ServiceChargeReadPlatformService scChargeReadPlatformService) {
 		this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
 		this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
+		this.scChargeReadPlatformService = scChargeReadPlatformService;
 	}
 
 	@Override
@@ -49,6 +56,51 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 	 * @return
 	 */
 	private BigDecimal serviceChargeCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
+		QuarterDateRange quarter = QuarterDateRange.getPreviousQuarter();
+		int year = Calendar.getInstance().get(Calendar.YEAR);
+		if (QuarterDateRange.Q4.equals(quarter)) {
+			year--;
+		}
+		Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
+		if (retrivedSCList == null || retrivedSCList.isEmpty()) {
+			return calculateServiceChargeForCurrentQuarter(isDisbursed, totalRepaymensts, totalOutstanding);
+		}
+		return calculateServiceChargeFromDBValues(isDisbursed, totalRepaymensts, totalOutstanding, retrivedSCList);
+	}
+
+	private BigDecimal calculateServiceChargeFromDBValues(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding,
+			Collection<ServiceChargeData> retrivedSCList) {
+		BigDecimal repaymentCostPerRupee = BigDecimal.ZERO;
+		BigDecimal annualizedCost = BigDecimal.ZERO;
+		BigDecimal serviceCostPerLoan = BigDecimal.ZERO;
+		for (ServiceChargeData data : retrivedSCList) {
+			switch (data.getHeader()) {
+			case REPAYMENT_PER_100:
+				repaymentCostPerRupee = data.getAmount();
+				break;
+			case ANNUALIZED_COST_I:
+				annualizedCost = data.getAmount();
+				break;
+			case LOAN_SERVICING_PER_LOAN:
+				serviceCostPerLoan = data.getAmount();
+				break;
+			}
+		}
+
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: repaymentCostPerRupee="
+				+ repaymentCostPerRupee.toPlainString());
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: annualizedCost="
+				+ annualizedCost.toPlainString());
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: serviceCostPerLoan/disbursement="
+				+ serviceCostPerLoan.toPlainString());
+
+		BigDecimal serviceCharge = serviceCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, repaymentCostPerRupee, annualizedCost,
+				serviceCostPerLoan);
+
+		return serviceCharge;
+	}
+
+	private BigDecimal calculateServiceChargeForCurrentQuarter(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
 		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
 		BigDecimal repaymentCostPerRupee = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
 		BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
@@ -60,6 +112,13 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceChargeCalculationLogic:serviceCostPerLoan/disbursement="
 				+ serviceCostPerLoan.toPlainString());
 
+		BigDecimal serviceCharge = serviceCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, repaymentCostPerRupee, annualizedCost,
+				serviceCostPerLoan);
+		return serviceCharge;
+	}
+
+	private BigDecimal serviceCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding,
+			BigDecimal repaymentCostPerRupee, BigDecimal annualizedCost, BigDecimal serviceCostPerLoan) {
 		// Adding disbursement charge in case it was disbursed in the current quarter
 		BigDecimal serviceCharge = isDisbursed ? serviceCostPerLoan : BigDecimal.ZERO;
 
@@ -72,9 +131,9 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		serviceCharge = serviceCharge.add(mobilization);
 		serviceCharge = serviceCharge.add(repayment);
 
-		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceChargeCalculationLogic:mobilization=" + mobilization.toPlainString());
-		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceChargeCalculationLogic:repayment=" + repayment.toPlainString());
-		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceChargeCalculationLogic:serviceCharge=" + serviceCharge.toPlainString());
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: mobilization=" + mobilization.toPlainString());
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: repayment=" + repayment.toPlainString());
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: serviceCharge=" + serviceCharge.toPlainString());
 		return serviceCharge;
 	}
 

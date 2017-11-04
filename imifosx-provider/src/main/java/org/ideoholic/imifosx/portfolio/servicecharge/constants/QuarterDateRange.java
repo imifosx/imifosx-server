@@ -80,6 +80,22 @@ public enum QuarterDateRange {
 				: (month >= Calendar.JULY && month <= Calendar.SEPTEMBER) ? Q3 : Q4;
 		return q;
 	}
+	
+	public static QuarterDateRange getPreviousQuarter() {
+		QuarterDateRange q = getCurrentQuarter();
+		switch (q) {
+		case Q1:
+			return Q4;
+		case Q2:
+			return Q1;
+		case Q3:
+			return Q2;
+		case Q4:
+			return Q3;
+		default:
+			return null;
+		}
+	}
 
 	public String getFormattedFromDateString() {
 		return DateUtils.formatToSqlDate(getFromDateForCurrentYear());
