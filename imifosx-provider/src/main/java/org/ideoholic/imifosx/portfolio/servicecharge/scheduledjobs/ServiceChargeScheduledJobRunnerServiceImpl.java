@@ -18,9 +18,17 @@
  */
 package org.ideoholic.imifosx.portfolio.servicecharge.scheduledjobs;
 
+import java.math.BigDecimal;
+import java.util.Calendar;
+
 import org.ideoholic.imifosx.infrastructure.jobs.annotation.CronTarget;
 import org.ideoholic.imifosx.infrastructure.jobs.service.JobName;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
+import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeData;
+import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
+import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeWritePlatformService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,24 +37,47 @@ import org.springframework.stereotype.Service;
 @Service(value = "serviceChargeScheduledJobRunnerService")
 public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceChargeScheduledJobRunnerService {
 
-    private final static Logger logger = LoggerFactory.getLogger(ServiceChargeScheduledJobRunnerServiceImpl.class);
-    
+	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeScheduledJobRunnerServiceImpl.class);
 
-    private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
-    
-    @Autowired
-    public ServiceChargeScheduledJobRunnerServiceImpl(final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService) {
-        this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
-        
-    }
+	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
+	private final ServiceChargeWritePlatformService scWritePlatformService;
 
-   
-    @Override
-    @CronTarget(jobName = JobName.GENERATE_SERVICECHARGE) 
-    public void generateServiceCharge(){
-    	logger.info("Inside Generate Service Charge");
-    	System.out.println("in the generate service charge");
-	  
-  }
+	@Autowired
+	public ServiceChargeScheduledJobRunnerServiceImpl(final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
+			ServiceChargeWritePlatformService scWritePlatformService) {
+		this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
+		this.scWritePlatformService = scWritePlatformService;
+	}
+
+	@Override
+	@CronTarget(jobName = JobName.GENERATE_SERVICECHARGE)
+	public void generateServiceCharge() {
+		logger.info("ServiceChargeScheduledJobRunnerServiceImpl::generateServiceCharge: Inside Generate Service Charge");
+
+		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+		int year = Calendar.getInstance().get(Calendar.YEAR);
+		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+
+		// Saving : Loan Servicing Cost per Loan
+		saveServiceCharge(quarter, year, ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, finalSheetData);
+
+		// Saving : Equivalent Annualized Cost (%) - I
+		saveServiceCharge(quarter, year, ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, finalSheetData);
+
+		// Saving : Repayments Cost per 100 Rupee of Repayment
+		saveServiceCharge(quarter, year, ServiceChargeReportTableHeaders.REPAYMENT_PER_100, finalSheetData);
+	}
+
+	private void saveServiceCharge(QuarterDateRange quarter, int year, ServiceChargeReportTableHeaders header, ServiceChargeFinalSheetData dataSheet) {
+		BigDecimal amount = dataSheet.getColumnValue(header, 0);
+
+		logger.info("ServiceChargeScheduledJobRunnerServiceImpl::saveServiceCharge: Data Details->");
+		logger.info("quarter from-" + quarter.getFromDateStringForCurrentYear() + "quarter to-" + quarter.getToDateStringForCurrentYear());
+		logger.info("Header-" + header.getCode());
+		logger.info("Amount-" + amount);
+
+		ServiceChargeData serviceCharge = ServiceChargeData.template(quarter, year, header, amount);
+		scWritePlatformService.createCharge(serviceCharge);
+	}
 
 }
