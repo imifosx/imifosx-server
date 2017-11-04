@@ -22,8 +22,8 @@ public enum ServiceChargeReportTableHeaders {
     ANNUALIZED_COST_I(15, "Equivalent Annualized Cost (%) - I"),
     ANNUALIZED_COST_II(16, "Equivalent Annualized Cost (%) - II"),
     ANNUALIZED_COST_III(17, "Equivalent Annualized Cost (%) - III"),
-    ANNUALIZED_COST_TOTAL(18, "Equivalent Annualized Cost (%) - Total");
-
+    ANNUALIZED_COST_TOTAL(18, "Equivalent Annualized Cost (%) - Total"),
+	INVALID(100, "INVALID HEADER");
 	private final Integer value;
 	private final String code;
 

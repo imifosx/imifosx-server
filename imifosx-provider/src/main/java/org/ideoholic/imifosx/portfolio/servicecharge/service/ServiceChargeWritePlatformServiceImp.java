@@ -25,8 +25,8 @@ public class ServiceChargeWritePlatformServiceImp implements ServiceChargeWriteP
 	public ServiceChargeData createCharge(ServiceChargeData serviceChargeData) {
 
 		String transactionSql = "INSERT INTO m_loan_service_charge  (sc_quarter,sc_year,sc_header,sc_amount) VALUES (?, ?, ?, ?)";
-		int result = this.jdbcTemplate.update(transactionSql, serviceChargeData.getQuarter(), serviceChargeData.getYear(),
-				serviceChargeData.getHeader(), serviceChargeData.getAmount());
+		int result = this.jdbcTemplate.update(transactionSql, serviceChargeData.getQuarter().getId(), serviceChargeData.getYear(),
+				serviceChargeData.getHeader().getValue(), serviceChargeData.getAmount());
 
 		if (0 < result) {
 			return serviceChargeData;

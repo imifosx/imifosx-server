@@ -94,11 +94,11 @@ public class ServiceChargeData implements Comparable<ServiceChargeData>, Seriali
 	/**
 	 * @return the header of this Service Charge component as string mapped to {@link ServiceChargeReportTableHeaders}
 	 */
-	public final String getHeader() {
+	public final ServiceChargeReportTableHeaders getHeader() {
 		if (scHeader == null) {
-			return "UNKNOWN";
+			return ServiceChargeReportTableHeaders.INVALID;
 		}
-		return scHeader.getCode();
+		return scHeader;
 	}
 
 	/**
