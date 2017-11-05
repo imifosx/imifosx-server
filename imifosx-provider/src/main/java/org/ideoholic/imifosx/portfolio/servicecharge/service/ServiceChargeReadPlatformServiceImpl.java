@@ -13,37 +13,33 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Service;
 
+@Service
 public class ServiceChargeReadPlatformServiceImpl implements ServiceChargeReadPlatformService {
 
-	
 	private final JdbcTemplate jdbcTemplate;
 
 	@Autowired
 	public ServiceChargeReadPlatformServiceImpl(final RoutingDataSource dataSource) {
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 	}
-	
+
 	@Override
-	public Collection<ServiceChargeData> retrieveCharge(
-			QuarterDateRange quarterDateRange, int year) {
-		 try {
-	            
+	public Collection<ServiceChargeData> retrieveCharge(QuarterDateRange quarterDateRange, int year) {
+		try {
 
-	            final ServiceChargeMapper scm = new ServiceChargeMapper();
+			final ServiceChargeMapper scm = new ServiceChargeMapper();
 
-	            // retrieve service charges
-	            
-	            final String sql = "select "
-	                    + scm.ServiceChargeSchema()
-	                     + " where sc.sc_quarter = ? and sc.sc_year = ?";
-	            return this.jdbcTemplate.query(sql, scm, new Object[] { quarterDateRange.getId(),year });
-	        } catch (final EmptyResultDataAccessException e) {
-	            return null;
-	        }
+			// retrieve service charges
+
+			final String sql = "select " + scm.ServiceChargeSchema() + " where sc_quarter = ? and sc_year = ?";
+			return this.jdbcTemplate.query(sql, scm, new Object[] { quarterDateRange.getId(), year });
+		} catch (final EmptyResultDataAccessException e) {
+			return null;
+		}
 	}
-	
-	
+
 	@Override
 	public Collection<ServiceChargeData> retrieveAllCharges() {
 		// TODO Auto-generated method stub
@@ -56,25 +52,24 @@ public class ServiceChargeReadPlatformServiceImpl implements ServiceChargeReadPl
 		return null;
 	}
 
-	
-	 private static final class ServiceChargeMapper implements RowMapper<ServiceChargeData> {
+	private static final class ServiceChargeMapper implements RowMapper<ServiceChargeData> {
 
-	        public String ServiceChargeSchema() {
+		public String ServiceChargeSchema() {
 
-	            return "sc.sc_quarter as quarter, sc.sc_year as year, sc.sc_amount as amount from m_loan_service_charge sc";
-	        }
+			return "sc_quarter, sc_year, sc_header, sc_amount from m_loan_service_charge";
+		}
 
-			@Override
-			public ServiceChargeData mapRow(ResultSet rs, int rowNum) throws SQLException {
-				
-				final int quarter = rs.getInt("sc_quarter");
-	            final int year = rs.getInt("sc_year");
-	            final int header = rs.getInt("sc_header");
-	            final BigDecimal amount = rs.getBigDecimal("sc_amount");
-	            
-	            return ServiceChargeData.template(QuarterDateRange.fromInt(quarter), year, ServiceChargeReportTableHeaders.fromInt(header), amount);
-			}
+		@Override
+		public ServiceChargeData mapRow(ResultSet rs, int rowNum) throws SQLException {
 
-	 }		
+			final int quarter = rs.getInt("sc_quarter");
+			final int year = rs.getInt("sc_year");
+			final int header = rs.getInt("sc_header");
+			final BigDecimal amount = rs.getBigDecimal("sc_amount");
+
+			return ServiceChargeData.template(QuarterDateRange.fromInt(quarter), year, ServiceChargeReportTableHeaders.fromInt(header), amount);
+		}
+
+	}
 
 }

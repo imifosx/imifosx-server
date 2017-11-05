@@ -1,9 +1,11 @@
 package org.ideoholic.imifosx.portfolio.servicecharge.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Collection;
 
+import org.ideoholic.imifosx.organisation.monetary.domain.MoneyHelper;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
@@ -119,14 +121,16 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 
 	private BigDecimal serviceCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding,
 			BigDecimal repaymentCostPerRupee, BigDecimal annualizedCost, BigDecimal serviceCostPerLoan) {
+		final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
+
 		// Adding disbursement charge in case it was disbursed in the current quarter
 		BigDecimal serviceCharge = isDisbursed ? serviceCostPerLoan : BigDecimal.ZERO;
 
 		BigDecimal mobilization = totalOutstanding.multiply(repaymentCostPerRupee);
-		mobilization = mobilization.divide(ServiceChargeApiConstants.ONE_THOUSAND_TWO_HUNDRED);
+		mobilization = mobilization.divide(ServiceChargeApiConstants.ONE_THOUSAND_TWO_HUNDRED, roundingMode);
 
 		BigDecimal repayment = totalRepaymensts.multiply(annualizedCost);
-		repayment = repayment.divide(ServiceChargeApiConstants.HUNDRED);
+		repayment = repayment.divide(ServiceChargeApiConstants.HUNDRED, roundingMode);
 
 		serviceCharge = serviceCharge.add(mobilization);
 		serviceCharge = serviceCharge.add(repayment);
