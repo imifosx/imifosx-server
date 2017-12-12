@@ -24,7 +24,22 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
 	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
 	private final ServiceChargeReadPlatformService scChargeReadPlatformService;
-
+	
+	// Global parameter of final-sheet to avoid recalculating again for every loan
+	private ServiceChargeFinalSheetData finalSheetData = null;
+	
+	private ServiceChargeFinalSheetData getFinalSheetData(){
+		if(finalSheetData == null){
+			finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		}
+		return finalSheetData;
+	}
+	
+	private void clearFinalSheetData(){
+		// Setting final-sheet data to null so that it will be recalculated
+		finalSheetData = null;
+	}
+	
 	@Autowired
 	public ServiceChargeCalculationPlatformServiceImpl(final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
 			final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService,
@@ -44,6 +59,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:totalRepaymensts=" + totalRepaymensts);
 		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:totalOutstanding=" + totalOutstanding);
 
+		clearFinalSheetData();// Clear the sheet data before calculation
 		return serviceChargeCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding);
 	}
 
@@ -103,7 +119,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 	}
 
 	private BigDecimal calculateServiceChargeForCurrentQuarter(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
-		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		finalSheetData = getFinalSheetData();
 		BigDecimal repaymentCostPerRupee = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
 		BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
 		BigDecimal serviceCostPerLoan = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
@@ -144,8 +160,9 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 	@Override
 	public BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal) {
 		boolean isDisbursed = true; // Assuming that it will be disbursed
-		BigDecimal totalRepaymensts = BigDecimal.ZERO; // Assuming that on loan-payout, there is no repayment yet
+		BigDecimal totalRepaymensts = BigDecimal.ZERO; // Assuming that on loan-payout, there is no repayments yet
 		BigDecimal totalOutstanding = principal; // The current amount being disbursed is the outstanding loan amount
+		clearFinalSheetData(); // Clear the sheet data before calculation
 		return serviceChargeCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding);
 	}
 
