@@ -17,6 +17,7 @@ import org.ideoholic.imifosx.accounting.journalentry.domain.JournalEntryType;
 import org.ideoholic.imifosx.accounting.journalentry.service.JournalEntryReadPlatformService;
 import org.ideoholic.imifosx.infrastructure.core.service.Page;
 import org.ideoholic.imifosx.infrastructure.core.service.SearchParameters;
+import org.ideoholic.imifosx.organisation.monetary.domain.MoneyHelper;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.GLExpenseTagsForServiceCharge;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
@@ -109,69 +110,45 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 	public void computeFinalCalculations(ServiceChargeFinalSheetData sheetData) {
 		BigDecimal mobilizationCostPercent, avgDLRePm, lsCostPa, lsCostPerLoan, totalNoDlLoans, reForPeriod, reCostPer100;
 		try {
-			List<BigDecimal> columnEntry;
+			
 			BigDecimal lsCostOnACBf = sheetData.getColumnValue(ServiceChargeReportTableHeaders.LSCOST_ON_ACCOUNT_BF, 0);
 
-			columnEntry = new ArrayList<>(1);
 			mobilizationCostPercent = sheetData.getColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_MOBILIZATION, 1);
 			mobilizationCostPercent = mobilizationCostPercent.multiply(new BigDecimal("4"));
-			columnEntry.add(mobilizationCostPercent);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.TOTAL_MOBILIZATION, columnEntry);
+			setColumnValueWithRounding(sheetData, mobilizationCostPercent, ServiceChargeReportTableHeaders.TOTAL_MOBILIZATION);
 
-			columnEntry = new ArrayList<>(1);
-			avgDLRePm = scLoanDetailsReadPlatformService.getAllLoansRepaymentData();
-			columnEntry.add(avgDLRePm);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.AVG_REPAYMENT, columnEntry);
+			avgDLRePm = scLoanDetailsReadPlatformService.getLoansOutstandingAmount();
+			setColumnValueWithRounding(sheetData, avgDLRePm, ServiceChargeReportTableHeaders.AVG_REPAYMENT);
 
-			columnEntry = new ArrayList<>(1);
 			mobilizationCostPercent = ServiceChargeOperationUtils.divideNonZeroValues(mobilizationCostPercent, avgDLRePm).multiply(HUNDRED);
-			columnEntry.add(mobilizationCostPercent);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.MOBILIZATION_PERCENT, columnEntry);
-
-			columnEntry = new ArrayList<>(1);
+			setColumnValueWithRounding(sheetData, mobilizationCostPercent, ServiceChargeReportTableHeaders.MOBILIZATION_PERCENT);
+			
 			lsCostPa = sheetData.getColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_SUBTOTAL, 1);
 			lsCostPa = lsCostPa.multiply(new BigDecimal("4"));
-			columnEntry.add(lsCostPa);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PA, columnEntry);
+			setColumnValueWithRounding(sheetData, lsCostPa, ServiceChargeReportTableHeaders.LOAN_SERVICING_PA);
 
-			columnEntry = new ArrayList<>(1);
 			totalNoDlLoans = scLoanDetailsReadPlatformService.getTotalLoansForCurrentQuarter();
-			columnEntry.add(totalNoDlLoans);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.TOTAL_LOANS, columnEntry);
+			setColumnValueWithRounding(sheetData, totalNoDlLoans, ServiceChargeReportTableHeaders.TOTAL_LOANS);
 
-			columnEntry = new ArrayList<>(1);
 			lsCostPerLoan = ServiceChargeOperationUtils.divideNonZeroValues(lsCostPa, totalNoDlLoans);
-			columnEntry.add(lsCostPerLoan);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, columnEntry);
+			setColumnValueWithRounding(sheetData, lsCostPerLoan, ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN);
 
-			columnEntry = new ArrayList<>(1);
 			reForPeriod = scLoanDetailsReadPlatformService.getAllLoansRepaymentData();
-			columnEntry.add(reForPeriod);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.TOTAL_REPAYMENT, columnEntry);
+			setColumnValueWithRounding(sheetData, reForPeriod, ServiceChargeReportTableHeaders.TOTAL_REPAYMENT);
 
-			columnEntry = new ArrayList<>(1);
 			reCostPer100 = ServiceChargeOperationUtils.divideNonZeroValues(lsCostOnACBf, reForPeriod);
-			columnEntry.add(reCostPer100);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, columnEntry);
+			setColumnValueWithRounding(sheetData, reCostPer100, ServiceChargeReportTableHeaders.REPAYMENT_PER_100);
 
-			columnEntry = new ArrayList<>(1);
-			columnEntry.add(mobilizationCostPercent);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, columnEntry);
+			setColumnValueWithRounding(sheetData, mobilizationCostPercent, ServiceChargeReportTableHeaders.ANNUALIZED_COST_I);
 
-			columnEntry = new ArrayList<>(1);
 			BigDecimal eac2 = ServiceChargeOperationUtils.divideNonZeroValues(lsCostPa, avgDLRePm).multiply(HUNDRED);
-			columnEntry.add(eac2);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_II, columnEntry);
+			setColumnValueWithRounding(sheetData, eac2, ServiceChargeReportTableHeaders.ANNUALIZED_COST_II);
 
-			columnEntry = new ArrayList<>(1);
 			BigDecimal eac3 = ServiceChargeOperationUtils.divideNonZeroValues(lsCostOnACBf, avgDLRePm).multiply(HUNDRED);
-			columnEntry.add(eac3);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_III, columnEntry);
+			setColumnValueWithRounding(sheetData, eac3, ServiceChargeReportTableHeaders.ANNUALIZED_COST_III);
 
-			columnEntry = new ArrayList<>(1);
 			BigDecimal total = mobilizationCostPercent.add(eac2).add(eac3);
-			columnEntry.add(total);
-			sheetData.setColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_TOTAL, columnEntry);
+			setColumnValueWithRounding(sheetData, total, ServiceChargeReportTableHeaders.ANNUALIZED_COST_TOTAL);
 
 		} catch (Exception ex) {
 			// Any exception means that input data is wrong so ignoring it
@@ -179,6 +156,11 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		}
 	}
 
+	private void setColumnValueWithRounding(ServiceChargeFinalSheetData sheetData, BigDecimal value, ServiceChargeReportTableHeaders header){
+		List<BigDecimal> columnEntry = new ArrayList<>(1);
+		columnEntry.add(value.setScale(2, MoneyHelper.getRoundingMode()));
+		sheetData.setColumnValue(header, columnEntry);
+	}
 	private ServiceChargeFinalSheetData generateFinalTableOfJournalEntries(Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder,
 			ServiceChargeFinalSheetData finalSheetData) {
 		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultList = null;

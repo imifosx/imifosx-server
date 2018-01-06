@@ -35,6 +35,7 @@ import org.ideoholic.imifosx.portfolio.loanproduct.service.LoanEnumerations;
 import org.ideoholic.imifosx.portfolio.paymentdetail.data.PaymentDetailData;
 import org.ideoholic.imifosx.portfolio.paymenttype.data.PaymentTypeData;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.ideoholic.imifosx.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceChargeLoanDetailsReadPlatformService {
+public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceChargeLoanDetailsReadPlatformService, ServiceChargeApiConstants {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeLoanDetailsReadPlatformServiceImpl.class);
 
@@ -86,13 +87,9 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	}
 
 	public BigDecimal getAllLoansRepaymentData() throws Exception {
-		logger.debug("entered into getAllLoansRepaymentData");
 
-		BigDecimal totalRepayment = BigDecimal.ZERO;
+		BigDecimal totalRepayment = new BigDecimal("0");
 		
-		// create MathContext object with 2 precision
-		MathContext mc = new MathContext(2);
-
 		// Get the dates
 		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
 		String startDate = quarter.getFormattedFromDateString();
@@ -107,31 +104,41 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			e.printStackTrace();
 		}
 
-		getLoansOutstandingAmount();
-		
-		for (int i = 0; i < loanAccountData.getPageItems().size(); i++) {
-			logger.debug("Total number of accounts" + loanAccountData.getPageItems().size());
-			logger.debug("Monthly Payments");
+		int dataListSize = loanAccountData.getPageItems().size();
+		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Total number of accounts" + dataListSize);
+		for (int i = 0; i < dataListSize; i++) {
+			
 			try {
-				System.out.println("The loan id is " + loanAccountData.getPageItems().get(i).getId());
+				Long loanId = loanAccountData.getPageItems().get(i).getId();
+				if (!loanAccountData.getPageItems().get(i).isActive()) {
+					logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Loan ID:"  + loanId + " is inactive!");
+					continue;
+				}
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::The loan id is " + loanId);
 				final Collection<LoanTransactionData> currentLoanRepayments = this.loanReadPlatformService
 						.retrieveLoanTransactionsMonthlyPayments(loanAccountData.getPageItems().get(i).getId(), startDate, endDate);
 
 				for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
-					logger.debug("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getAmount());
+					BigDecimal repaymentAmount = loanTransactionData.getAmount();
+					logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + repaymentAmount);
 
 					// perform add operation on bg1 with augend bg2 and context mc
-					totalRepayment = totalRepayment.add(loanTransactionData.getAmount(), mc);
+					totalRepayment = totalRepayment.add(repaymentAmount);
+					
+					logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Partial totalRepayment:" + totalRepayment.toPlainString());
 				}
 				
-				// Get Loan Charge Name
+				/* Get Loan Charge Name - TODO: Need to decide if we need to identify the loan type
 				String loanCharges = getLoanChargeName(loanAccountData.getPageItems().get(i).getId());
-		        	System.out.println("********** Loan Charge Name ************** "+loanCharges);	
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Loan Charge Name:" + loanCharges);
+				*/
 		        	
 			} catch (Exception e) {
+				// Exception on a particular loan is ignored and continue to calculate 
 				e.printStackTrace();
 			}
 		}
+		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::totalRepayment:" + totalRepayment.toPlainString());
 		
 		return totalRepayment;
 	}
@@ -150,12 +157,10 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	
 	
 	public BigDecimal getLoansOutstandingAmount() throws Exception {
-		logger.debug("entered into getLoansOutstandingAmount");
+		logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount");
 
 		
 		BigDecimal totalOutstandingAmount = BigDecimal.ZERO;
-		// create MathContext object with 2 precision
-		MathContext mc = new MathContext(2);
 
 		// Get the dates
 		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
@@ -171,21 +176,18 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			e.printStackTrace();
 		}
 
-		
-		
 		for (int i = 0; i < loanAccountDataForOutstandingAmount.getPageItems().size(); i++) {
-			
-			
-			System.out.println("Total Outstanding Amount "+loanAccountDataForOutstandingAmount.getPageItems().get(i).getTotalOutstandingAmount());
-			logger.debug("outstanding Amount");
-			logger.debug("Account Loan id "+loanAccountDataForOutstandingAmount.getPageItems().get(i).getId());
-			logger.debug("Outstanding Amount: "+loanAccountDataForOutstandingAmount.getPageItems().get(i).getTotalOutstandingAmount());
-			totalOutstandingAmount = totalOutstandingAmount.add(loanAccountDataForOutstandingAmount.getPageItems().get(i).getTotalOutstandingAmount(), mc);
-			
+			LoanAccountData loanAccData = loanAccountDataForOutstandingAmount.getPageItems().get(i);
+			if(!loanAccData.isActive()){
+				continue;
+			}
+			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Total Outstanding Amount "+loanAccData.getTotalOutstandingAmount());
+			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::outstanding Amount");
+			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Account Loan id "+loanAccData.getId());
+			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Outstanding Amount: "+loanAccData.getTotalOutstandingAmount());
+			totalOutstandingAmount = totalOutstandingAmount.add(loanAccData.getTotalOutstandingAmount());
 		}
-		
-
-
+		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstandingAmount:" + totalOutstandingAmount);
 		return totalOutstandingAmount;
 	}
 
@@ -214,7 +216,11 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 		try {
 			LoanAccountData loanAccountData = loanReadPlatformService.retrieveOneLoanForCurrentQuarter(searchParameters, loanId, startDate, endDate);
-			result = true;
+			if (loanAccountData == null) {
+				result = false;
+			} else {
+				result = true;
+			}
 		} catch (Exception e) {
 			// TODO: handle exception
 			logger.error(e.getMessage());
@@ -250,7 +256,6 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		
 		
 		BigDecimal totalOutstandingAmount=BigDecimal.ZERO;
-		BigDecimal totalRepayment = BigDecimal.ZERO;
 		// create MathContext object with 2 precision
 		MathContext mc = new MathContext(2);
 		String startDate = range.getFormattedFromDateString();
@@ -292,7 +297,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 					}
 				}
 			}
-		logger.info("Total outstanding amount "+totalOutstandingAmount);
+		logger.debug("Total outstanding amount "+totalOutstandingAmount);
 		return totalOutstandingAmount;
 	}
 	
