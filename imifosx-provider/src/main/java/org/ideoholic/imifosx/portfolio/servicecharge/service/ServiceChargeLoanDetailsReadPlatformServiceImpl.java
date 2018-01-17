@@ -54,17 +54,14 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 	private final LoanReadPlatformService loanReadPlatformService;
 	private final LoanChargeReadPlatformService loanChargeReadPlatformService;
-	private final ServiceChargeOperationUtils serviceChargeOperationUtils;
 	private final JdbcTemplate jdbcTemplate;
 	private final PlatformSecurityContext context;
 	
 	@Autowired
 	public ServiceChargeLoanDetailsReadPlatformServiceImpl(LoanReadPlatformService loanReadPlatformService, LoanChargeReadPlatformService loanChargeReadPlatformService,
-			ServiceChargeOperationUtils serviceChargeOperationUtils,
 			final RoutingDataSource dataSource,final PlatformSecurityContext context) {
 		this.loanReadPlatformService = loanReadPlatformService;
 		this.loanChargeReadPlatformService = loanChargeReadPlatformService;
-		this.serviceChargeOperationUtils = serviceChargeOperationUtils;
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 		this.context=context;
 	}
@@ -180,10 +177,12 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			e.printStackTrace();
 		}
 
+		if(loanAccountDataForOutstandingAmount!=null){
+		
 		for (int i = 0; i < loanAccountDataForOutstandingAmount.getPageItems().size(); i++) {
 			LoanAccountData loanAccData = loanAccountDataForOutstandingAmount.getPageItems().get(i);
 			
-			boolean isDemandLaon = serviceChargeOperationUtils.checkDemandLaon(loanAccData);
+			boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanAccData);
 			if(!loanAccData.isActive() && !isDemandLaon){
 				continue;
 			}
@@ -192,6 +191,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Account Loan id "+loanAccData.getId());
 			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Outstanding Amount: "+loanAccData.getTotalOutstandingAmount());
 			totalOutstandingAmount = totalOutstandingAmount.add(loanAccData.getTotalOutstandingAmount());
+		}
 		}
 		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstandingAmount:" + totalOutstandingAmount);
 		return totalOutstandingAmount;
