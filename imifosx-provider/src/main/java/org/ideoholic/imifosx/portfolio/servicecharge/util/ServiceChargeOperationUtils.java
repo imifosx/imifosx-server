@@ -2,10 +2,15 @@ package org.ideoholic.imifosx.portfolio.servicecharge.util;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.ideoholic.imifosx.portfolio.charge.data.ChargeData;
+import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanAccountData;
+import org.ideoholic.imifosx.portfolio.loanproduct.data.LoanProductData;
 
 public class ServiceChargeOperationUtils {
 
@@ -75,5 +80,20 @@ public class ServiceChargeOperationUtils {
 		}
 		sb.append("</table>");
 		return sb.toString();
+	}
+
+	public boolean checkDemandLaon(LoanAccountData loanAccData) {
+		
+		Collection<LoanProductData> loanProductData = loanAccData.getProductOptions();
+		for (LoanProductData loanProduct : loanProductData) {
+			Collection<ChargeData> chargeData= loanProduct.getChargeOptions();
+			for (ChargeData charges : chargeData) {
+				String chargeName = charges.getName();
+				if(StringUtils.equalsIgnoreCase("Service Charge", chargeName)){
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }

@@ -2115,11 +2115,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 		        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
 		        sqlBuilder.append(this.loaanLoanMapper.loanSchema());
 
-		        // TODO - for time being this will data scope list of loans returned to
-		        // only loans that have a client associated.
-		        // to support senario where loan has group_id only OR client_id will
-		        // probably require a UNION query
-		        // but that at present is an edge case
+		        // TODO - ideoholic 
+		        //get all the loans which are active in the current quarter
 		        sqlBuilder.append(" join m_office o on o.id = c.office_id");
 		        sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
 		        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.disbursedon_date between '"+startDate+"' and '"+endDate+"'");

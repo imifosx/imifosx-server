@@ -265,4 +265,8 @@ public class ChargeData implements Comparable<ChargeData>, Serializable {
         }
         return isOverdueInstallmentCharge;
     }
+
+	public String getName() {
+		return name;
+	}
 }

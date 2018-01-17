@@ -1516,4 +1516,8 @@ public class LoanAccountData {
 		return id;
 	}
 
+	public Collection<LoanProductData> getProductOptions() {
+		return productOptions;
+	}
+
 }
