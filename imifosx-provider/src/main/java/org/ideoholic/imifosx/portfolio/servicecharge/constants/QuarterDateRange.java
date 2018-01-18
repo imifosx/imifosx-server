@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.ideoholic.imifosx.accounting.journalentry.api.DateParam;
 import org.ideoholic.imifosx.infrastructure.core.service.DateUtils;
 
@@ -63,24 +64,19 @@ public enum QuarterDateRange {
 	}
 
 	public Date getFromDateForCurrentYear() {
-		return getFromDate(Calendar.getInstance().get(Calendar.YEAR));
+		return getFromDate(QuarterYearHolder.getYear());
 	}
 
 	public Date getToDateForCurrentYear() {
-		return getToDate(Calendar.getInstance().get(Calendar.YEAR));
+		return getToDate(QuarterYearHolder.getYear());
 	}
 
 	// Find better way to do this
 	public static QuarterDateRange getCurrentQuarter() {
-		QuarterDateRange q = Q1;
-		Calendar c = Calendar.getInstance(Locale.getDefault());
-		int month = c.get(Calendar.MONTH);
-
-		q = (month >= Calendar.JANUARY && month <= Calendar.MARCH) ? Q1 : (month >= Calendar.APRIL && month <= Calendar.JUNE) ? Q2
-				: (month >= Calendar.JULY && month <= Calendar.SEPTEMBER) ? Q3 : Q4;
+		QuarterDateRange q = QuarterYearHolder.getCurrentQuarter();
 		return q;
 	}
-	
+
 	public static QuarterDateRange getPreviousQuarter() {
 		QuarterDateRange q = getCurrentQuarter();
 		switch (q) {
@@ -120,6 +116,58 @@ public enum QuarterDateRange {
 	public static QuarterDateRange fromInt(final int i) {
 		final QuarterDateRange type = intToEnumMap.get(Integer.valueOf(i));
 		return type;
+	}
+
+	public static void setQuarterAndYear(String quarter, int year) {
+		QuarterYearHolder.setQuarterAndYear(quarter, year);
+	}
+
+	private static class QuarterYearHolder {
+		private static String quarter = "";
+		private static int year = 0;
+
+		static void setQuarterAndYear(String quarterParam, int yearParam) {
+			quarter = quarterParam;
+			year = yearParam;
+		}
+
+		static int getYear() {
+			if (year == 0) {
+				return Calendar.getInstance().get(Calendar.YEAR);
+			}
+			return year;
+		}
+
+		static QuarterDateRange getCurrentQuarter() {
+			QuarterDateRange q = null;
+			if (!StringUtils.isEmpty(quarter)) {
+				final String qStr = quarter.toUpperCase();
+				switch (qStr) {
+				case "Q1":
+					q = Q1;
+					break;
+				case "Q2":
+					q = Q2;
+					break;
+				case "Q3":
+					q = Q3;
+					break;
+				case "Q4":
+					q = Q4;
+					break;
+				default:
+					q = null;
+					break;
+				}
+			} else {
+				Calendar c = Calendar.getInstance(Locale.getDefault());
+				int month = c.get(Calendar.MONTH);
+
+				q = (month >= Calendar.JANUARY && month <= Calendar.MARCH) ? Q1 : (month >= Calendar.APRIL && month <= Calendar.JUNE) ? Q2
+						: (month >= Calendar.JULY && month <= Calendar.SEPTEMBER) ? Q3 : Q4;
+			}
+			return q;
+		}
 	}
 
 }

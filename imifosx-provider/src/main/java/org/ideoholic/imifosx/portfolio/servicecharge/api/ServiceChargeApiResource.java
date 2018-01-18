@@ -18,6 +18,7 @@ import javax.ws.rs.core.UriInfo;
 import org.ideoholic.imifosx.infrastructure.core.api.ApiRequestParameterHelper;
 import org.ideoholic.imifosx.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.ideoholic.imifosx.portfolio.charge.data.ChargeData;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
@@ -96,6 +97,23 @@ public class ServiceChargeApiResource {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("table") final boolean displayTable) {
 		String result = null;
+		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		if (!displayTable) {
+			result = finalSheetData.getResultsDataMap().toString();
+		} else {
+			result = finalSheetData.generateResultAsHTMLTable(false).toString();
+		}
+		return result;
+	}
+	
+	@GET
+	@Path("getQuarterJournalEntries")
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("quarter") final String quarter, @QueryParam("year") final int year, 
+			@QueryParam("table") final boolean displayTable) {
+		String result = null;
+		QuarterDateRange.setQuarterAndYear(quarter, year);
 		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
 		if (!displayTable) {
 			result = finalSheetData.getResultsDataMap().toString();
