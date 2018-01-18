@@ -2056,7 +2056,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 		        // but that at present is an edge case
 		        sqlBuilder.append(" join m_office o on o.id = c.office_id");
 		        sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
-		        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.disbursedon_date between '"+startDate+"' and '"+endDate+"'");
+		        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.loan_status_id='300' or l.closedon_date between '"+startDate+"' and '"+endDate+"' ");
 
 		        int arrayPos = 2;
 		        List<Object> extraCriterias = new ArrayList<>();

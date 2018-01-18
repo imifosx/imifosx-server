@@ -31,7 +31,9 @@ import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanTransactionEnumData;
 import org.ideoholic.imifosx.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.ideoholic.imifosx.portfolio.loanaccount.service.LoanChargeReadPlatformService;
 import org.ideoholic.imifosx.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.ideoholic.imifosx.portfolio.loanproduct.data.LoanProductData;
 import org.ideoholic.imifosx.portfolio.loanproduct.service.LoanEnumerations;
+import org.ideoholic.imifosx.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.ideoholic.imifosx.portfolio.paymentdetail.data.PaymentDetailData;
 import org.ideoholic.imifosx.portfolio.paymenttype.data.PaymentTypeData;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
@@ -54,14 +56,17 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 	private final LoanReadPlatformService loanReadPlatformService;
 	private final LoanChargeReadPlatformService loanChargeReadPlatformService;
+	 private final LoanProductReadPlatformService loanProductReadPlatformService;
 	private final JdbcTemplate jdbcTemplate;
 	private final PlatformSecurityContext context;
 	
 	@Autowired
 	public ServiceChargeLoanDetailsReadPlatformServiceImpl(LoanReadPlatformService loanReadPlatformService, LoanChargeReadPlatformService loanChargeReadPlatformService,
+			final LoanProductReadPlatformService readPlatformService,
 			final RoutingDataSource dataSource,final PlatformSecurityContext context) {
 		this.loanReadPlatformService = loanReadPlatformService;
 		this.loanChargeReadPlatformService = loanChargeReadPlatformService;
+		this.loanProductReadPlatformService = readPlatformService;
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 		this.context=context;
 	}
@@ -181,9 +186,9 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		
 		for (int i = 0; i < loanAccountDataForOutstandingAmount.getPageItems().size(); i++) {
 			LoanAccountData loanAccData = loanAccountDataForOutstandingAmount.getPageItems().get(i);
-			
-			boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanAccData);
-			if(!loanAccData.isActive() && !isDemandLaon){
+			LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
+			boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanProduct);
+			if(!loanAccData.isActive() || !isDemandLaon){
 				continue;
 			}
 			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Total Outstanding Amount "+loanAccData.getTotalOutstandingAmount());
