@@ -30,7 +30,7 @@ public class ServiceChargeOperationUtils {
 		if (operand == null) {
 			return BigDecimal.ONE;
 		}
-		if (divisor != null && (divisor.compareTo(BigDecimal.ZERO) == 0)) {
+		if (divisor != null && (divisor.compareTo(BigDecimal.ZERO) != 0)) {
 			operand = operand.divide(divisor, RoundingMode.HALF_UP);
 		}
 		return operand;
