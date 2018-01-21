@@ -26,6 +26,7 @@ import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeCalcul
 import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
 import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +47,8 @@ public class ServiceChargeApiResource {
 	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
 	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
 	private final ServiceChargeCalculationPlatformService serviceChargeCalculator;
+	@Autowired
+	private ApplicationContext appContext;
 
 	@Autowired
 	public ServiceChargeApiResource(final DefaultToApiJsonSerializer<ChargeData> toApiJsonSerializer,
@@ -64,7 +67,8 @@ public class ServiceChargeApiResource {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String retrieveServiceCharge(@Context final UriInfo uriInfo) {
-		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 
 		BigDecimal disbursmentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
 		BigDecimal mobilizationCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
@@ -97,7 +101,8 @@ public class ServiceChargeApiResource {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("table") final boolean displayTable) {
 		String result = null;
-		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 		if (!displayTable) {
 			result = finalSheetData.getResultsDataMap().toString();
 		} else {
@@ -108,13 +113,14 @@ public class ServiceChargeApiResource {
 	
 	@GET
 	@Path("getQuarterJournalEntries")
-	@Consumes({ MediaType.APPLICATION_JSON })
+	@Consumes({ MediaType.APPLICATION_JSON })	
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("quarter") final String quarter, @QueryParam("year") final int year, 
 			@QueryParam("table") final boolean displayTable) {
 		String result = null;
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
 		QuarterDateRange.setQuarterAndYear(quarter, year);
-		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 		if (!displayTable) {
 			result = finalSheetData.getResultsDataMap().toString();
 		} else {

@@ -8,5 +8,5 @@ public interface ServiceChargeJournalDetailsReadPlatformService {
 	BigDecimal HUNDRED = new BigDecimal(100);
 	
 	// Add Journal related Service Charge methods here
-	ServiceChargeFinalSheetData generatefinalSheetData();
+	ServiceChargeFinalSheetData generatefinalSheetData(ServiceChargeFinalSheetData finalSheetData);
 }

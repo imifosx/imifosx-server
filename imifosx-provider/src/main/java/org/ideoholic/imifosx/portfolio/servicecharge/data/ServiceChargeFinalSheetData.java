@@ -9,22 +9,87 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.ideoholic.imifosx.portfolio.servicecharge.exception.ServiceChargeNotFoundException;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Service;
 
+@Service
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class ServiceChargeFinalSheetData {
 	private Map<ServiceChargeReportTableHeaders, List<BigDecimal>> resultsDataMap;
 	private StringBuffer resultDataAsHTMLTableString;
 
+	private BigDecimal totalMobilization;
+	private BigDecimal totalServicing;
+	private BigDecimal totalInvestment;
+	private BigDecimal totalOverHeads;
+	private BigDecimal totalProvisions;
+	private BigDecimal totalBFServicing;
+
+	// Overheads apportioned values
+	private BigDecimal overheadsApportionedMobilization;
+	private BigDecimal overheadsApportionedServicing;
+	private BigDecimal overheadsApportionedlInvestment;
+	
+	// Overheads apportioned values
+	private BigDecimal mobilizationApportionedServicing;
+	private BigDecimal mobilizationApportionedlInvestment;
+	
+
 	private void init() {
 		resultsDataMap = new HashMap<ServiceChargeReportTableHeaders, List<BigDecimal>>();
 		resultDataAsHTMLTableString = new StringBuffer();
-		for (ServiceChargeReportTableHeaders header : ServiceChargeReportTableHeaders
-				.values()) {
+		for (ServiceChargeReportTableHeaders header : ServiceChargeReportTableHeaders.values()) {
 			resultsDataMap.put(header, new ArrayList<BigDecimal>());
 		}
 	}
 
 	public ServiceChargeFinalSheetData() {
 		init();
+	}
+
+	public BigDecimal getTotalMobilization() {
+		return totalMobilization;
+	}
+
+	public BigDecimal getTotalServicing() {
+		return totalServicing;
+	}
+
+	public BigDecimal getTotalInvestment() {
+		return totalInvestment;
+	}
+
+	public BigDecimal getTotalOverHeads() {
+		return totalOverHeads;
+	}
+
+	public BigDecimal getTotalProvisions() {
+		return totalProvisions;
+	}
+
+	public BigDecimal getTotalBFServicing() {
+		return totalBFServicing;
+	}
+
+	public BigDecimal getOverheadsApportionedMobilization() {
+		return overheadsApportionedMobilization;
+	}
+
+	public BigDecimal getOverheadsApportionedServicing() {
+		return overheadsApportionedServicing;
+	}
+
+	public BigDecimal getOverheadsApportionedlInvestment() {
+		return overheadsApportionedlInvestment;
+	}
+
+	public BigDecimal getMobilizationApportionedServicing() {
+		return mobilizationApportionedServicing;
+	}
+
+	public BigDecimal getMobilizationApportionedlInvestment() {
+		return mobilizationApportionedlInvestment;
 	}
 
 	public Map<ServiceChargeReportTableHeaders, List<BigDecimal>> getResultsDataMap() {
@@ -35,15 +100,13 @@ public class ServiceChargeFinalSheetData {
 		return resultDataAsHTMLTableString;
 	}
 
-	public void setColumnValue(ServiceChargeReportTableHeaders header,
-			List<BigDecimal> dataList) {
+	public void setColumnValue(ServiceChargeReportTableHeaders header, List<BigDecimal> dataList) {
 		getResultsDataMap().put(header, dataList);
 	}
 
-	public BigDecimal getColumnValue(
-			ServiceChargeReportTableHeaders header, int columnNumber) {
+	public BigDecimal getColumnValue(ServiceChargeReportTableHeaders header, int columnNumber) {
 		List<BigDecimal> dataList = getResultsDataMap().get(header);
-		if(columnNumber >= dataList.size()){
+		if (columnNumber >= dataList.size()) {
 			throw new ServiceChargeNotFoundException(header.getValue().longValue());
 		}
 		return dataList.get(columnNumber);
@@ -76,12 +139,10 @@ public class ServiceChargeFinalSheetData {
 		populateTableRowsWithEntriesinResultsMap(13, 18, true);
 	}
 
-	private void populateTableRowsWithEntriesinResultsMap(int start, int end,
-			boolean endTable) {
+	private void populateTableRowsWithEntriesinResultsMap(int start, int end, boolean endTable) {
 		StringBuffer result = getResultDataAsHTMLTableString();
 		for (int iCounter = start; iCounter <= end; iCounter++) {
-			ServiceChargeReportTableHeaders header = ServiceChargeReportTableHeaders
-					.fromInt(iCounter);
+			ServiceChargeReportTableHeaders header = ServiceChargeReportTableHeaders.fromInt(iCounter);
 			List<BigDecimal> dataList = resultsDataMap.get(header);
 			if (dataList != null) {
 				result.append("<tr>");
@@ -140,5 +201,116 @@ public class ServiceChargeFinalSheetData {
 			sb.append("</tr>");
 		}
 		return sb;
+	}
+	
+	private void setBFAmountRow() {
+		List<BigDecimal> bfColumnEntries = new ArrayList<>(1);
+		bfColumnEntries.add(totalBFServicing);
+		setColumnValue(ServiceChargeReportTableHeaders.LSCOST_ON_ACCOUNT_BF, bfColumnEntries);
+	}
+	
+	private void setSubTotalRow() {
+		List<BigDecimal> columnEntries = new ArrayList<>(5);
+		BigDecimal totalAmount = BigDecimal.ZERO;
+		totalAmount = totalAmount.add(totalMobilization).add(totalServicing).add(totalInvestment).add(totalOverHeads);
+		columnEntries.add(totalMobilization);
+		columnEntries.add(totalServicing);
+		columnEntries.add(totalInvestment);
+		columnEntries.add(totalOverHeads);
+		columnEntries.add(totalAmount);
+		setColumnValue(ServiceChargeReportTableHeaders.SUBTOTAL, columnEntries);
+	}
+	
+	private void setOverheadsApportionedRow() {
+		List<BigDecimal> columnEntries = new ArrayList<>(5);
+		BigDecimal totalAmount = BigDecimal.ZERO;
+		// Populate overheads apportioned values
+		totalAmount = totalAmount.add(overheadsApportionedMobilization).add(overheadsApportionedServicing)
+				.add(overheadsApportionedlInvestment);
+		columnEntries.add(overheadsApportionedMobilization);
+		columnEntries.add(overheadsApportionedServicing);
+		columnEntries.add(overheadsApportionedlInvestment);
+		columnEntries.add(null);
+		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_OVERHEADS, columnEntries);
+	}
+	
+	private void setTotalAfterOverheadsApportionedRow() {
+		List<BigDecimal> columnEntries = new ArrayList<>(5);
+		BigDecimal totalAmount = BigDecimal.ZERO;
+
+		this.totalMobilization = this.totalMobilization.add(overheadsApportionedMobilization);
+		this.totalServicing = this.totalServicing.add(overheadsApportionedServicing);
+		this.totalInvestment = this.totalInvestment.add(overheadsApportionedlInvestment);
+
+		// Populate overheads apportioned + original total values
+		totalAmount = totalAmount.add(totalMobilization).add(totalServicing).add(totalInvestment);
+		columnEntries.add(totalMobilization);
+		columnEntries.add(totalServicing);
+		columnEntries.add(totalInvestment);
+		columnEntries.add(null);
+		columnEntries.add(totalAmount);
+		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_SUBTOTAL, columnEntries);
+
+	}
+	
+	private void setMobilizationApportionedRow() {
+		List<BigDecimal> columnEntries = new ArrayList<>(5);
+		BigDecimal totalAmount = BigDecimal.ZERO;
+		// Populate mobilization apportioned values
+		totalAmount = totalAmount.add(mobilizationApportionedServicing).add(mobilizationApportionedlInvestment);
+		columnEntries.add(null);
+		columnEntries.add(mobilizationApportionedServicing);
+		columnEntries.add(mobilizationApportionedlInvestment);
+		columnEntries.add(null);
+		columnEntries.add(totalAmount);
+		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_MOBILIZATION, columnEntries);
+	}
+	
+	private void setTotalAfterMobilizationApportionedRow() {
+		List<BigDecimal> columnEntries = new ArrayList<>(5);
+		BigDecimal totalAmount = BigDecimal.ZERO;
+
+		this.totalServicing = this.totalServicing.add(overheadsApportionedServicing);
+		this.totalInvestment = this.totalInvestment.add(overheadsApportionedlInvestment);
+
+		// Populate mobilization apportioned + original total values
+		totalAmount = totalAmount.add(totalServicing).add(totalInvestment);
+		columnEntries.add(null);
+		columnEntries.add(totalServicing);
+		columnEntries.add(totalInvestment);
+		columnEntries.add(null);
+		columnEntries.add(totalAmount);
+		setColumnValue(ServiceChargeReportTableHeaders.TOTAL_SEGREGATION_COST, columnEntries);
+
+	}
+
+	public void setJounEntriesData(BigDecimal totalMobilizationAmount, BigDecimal totalServicingAmount,
+			BigDecimal totalInvestmentAmount, BigDecimal totalOverHeadsAmount, BigDecimal totalProvisionsAmount,
+			BigDecimal totalBFServicingAmount) {
+		this.totalMobilization = totalMobilizationAmount;
+		this.totalServicing = totalServicingAmount;
+		this.totalInvestment = totalInvestmentAmount;
+		this.totalOverHeads = totalOverHeadsAmount;
+		this.totalProvisions = totalProvisionsAmount;
+		this.totalBFServicing = totalBFServicingAmount;
+
+		setBFAmountRow();
+		setSubTotalRow();
+	}
+
+	public void setOverheadsApportionedValues(BigDecimal mobilizationAmount, BigDecimal servicingAmount,
+			BigDecimal investmentAmount) {
+		overheadsApportionedMobilization = mobilizationAmount;
+		overheadsApportionedlInvestment = investmentAmount;
+		overheadsApportionedServicing = servicingAmount;
+		setOverheadsApportionedRow();
+		setTotalAfterOverheadsApportionedRow();
+	}
+
+	public void setMobilizationApportionedValues(BigDecimal servicingAmount, BigDecimal investmentAmount) {
+		mobilizationApportionedServicing = servicingAmount;
+		mobilizationApportionedlInvestment = investmentAmount;
+		setMobilizationApportionedRow();
+		setTotalAfterMobilizationApportionedRow();
 	}
 }

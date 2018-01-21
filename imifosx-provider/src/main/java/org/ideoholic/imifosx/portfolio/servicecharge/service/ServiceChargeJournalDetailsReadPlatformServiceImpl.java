@@ -46,15 +46,14 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
 	}
 	
-	public ServiceChargeFinalSheetData generatefinalSheetData() {
-		ServiceChargeFinalSheetData finalSheetData = new ServiceChargeFinalSheetData();
-		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder = generateExpenseTagsData();
+	public ServiceChargeFinalSheetData generatefinalSheetData(ServiceChargeFinalSheetData finalSheetData) {
+		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder = generateExpenseTagsData(finalSheetData);
 		generateFinalTableOfJournalEntries(resultDataHolder, finalSheetData);
 		computeFinalCalculations(finalSheetData);
 		return finalSheetData;
 	}
 	
-	private Map<GLExpenseTagsForServiceCharge, BigDecimal> generateExpenseTagsData(){
+	private Map<GLExpenseTagsForServiceCharge, BigDecimal> generateExpenseTagsData(ServiceChargeFinalSheetData finalSheetData){
 		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultDataHolder = new HashMap<>();
 		List<GLAccountData> glAccountData = glAccountReadPlatformService.retrieveAllEnabledDetailGLAccounts(GLAccountType.EXPENSE);
 
@@ -90,6 +89,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		BigDecimal totalOverHeadsAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.OVERHEADS));
 		BigDecimal totalProvisionsAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.PROVISIONS));
 		BigDecimal totalBFServicingAmount = calculateTotalAmountForJournalEntriesOfGivenListOfGLs(filteredGLAccountMap.get(GLExpenseTagsForServiceCharge.BFSERVICING));
+		finalSheetData.setJounEntriesData(totalMobilizationAmount, totalServicingAmount, totalInvestmentAmount, totalOverHeadsAmount, totalProvisionsAmount, totalBFServicingAmount);
 		
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.MOBILIZATION, totalMobilizationAmount);
 		resultDataHolder.put(GLExpenseTagsForServiceCharge.SERVICING, totalServicingAmount);
@@ -111,7 +111,8 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		BigDecimal mobilizationCostPercent, avgDLRePm, lsCostPa, lsCostPerLoan, totalNoDlLoans, reForPeriod, reCostPer100;
 		try {
 			
-			BigDecimal lsCostOnACBf = sheetData.getColumnValue(ServiceChargeReportTableHeaders.LSCOST_ON_ACCOUNT_BF, 0);
+			BigDecimal lsCostOnACBf = sheetData.getTotalBFServicing();
+			// sheetData.getColumnValue(ServiceChargeReportTableHeaders.LSCOST_ON_ACCOUNT_BF, 0);
 
 			mobilizationCostPercent = sheetData.getColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_MOBILIZATION, 1);
 			mobilizationCostPercent = mobilizationCostPercent.multiply(new BigDecimal("4"));
@@ -165,31 +166,32 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			ServiceChargeFinalSheetData finalSheetData) {
 		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultList = null;
 
-		populateResultMapRow(finalSheetData, 1, resultDataHolder);
+		// populateResultMapRow(finalSheetData, 1, resultDataHolder);
 
-		populateResultMapRow(finalSheetData, 2, resultDataHolder);
+		// populateResultMapRow(finalSheetData, 2, resultDataHolder);
 
 		/*
 		 * TODO: Check if rounding is necessary, and if necessary then what type
 		 * of rounding needs to be done
 		 */
 
-		resultList = apportionOverHeads(resultDataHolder);
-		populateResultMapRow(finalSheetData, 3, resultList);
+		resultList = apportionOverHeads(finalSheetData, resultDataHolder);
+		// populateResultMapRow(finalSheetData, 3, resultList);
 
 		resultDataHolder = addSingleRowToMapEntries(resultDataHolder, resultList);
-		populateResultMapRow(finalSheetData, 4, resultDataHolder);
+		// populateResultMapRow(finalSheetData, 4, resultDataHolder);
 
-		resultList = apportionMobilization(resultDataHolder);
-		populateResultMapRow(finalSheetData, 5, resultList);
+		resultList = apportionMobilization(finalSheetData, resultDataHolder);
+		// populateResultMapRow(finalSheetData, 5, resultList);
 
 		resultDataHolder = addSingleRowToMapEntries(resultDataHolder, resultList);
-		populateResultMapRow(finalSheetData, 6, resultDataHolder);
+		// populateResultMapRow(finalSheetData, 6, resultDataHolder);
 
 		return finalSheetData;
 	}
 
-	private Map<GLExpenseTagsForServiceCharge, BigDecimal> apportionOverHeads(Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap) {
+	private Map<GLExpenseTagsForServiceCharge, BigDecimal> apportionOverHeads(ServiceChargeFinalSheetData finalSheetData,
+			Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap) {
 		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultMap = new HashMap<>();
 		BigDecimal mobilizationAmount = new BigDecimal(dataMap.get(GLExpenseTagsForServiceCharge.MOBILIZATION).toPlainString());
 		BigDecimal servicingAmount = new BigDecimal(dataMap.get(GLExpenseTagsForServiceCharge.SERVICING).toPlainString());
@@ -201,6 +203,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		mobilizationAmount = ServiceChargeOperationUtils.divideAndMultiplyNonZeroValues(mobilizationAmount, totalAmount, overHeadsAmount);
 		servicingAmount = ServiceChargeOperationUtils.divideAndMultiplyNonZeroValues(servicingAmount, totalAmount, overHeadsAmount);
 		investmentAmount = ServiceChargeOperationUtils.divideAndMultiplyNonZeroValues(investmentAmount, totalAmount, overHeadsAmount);
+		finalSheetData.setOverheadsApportionedValues(mobilizationAmount, servicingAmount, investmentAmount);
 
 		resultMap.put(GLExpenseTagsForServiceCharge.MOBILIZATION, mobilizationAmount);
 		resultMap.put(GLExpenseTagsForServiceCharge.SERVICING, servicingAmount);
@@ -209,7 +212,8 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		return resultMap;
 	}
 
-	private Map<GLExpenseTagsForServiceCharge, BigDecimal> apportionMobilization(Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap) {
+	private Map<GLExpenseTagsForServiceCharge, BigDecimal> apportionMobilization(ServiceChargeFinalSheetData finalSheetData,
+			Map<GLExpenseTagsForServiceCharge, BigDecimal> dataMap) {
 		Map<GLExpenseTagsForServiceCharge, BigDecimal> resultMap = new HashMap<>();
 		BigDecimal mobilizationAmount = new BigDecimal(dataMap.get(GLExpenseTagsForServiceCharge.MOBILIZATION).toPlainString());
 		BigDecimal servicingAmount = new BigDecimal(dataMap.get(GLExpenseTagsForServiceCharge.SERVICING).toPlainString());
@@ -222,6 +226,8 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 
 		servicingAmount = mobilizationAmount.multiply(multiplicand);
 		investmentAmount = mobilizationAmount.subtract(servicingAmount);
+
+		finalSheetData.setMobilizationApportionedValues(servicingAmount, investmentAmount);
 
 		resultMap.put(GLExpenseTagsForServiceCharge.SERVICING, servicingAmount);
 		resultMap.put(GLExpenseTagsForServiceCharge.INVESTMENT, investmentAmount);

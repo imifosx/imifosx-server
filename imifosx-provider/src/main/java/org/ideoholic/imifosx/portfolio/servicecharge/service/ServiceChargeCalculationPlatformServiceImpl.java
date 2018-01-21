@@ -14,6 +14,7 @@ import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalShee
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,30 +22,15 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeCalculationPlatformServiceImpl.class);
 
-	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
 	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
 	private final ServiceChargeReadPlatformService scChargeReadPlatformService;
-	
-	// Global parameter of final-sheet to avoid recalculating again for every loan
-	private ServiceChargeFinalSheetData finalSheetData = null;
-	
-	private ServiceChargeFinalSheetData getFinalSheetData(){
-		if(finalSheetData == null){
-			finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
-		}
-		return finalSheetData;
-	}
-	
-	private void clearFinalSheetData(){
-		// Setting final-sheet data to null so that it will be recalculated
-		finalSheetData = null;
-	}
+	@Autowired
+	private ApplicationContext appContext;
 	
 	@Autowired
 	public ServiceChargeCalculationPlatformServiceImpl(final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
 			final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService,
 			ServiceChargeReadPlatformService scChargeReadPlatformService) {
-		this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
 		this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
 		this.scChargeReadPlatformService = scChargeReadPlatformService;
 	}
@@ -59,8 +45,8 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:totalRepaymensts=" + totalRepaymensts);
 		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:totalOutstanding=" + totalOutstanding);
 
-		clearFinalSheetData();// Clear the sheet data before calculation
-		return serviceChargeCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding);
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
+		return serviceChargeCalculationLogic(finalSheetData, isDisbursed, totalRepaymensts, totalOutstanding);
 	}
 
 	/**
@@ -73,7 +59,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 	 * @param totalOutstanding
 	 * @return
 	 */
-	private BigDecimal serviceChargeCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
+	private BigDecimal serviceChargeCalculationLogic(ServiceChargeFinalSheetData finalSheetData, boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
 		QuarterDateRange quarter = QuarterDateRange.getPreviousQuarter();
 		int year = Calendar.getInstance().get(Calendar.YEAR);
 		if (QuarterDateRange.Q4.equals(quarter)) {
@@ -81,7 +67,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		}
 		Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
 		if (retrivedSCList == null || retrivedSCList.isEmpty()) {
-			return calculateServiceChargeForCurrentQuarter(isDisbursed, totalRepaymensts, totalOutstanding);
+			return calculateServiceChargeForCurrentQuarter(finalSheetData, isDisbursed, totalRepaymensts, totalOutstanding);
 		}
 		return calculateServiceChargeFromDBValues(isDisbursed, totalRepaymensts, totalOutstanding, retrivedSCList);
 	}
@@ -118,8 +104,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		return serviceCharge;
 	}
 
-	private BigDecimal calculateServiceChargeForCurrentQuarter(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
-		finalSheetData = getFinalSheetData();
+	private BigDecimal calculateServiceChargeForCurrentQuarter(ServiceChargeFinalSheetData finalSheetData, boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
 		BigDecimal repaymentCostPerRupee = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
 		BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
 		BigDecimal serviceCostPerLoan = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
@@ -162,8 +147,8 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		boolean isDisbursed = true; // Assuming that it will be disbursed
 		BigDecimal totalRepaymensts = BigDecimal.ZERO; // Assuming that on loan-payout, there is no repayments yet
 		BigDecimal totalOutstanding = principal; // The current amount being disbursed is the outstanding loan amount
-		clearFinalSheetData(); // Clear the sheet data before calculation
-		return serviceChargeCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding);
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
+		return serviceChargeCalculationLogic(finalSheetData, isDisbursed, totalRepaymensts, totalOutstanding);
 	}
 
 }

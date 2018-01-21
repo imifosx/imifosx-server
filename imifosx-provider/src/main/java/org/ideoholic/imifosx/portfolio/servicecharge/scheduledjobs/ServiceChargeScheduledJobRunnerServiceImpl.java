@@ -32,13 +32,16 @@ import org.ideoholic.imifosx.portfolio.servicecharge.service.ServiceChargeWriteP
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 @Service(value = "serviceChargeScheduledJobRunnerService")
 public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceChargeScheduledJobRunnerService {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeScheduledJobRunnerServiceImpl.class);
-
+	
+	@Autowired
+	private ApplicationContext appContext;
 	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
 	private final ServiceChargeWritePlatformService scWritePlatformService;
 
@@ -56,7 +59,8 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
 
 		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
 		int year = Calendar.getInstance().get(Calendar.YEAR);
-		ServiceChargeFinalSheetData finalSheetData = scJournalDetailsReadPlatformService.generatefinalSheetData();
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 
 		// Saving : Loan Servicing Cost per Loan
 		saveServiceCharge(quarter, year, ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, finalSheetData);
