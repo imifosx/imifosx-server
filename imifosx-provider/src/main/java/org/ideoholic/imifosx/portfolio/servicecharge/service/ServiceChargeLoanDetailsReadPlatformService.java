@@ -6,6 +6,7 @@ import java.util.Collection;
 import org.ideoholic.imifosx.infrastructure.core.service.SearchParameters;
 import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanAccountData;
 import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanTransactionData;
+import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 
 public interface ServiceChargeLoanDetailsReadPlatformService {
 	// Add Loan related Service Charge methods here
@@ -14,7 +15,7 @@ public interface ServiceChargeLoanDetailsReadPlatformService {
 
 	BigDecimal getAllLoansRepaymentData() throws Exception;
 
-	BigDecimal getLoansOutstandingAmount() throws Exception;
+	void getLoansOutstandingAmount(ServiceChargeFinalSheetData sheetData) throws Exception;
 
 	boolean findIfLoanDisbursedInCurrentQuarter(Long loanId);
 

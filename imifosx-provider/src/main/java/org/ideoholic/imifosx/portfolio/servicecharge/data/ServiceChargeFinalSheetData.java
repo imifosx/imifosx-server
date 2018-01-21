@@ -35,6 +35,10 @@ public class ServiceChargeFinalSheetData {
 	private BigDecimal mobilizationApportionedServicing;
 	private BigDecimal mobilizationApportionedlInvestment;
 	
+	// DL & NDL loan outstanding amount
+	private BigDecimal DloutstandingAmount;
+	private BigDecimal NdloutstandingAmount;
+	
 
 	private void init() {
 		resultsDataMap = new HashMap<ServiceChargeReportTableHeaders, List<BigDecimal>>();
@@ -98,6 +102,22 @@ public class ServiceChargeFinalSheetData {
 
 	public StringBuffer getResultDataAsHTMLTableString() {
 		return resultDataAsHTMLTableString;
+	}
+
+	public BigDecimal getDloutstandingAmount() {
+		return DloutstandingAmount;
+	}
+
+	public void setDloutstandingAmount(BigDecimal dloutstandingAmount) {
+		DloutstandingAmount = dloutstandingAmount;
+	}
+
+	public BigDecimal getNdloutstandingAmount() {
+		return NdloutstandingAmount;
+	}
+
+	public void setNdloutstandingAmount(BigDecimal ndloutstandingAmount) {
+		NdloutstandingAmount = ndloutstandingAmount;
 	}
 
 	public void setColumnValue(ServiceChargeReportTableHeaders header, List<BigDecimal> dataList) {
@@ -312,5 +332,10 @@ public class ServiceChargeFinalSheetData {
 		mobilizationApportionedlInvestment = investmentAmount;
 		setMobilizationApportionedRow();
 		setTotalAfterMobilizationApportionedRow();
+	}
+	
+	public void setLoanOutstandingAmount(BigDecimal dLoanOutstandingAmount, BigDecimal NdloanOutstandingAmount){
+		DloutstandingAmount = dLoanOutstandingAmount;
+		NdloutstandingAmount = NdloanOutstandingAmount; 
 	}
 }

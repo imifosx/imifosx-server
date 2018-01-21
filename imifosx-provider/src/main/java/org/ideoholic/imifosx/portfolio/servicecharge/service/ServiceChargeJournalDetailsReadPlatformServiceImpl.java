@@ -118,7 +118,8 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 			mobilizationCostPercent = mobilizationCostPercent.multiply(new BigDecimal("4"));
 			setColumnValueWithRounding(sheetData, mobilizationCostPercent, ServiceChargeReportTableHeaders.TOTAL_MOBILIZATION);
 
-			avgDLRePm = scLoanDetailsReadPlatformService.getLoansOutstandingAmount();
+			scLoanDetailsReadPlatformService.getLoansOutstandingAmount(sheetData);
+			avgDLRePm = sheetData.getDloutstandingAmount();
 			setColumnValueWithRounding(sheetData, avgDLRePm, ServiceChargeReportTableHeaders.AVG_REPAYMENT);
 
 			mobilizationCostPercent = ServiceChargeOperationUtils.divideNonZeroValues(mobilizationCostPercent, avgDLRePm).multiply(HUNDRED);
@@ -219,7 +220,16 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 		BigDecimal servicingAmount = new BigDecimal(dataMap.get(GLExpenseTagsForServiceCharge.SERVICING).toPlainString());
 		BigDecimal investmentAmount = new BigDecimal(dataMap.get(GLExpenseTagsForServiceCharge.INVESTMENT).toPlainString());
 		BigDecimal dlAmount = BigDecimal.ONE;
-		BigDecimal outstandingLoanAmount = BigDecimal.ONE;
+		BigDecimal outstandingLoanAmount = BigDecimal.ZERO;
+		try {
+			scLoanDetailsReadPlatformService.getLoansOutstandingAmount(finalSheetData);
+			dlAmount = finalSheetData.getDloutstandingAmount();
+			outstandingLoanAmount = finalSheetData.getNdloutstandingAmount();
+		} catch (Exception e) {
+			logger.info(""+e);
+		}
+		
+		
 
 		BigDecimal multiplicand = BigDecimal.ONE.multiply(dlAmount);
 		multiplicand = ServiceChargeOperationUtils.divideNonZeroValues(multiplicand, outstandingLoanAmount);

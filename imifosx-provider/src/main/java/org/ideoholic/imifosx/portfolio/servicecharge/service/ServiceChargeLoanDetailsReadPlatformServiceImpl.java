@@ -3,9 +3,15 @@ package org.ideoholic.imifosx.portfolio.servicecharge.service;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 
 import org.ideoholic.imifosx.infrastructure.core.data.EnumOptionData;
 import org.ideoholic.imifosx.infrastructure.core.domain.JdbcSupport;
@@ -38,6 +44,7 @@ import org.ideoholic.imifosx.portfolio.paymentdetail.data.PaymentDetailData;
 import org.ideoholic.imifosx.portfolio.paymenttype.data.PaymentTypeData;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
 import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
+import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.ideoholic.imifosx.portfolio.servicecharge.util.ServiceChargeOperationUtils;
 import org.ideoholic.imifosx.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
@@ -162,12 +169,12 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	}
 	
 	
-	public BigDecimal getLoansOutstandingAmount() throws Exception {
+	public void getLoansOutstandingAmount(ServiceChargeFinalSheetData sheetData) throws Exception {
 		logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount");
 
 		
-		BigDecimal totalOutstandingAmount = BigDecimal.ZERO;
-
+		BigDecimal dLtotalOutstandingAmount = BigDecimal.ZERO;
+		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		// Get the dates
 		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
 		String startDate = quarter.getFormattedFromDateString();
@@ -185,21 +192,61 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		if(loanAccountDataForOutstandingAmount!=null){
 		
 		for (int i = 0; i < loanAccountDataForOutstandingAmount.getPageItems().size(); i++) {
+			
 			LoanAccountData loanAccData = loanAccountDataForOutstandingAmount.getPageItems().get(i);
 			LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
+			
 			boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanProduct);
 			if(!loanAccData.isActive() || !isDemandLaon){
-				continue;
+				BigDecimal nonDemandLoanrepaymentAmount = getRepaymentAmount(loanAccData.getId(),startDate);
+				nonDemandLoanrepaymentAmount = nonDemandLoanrepaymentAmount.add(loanAccData.getTotalOutstandingAmount());
+				nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(nonDemandLoanrepaymentAmount.divide(new BigDecimal(3),3, RoundingMode.CEILING));
+			}else{
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Total Outstanding Amount "+loanAccData.getTotalOutstandingAmount());
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::outstanding Amount");
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Account Loan id "+loanAccData.getId());
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Outstanding Amount: "+loanAccData.getTotalOutstandingAmount());
+				BigDecimal demandLoanrepaymentAmount = getRepaymentAmount(loanAccData.getId(),startDate);
+				
+				//totalOutstandingAmount = totalOutstandingAmount.add(loanAccData.getTotalOutstandingAmount());
+				demandLoanrepaymentAmount = demandLoanrepaymentAmount.add(loanAccData.getTotalOutstandingAmount());
+				dLtotalOutstandingAmount = dLtotalOutstandingAmount.add(demandLoanrepaymentAmount.divide(new BigDecimal(3),3, RoundingMode.CEILING));
 			}
-			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Total Outstanding Amount "+loanAccData.getTotalOutstandingAmount());
-			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::outstanding Amount");
-			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Account Loan id "+loanAccData.getId());
-			logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Outstanding Amount: "+loanAccData.getTotalOutstandingAmount());
-			totalOutstandingAmount = totalOutstandingAmount.add(loanAccData.getTotalOutstandingAmount());
+			
 		}
+		
 		}
-		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstandingAmount:" + totalOutstandingAmount);
-		return totalOutstandingAmount;
+		sheetData.setLoanOutstandingAmount(dLtotalOutstandingAmount, nDLtotalOutstandingAmount);
+		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstanding DL Amount:" + dLtotalOutstandingAmount );
+		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstanding Non DL Amount:" +  nDLtotalOutstandingAmount);
+	}
+
+	private BigDecimal getRepaymentAmount(Long loanId, String startDate) throws ParseException {
+		// Get the total repayment for the quarter
+		BigDecimal repaymentAmount = BigDecimal.ZERO;
+		Date date = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
+		Calendar calendar = Calendar.getInstance();  
+        calendar.setTime(date);  
+		for(int j=0;j<3;j++){
+
+				calendar.add(Calendar.MONTH, 1);  
+		        calendar.set(Calendar.DAY_OF_MONTH, 1);  
+		        calendar.add(Calendar.DATE, -1);  
+		        Date lastDayOfMonth = calendar.getTime();  
+			
+			final Collection<LoanTransactionData> currentLoanRepayments = loanReadPlatformService
+					.retrieveLoanTransactionsMonthlyPayments(loanId, new SimpleDateFormat("yyyy-MM-dd").format(date), new SimpleDateFormat("yyyy-MM-dd").format(lastDayOfMonth));
+			
+			for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
+				repaymentAmount = repaymentAmount.add(loanTransactionData.getAmount());
+			}
+			
+			calendar.add(Calendar.MONTH, +1);  
+			calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
+			date = calendar.getTime();
+		}
+		return repaymentAmount;
+//End code
 	}
 
 	@Override

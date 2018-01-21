@@ -11,7 +11,7 @@ import org.ideoholic.imifosx.accounting.journalentry.api.DateParam;
 import org.ideoholic.imifosx.infrastructure.core.service.DateUtils;
 
 public enum QuarterDateRange {
-	Q1(1, "01 Jan ", "31 Mar "), Q2(2, "01 Apr ", "30 Jun "), Q3(3, "01 Jul ", "30 Sep "), Q4(4, "30 Sep ", "31 Dec ");
+	Q1(1, "01 Jan ", "31 Mar "), Q2(2, "01 Apr ", "30 Jun "), Q3(3, "01 Jul ", "30 Sep "), Q4(4, "01 Oct ", "31 Dec ");
 
 	private final Integer id;
 	private final String fromDate;
