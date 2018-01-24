@@ -8,10 +8,10 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.ideoholic.imifosx.portfolio.charge.data.ChargeData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanAccountData;
 import org.ideoholic.imifosx.portfolio.loanproduct.data.LoanProductData;
+import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 
-public class ServiceChargeOperationUtils {
+public class ServiceChargeOperationUtils implements ServiceChargeApiConstants{
 
 	public static BigDecimal divideAndMultiplyNonZeroValues(BigDecimal operand, BigDecimal divisor, BigDecimal multiplicand) {
 		if (operand == null) {
@@ -82,19 +82,20 @@ public class ServiceChargeOperationUtils {
 	}
 
 	public static boolean checkDemandLaon(LoanProductData loanProduct) {
-		
-		if(loanProduct!=null){
+		if (loanProduct != null) {
+			// Get all the charges associated with the loan product
 			Collection<ChargeData> chargeData = loanProduct.charges();
+			// Iterate over the list of charges
 			for (ChargeData chargeDataName : chargeData) {
-				if(chargeDataName!=null){
+				if (chargeDataName != null) {
 					String chargeName = chargeDataName.getName();
-					if(StringUtils.equalsIgnoreCase("Service Charge", chargeName)){
+					// If the charge name is Service Charge then it is Demand-Loan
+					if (StringUtils.equalsIgnoreCase(SERVICE_CHARGE_NAME, chargeName)) {
 						return true;
+					} // End-Of-If StringUtils check
 				}
-			}
-			}
+			} // End-Of-For
 		}
-		
 		return false;
 	}
 }

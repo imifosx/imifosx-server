@@ -31,13 +31,18 @@ public class ServiceChargeFinalSheetData {
 	private BigDecimal overheadsApportionedServicing;
 	private BigDecimal overheadsApportionedlInvestment;
 	
-	// Overheads apportioned values
+	// Sub Total after Overheads Allocation
+	private BigDecimal subTotalAfterOverheadsAllocationMobilization;
+	private BigDecimal subTotalAfterOverheadsAllocationServicing;
+	private BigDecimal subTotalAfterOverheadsAllocationInvestment;
+
+	// Mobilization apportioned values
 	private BigDecimal mobilizationApportionedServicing;
 	private BigDecimal mobilizationApportionedlInvestment;
 	
 	// DL & NDL loan outstanding amount
-	private BigDecimal DloutstandingAmount;
-	private BigDecimal NdloutstandingAmount;
+	private BigDecimal dlOutstandingAmount;
+	private BigDecimal nDlOutstandingAmount;
 	
 
 	private void init() {
@@ -88,6 +93,18 @@ public class ServiceChargeFinalSheetData {
 		return overheadsApportionedlInvestment;
 	}
 
+	public BigDecimal getSubTotalAfterOverheadsAllocationMobilization() {
+		return subTotalAfterOverheadsAllocationMobilization;
+	}
+
+	public BigDecimal getSubTotalAfterOverheadsAllocationServicing() {
+		return subTotalAfterOverheadsAllocationServicing;
+	}
+
+	public BigDecimal getSubTotalAfterOverheadsAllocationInvestment() {
+		return subTotalAfterOverheadsAllocationInvestment;
+	}
+
 	public BigDecimal getMobilizationApportionedServicing() {
 		return mobilizationApportionedServicing;
 	}
@@ -104,20 +121,20 @@ public class ServiceChargeFinalSheetData {
 		return resultDataAsHTMLTableString;
 	}
 
-	public BigDecimal getDloutstandingAmount() {
-		return DloutstandingAmount;
+	public BigDecimal getDlOutstandingAmount() {
+		return dlOutstandingAmount;
 	}
 
-	public void setDloutstandingAmount(BigDecimal dloutstandingAmount) {
-		DloutstandingAmount = dloutstandingAmount;
+	public void setDlOutstandingAmount(BigDecimal dloutstandingAmount) {
+		dlOutstandingAmount = dloutstandingAmount;
 	}
 
-	public BigDecimal getNdloutstandingAmount() {
-		return NdloutstandingAmount;
+	public BigDecimal getNDlOutstandingAmount() {
+		return nDlOutstandingAmount;
 	}
 
-	public void setNdloutstandingAmount(BigDecimal ndloutstandingAmount) {
-		NdloutstandingAmount = ndloutstandingAmount;
+	public void setNDlOutstandingAmount(BigDecimal ndloutstandingAmount) {
+		nDlOutstandingAmount = ndloutstandingAmount;
 	}
 
 	public void setColumnValue(ServiceChargeReportTableHeaders header, List<BigDecimal> dataList) {
@@ -251,7 +268,11 @@ public class ServiceChargeFinalSheetData {
 		columnEntries.add(overheadsApportionedServicing);
 		columnEntries.add(overheadsApportionedlInvestment);
 		columnEntries.add(null);
+		columnEntries.add(totalAmount);
 		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_OVERHEADS, columnEntries);
+		subTotalAfterOverheadsAllocationMobilization = totalMobilization.add(overheadsApportionedMobilization);
+		subTotalAfterOverheadsAllocationServicing = totalServicing.add(overheadsApportionedServicing);
+		subTotalAfterOverheadsAllocationInvestment = totalInvestment.add(overheadsApportionedlInvestment);
 	}
 	
 	private void setTotalAfterOverheadsApportionedRow() {
@@ -335,7 +356,7 @@ public class ServiceChargeFinalSheetData {
 	}
 	
 	public void setLoanOutstandingAmount(BigDecimal dLoanOutstandingAmount, BigDecimal NdloanOutstandingAmount){
-		DloutstandingAmount = dLoanOutstandingAmount;
-		NdloutstandingAmount = NdloanOutstandingAmount; 
+		dlOutstandingAmount = dLoanOutstandingAmount;
+		nDlOutstandingAmount = NdloanOutstandingAmount; 
 	}
 }
