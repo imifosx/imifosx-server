@@ -1520,4 +1520,8 @@ public class LoanAccountData {
 		return productOptions;
 	}
 
+	public BigDecimal getApprovedPrincipal() {
+		return approvedPrincipal;
+	}
+
 }

@@ -197,56 +197,52 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
 			
 			boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanProduct);
-			if(!loanAccData.isActive() || !isDemandLaon){
-				BigDecimal nonDemandLoanrepaymentAmount = getRepaymentAmount(loanAccData.getId(),startDate);
-				nonDemandLoanrepaymentAmount = nonDemandLoanrepaymentAmount.add(loanAccData.getTotalOutstandingAmount());
-				nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(nonDemandLoanrepaymentAmount.divide(new BigDecimal(3),3, RoundingMode.CEILING));
+			if(!isDemandLaon){
+				
+				BigDecimal nonDemandLoanrepaymentAmount = getRepaymentAmount(loanAccData,startDate,endDate);
+				nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(nonDemandLoanrepaymentAmount);
+
 			}else{
 				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Total Outstanding Amount "+loanAccData.getTotalOutstandingAmount());
 				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::outstanding Amount");
 				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Account Loan id "+loanAccData.getId());
 				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Outstanding Amount: "+loanAccData.getTotalOutstandingAmount());
-				BigDecimal demandLoanrepaymentAmount = getRepaymentAmount(loanAccData.getId(),startDate);
 				
-				//totalOutstandingAmount = totalOutstandingAmount.add(loanAccData.getTotalOutstandingAmount());
-				demandLoanrepaymentAmount = demandLoanrepaymentAmount.add(loanAccData.getTotalOutstandingAmount());
-				dLtotalOutstandingAmount = dLtotalOutstandingAmount.add(demandLoanrepaymentAmount.divide(new BigDecimal(3),3, RoundingMode.CEILING));
+				BigDecimal demandLoanrepaymentAmount = getRepaymentAmount(loanAccData,startDate,endDate);
+				dLtotalOutstandingAmount = dLtotalOutstandingAmount.add(demandLoanrepaymentAmount);
 			}
 			
 		}
 		
 		}
+		nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(nDLtotalOutstandingAmount.divide(new BigDecimal(3),6, RoundingMode.CEILING));
+		dLtotalOutstandingAmount = dLtotalOutstandingAmount.add(dLtotalOutstandingAmount.divide(new BigDecimal(3),6, RoundingMode.CEILING));
 		sheetData.setLoanOutstandingAmount(dLtotalOutstandingAmount, nDLtotalOutstandingAmount);
 		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstanding DL Amount:" + dLtotalOutstandingAmount );
 		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstanding Non DL Amount:" +  nDLtotalOutstandingAmount);
 	}
 
-	private BigDecimal getRepaymentAmount(Long loanId, String startDate) throws ParseException {
-		// Get the total repayment for the quarter
+	private BigDecimal getRepaymentAmount(LoanAccountData loanAccData, String startDate, String endDate)
+			throws ParseException {
+		// Get the total repayment
+		BigDecimal approvedPricipal = loanAccData.getApprovedPrincipal();
+		BigDecimal totlaRepayment = loanAccData.getApprovedPrincipal();
+		
 		BigDecimal repaymentAmount = BigDecimal.ZERO;
 		Date date = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
-		Calendar calendar = Calendar.getInstance();  
-        calendar.setTime(date);  
-		for(int j=0;j<3;j++){
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(date);
 
-				calendar.add(Calendar.MONTH, 1);  
-		        calendar.set(Calendar.DAY_OF_MONTH, 1);  
-		        calendar.add(Calendar.DATE, -1);  
-		        Date lastDayOfMonth = calendar.getTime();  
-			
 			final Collection<LoanTransactionData> currentLoanRepayments = loanReadPlatformService
-					.retrieveLoanTransactionsMonthlyPayments(loanId, new SimpleDateFormat("yyyy-MM-dd").format(date), new SimpleDateFormat("yyyy-MM-dd").format(lastDayOfMonth));
-			
+					.retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),startDate,endDate);
+
 			for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
-				repaymentAmount = repaymentAmount.add(loanTransactionData.getAmount());
+				approvedPricipal = approvedPricipal.subtract(loanTransactionData.getAmount());
+				totlaRepayment = approvedPricipal.add(totlaRepayment);
 			}
-			
-			calendar.add(Calendar.MONTH, +1);  
-			calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
-			date = calendar.getTime();
-		}
-		return repaymentAmount;
-//End code
+		
+		return totlaRepayment;
+		
 	}
 
 	@Override
