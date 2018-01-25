@@ -227,20 +227,38 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		// Get the total repayment
 		BigDecimal approvedPricipal = loanAccData.getApprovedPrincipal();
 		BigDecimal totlaRepayment = loanAccData.getApprovedPrincipal();
-		
-		BigDecimal repaymentAmount = BigDecimal.ZERO;
+		int outstandingAmout = loanAccData.getTotalOutstandingAmount().compareTo(BigDecimal.ZERO);
 		Date date = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
+		
+		for (int j = 0; j < 3; j++) {
+			calendar.add(Calendar.MONTH, 1);
+			calendar.set(Calendar.DAY_OF_MONTH, 1);
+			calendar.add(Calendar.DATE, -1);
+			Date lastDayOfMonth = calendar.getTime();
 
 			final Collection<LoanTransactionData> currentLoanRepayments = loanReadPlatformService
-					.retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),startDate,endDate);
-
-			for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
-				approvedPricipal = approvedPricipal.subtract(loanTransactionData.getAmount());
+					.retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),
+							new SimpleDateFormat("yyyy-MM-dd").format(date),
+							new SimpleDateFormat("yyyy-MM-dd").format(lastDayOfMonth));
+			 
+			if(currentLoanRepayments.isEmpty() && outstandingAmout != 0){
+				approvedPricipal = approvedPricipal.subtract(BigDecimal.ZERO);
+				totlaRepayment = approvedPricipal.add(totlaRepayment);
+			}else if(!currentLoanRepayments.isEmpty()){
+				BigDecimal repaymentAmount = BigDecimal.ZERO;
+				for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
+					repaymentAmount = repaymentAmount.add(loanTransactionData.getAmount());
+				}
+				approvedPricipal = approvedPricipal.subtract(repaymentAmount);
 				totlaRepayment = approvedPricipal.add(totlaRepayment);
 			}
-		
+			
+			calendar.add(Calendar.MONTH, +1);
+			calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
+			date = calendar.getTime();
+		}
 		return totlaRepayment;
 		
 	}
