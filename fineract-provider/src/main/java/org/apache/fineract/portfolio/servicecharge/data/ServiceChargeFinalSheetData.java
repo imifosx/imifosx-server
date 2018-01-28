@@ -62,6 +62,9 @@ public class ServiceChargeFinalSheetData {
 	private BigDecimal dlOutstandingAmount;
 	private BigDecimal nDlOutstandingAmount;
 	
+	// Total Number of Demand Loans
+	private int noOfDemandLoans;
+	
 
 	private void init() {
 		resultsDataMap = new HashMap<ServiceChargeReportTableHeaders, List<BigDecimal>>();
@@ -376,5 +379,13 @@ public class ServiceChargeFinalSheetData {
 	public void setLoanOutstandingAmount(BigDecimal dLoanOutstandingAmount, BigDecimal NdloanOutstandingAmount){
 		dlOutstandingAmount = dLoanOutstandingAmount;
 		nDlOutstandingAmount = NdloanOutstandingAmount; 
+	}
+
+	public int getNoOfDemandLoans() {
+		return noOfDemandLoans;
+	}
+
+	public void setNoOfDemandLoans(int noOfDemandLoans) {
+		this.noOfDemandLoans = noOfDemandLoans;
 	}
 }
