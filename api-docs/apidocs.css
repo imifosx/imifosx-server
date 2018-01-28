@@ -192,7 +192,7 @@ body {
 .flybar-nav {
     display: block;
     float: left;
-    min-width: 80px;
+    min-width: 60px;
     position: relative;
 }
 
@@ -745,4 +745,8 @@ ul.field li {
 
 tt {
     font-size: 9.5pt;
+}
+
+ol.normalli li {
+    list-style-type: decimal;
 }
