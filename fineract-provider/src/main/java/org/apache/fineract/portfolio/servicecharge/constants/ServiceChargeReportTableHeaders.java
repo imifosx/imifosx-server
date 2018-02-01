@@ -24,9 +24,9 @@ import java.util.Map;
 public enum ServiceChargeReportTableHeaders {
 	
 	SUBTOTAL(1, "Sub Total"),
-	ALLOCATION_OVERHEADS(2, "Allocation-I (Overheads)"),
-	ALLOCATION_SUBTOTAL(3, "Sub Total after Overheads Allocation"),
-	ALLOCATION_MOBILIZATION(4, "Allocation-II (Mobilization Cost)"),
+	ALLOCATION_I_OVERHEADS(2, "Allocation-I (Overheads)"),
+	SUBTOTAL_ALLOCATION(3, "Sub Total after Overheads Allocation"),
+	ALLOCATION_II_MOBILIZATION(4, "Allocation-II (Mobilization Cost)"),
     TOTAL_SEGREGATION_COST(5, "Total Activity-wise Segregated Cost"),
     LSCOST_ON_ACCOUNT_BF(6, "LS Cost on A/c BF"),
     TOTAL_MOBILIZATION(7, "Total Mobilisation Cost p.a."),

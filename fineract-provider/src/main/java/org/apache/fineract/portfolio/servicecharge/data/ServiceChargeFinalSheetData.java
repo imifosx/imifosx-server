@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeNotFoundException;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -37,12 +38,11 @@ public class ServiceChargeFinalSheetData {
 	private Map<ServiceChargeReportTableHeaders, List<BigDecimal>> resultsDataMap;
 	private StringBuffer resultDataAsHTMLTableString;
 
-	private BigDecimal totalMobilization;
-	private BigDecimal totalServicing;
-	private BigDecimal totalInvestment;
-	private BigDecimal totalOverHeads;
-	private BigDecimal totalProvisions;
-	private BigDecimal totalBFServicing;
+	private BigDecimal subTotalMobilization;
+	private BigDecimal subTotalServicing;
+	private BigDecimal subTotalInvestment;
+	private BigDecimal subTotalOverHeads;
+	private BigDecimal subTotalBFServicing;
 
 	// Overheads apportioned values
 	private BigDecimal overheadsApportionedMobilization;
@@ -58,9 +58,14 @@ public class ServiceChargeFinalSheetData {
 	private BigDecimal mobilizationApportionedServicing;
 	private BigDecimal mobilizationApportionedlInvestment;
 	
+	// Total Activity-wise Segregated Cost
+	private BigDecimal finalTotalLoanServicing;
+	private BigDecimal finalTotalInvestment;
+	
 	// DL & NDL loan outstanding amount
 	private BigDecimal dlOutstandingAmount;
 	private BigDecimal nDlOutstandingAmount;
+	private BigDecimal totalLoanRepaymentAmount;
 	
 	// Total Number of Demand Loans
 	private int noOfDemandLoans;
@@ -72,34 +77,31 @@ public class ServiceChargeFinalSheetData {
 		for (ServiceChargeReportTableHeaders header : ServiceChargeReportTableHeaders.values()) {
 			resultsDataMap.put(header, new ArrayList<BigDecimal>());
 		}
+		totalLoanRepaymentAmount = BigDecimal.ZERO;
 	}
 
 	public ServiceChargeFinalSheetData() {
 		init();
 	}
 
-	public BigDecimal getTotalMobilization() {
-		return totalMobilization;
+	public BigDecimal getSubTotalMobilization() {
+		return subTotalMobilization;
 	}
 
-	public BigDecimal getTotalServicing() {
-		return totalServicing;
+	public BigDecimal getSubTotalServicing() {
+		return subTotalServicing;
 	}
 
-	public BigDecimal getTotalInvestment() {
-		return totalInvestment;
+	public BigDecimal getSubTotalInvestment() {
+		return subTotalInvestment;
 	}
 
-	public BigDecimal getTotalOverHeads() {
-		return totalOverHeads;
-	}
-
-	public BigDecimal getTotalProvisions() {
-		return totalProvisions;
+	public BigDecimal getSubTotalOverHeads() {
+		return subTotalOverHeads;
 	}
 
 	public BigDecimal getTotalBFServicing() {
-		return totalBFServicing;
+		return subTotalBFServicing;
 	}
 
 	public BigDecimal getOverheadsApportionedMobilization() {
@@ -146,20 +148,34 @@ public class ServiceChargeFinalSheetData {
 		return dlOutstandingAmount;
 	}
 
-	public void setDlOutstandingAmount(BigDecimal dloutstandingAmount) {
-		dlOutstandingAmount = dloutstandingAmount;
+	public BigDecimal getTotalLoanRepaymentAmount() {
+		return totalLoanRepaymentAmount;
+	}
+	
+	public void addTotalLoanRepaymentAmount(BigDecimal amount) {
+		this.totalLoanRepaymentAmount = this.totalLoanRepaymentAmount.add(amount);
 	}
 
 	public BigDecimal getNDlOutstandingAmount() {
 		return nDlOutstandingAmount;
 	}
 
-	public void setNDlOutstandingAmount(BigDecimal ndloutstandingAmount) {
-		nDlOutstandingAmount = ndloutstandingAmount;
+	public void setColumnValue(ServiceChargeReportTableHeaders header, List<BigDecimal> dataList) {
+		List<BigDecimal> roundedDataList = roundOffBigDecimalValues(dataList);
+		getResultsDataMap().put(header, roundedDataList);
 	}
 
-	public void setColumnValue(ServiceChargeReportTableHeaders header, List<BigDecimal> dataList) {
-		getResultsDataMap().put(header, dataList);
+	private List<BigDecimal> roundOffBigDecimalValues(List<BigDecimal> dataList) {
+		List<BigDecimal> roundedDataList = new ArrayList<BigDecimal>();
+		for (BigDecimal data : dataList) {
+			if (data != null) {
+				BigDecimal value = data.setScale(2, MoneyHelper.getRoundingMode());
+				roundedDataList.add(value);
+			}else {
+				roundedDataList.add(null);
+			}
+		}
+		return roundedDataList;
 	}
 
 	public BigDecimal getColumnValue(ServiceChargeReportTableHeaders header, int columnNumber) {
@@ -209,10 +225,11 @@ public class ServiceChargeFinalSheetData {
 				result.append("</td>");
 				for (BigDecimal element : dataList) {
 					result.append("<td>");
-					if (element != null)
+					if (element != null) {
 						result.append(element.toPlainString());
-					else
+					} else {
 						result.append(StringUtils.EMPTY);
+					}
 					result.append("</td>");
 				}
 				result.append("</tr>");
@@ -263,18 +280,18 @@ public class ServiceChargeFinalSheetData {
 	
 	private void setBFAmountRow() {
 		List<BigDecimal> bfColumnEntries = new ArrayList<>(1);
-		bfColumnEntries.add(totalBFServicing);
+		bfColumnEntries.add(subTotalBFServicing);
 		setColumnValue(ServiceChargeReportTableHeaders.LSCOST_ON_ACCOUNT_BF, bfColumnEntries);
 	}
 	
 	private void setSubTotalRow() {
 		List<BigDecimal> columnEntries = new ArrayList<>(5);
 		BigDecimal totalAmount = BigDecimal.ZERO;
-		totalAmount = totalAmount.add(totalMobilization).add(totalServicing).add(totalInvestment).add(totalOverHeads);
-		columnEntries.add(totalMobilization);
-		columnEntries.add(totalServicing);
-		columnEntries.add(totalInvestment);
-		columnEntries.add(totalOverHeads);
+		totalAmount = totalAmount.add(subTotalMobilization).add(subTotalServicing).add(subTotalInvestment).add(subTotalOverHeads);
+		columnEntries.add(subTotalMobilization);
+		columnEntries.add(subTotalServicing);
+		columnEntries.add(subTotalInvestment);
+		columnEntries.add(subTotalOverHeads);
 		columnEntries.add(totalAmount);
 		setColumnValue(ServiceChargeReportTableHeaders.SUBTOTAL, columnEntries);
 	}
@@ -290,28 +307,24 @@ public class ServiceChargeFinalSheetData {
 		columnEntries.add(overheadsApportionedlInvestment);
 		columnEntries.add(null);
 		columnEntries.add(totalAmount);
-		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_OVERHEADS, columnEntries);
-		subTotalAfterOverheadsAllocationMobilization = totalMobilization.add(overheadsApportionedMobilization);
-		subTotalAfterOverheadsAllocationServicing = totalServicing.add(overheadsApportionedServicing);
-		subTotalAfterOverheadsAllocationInvestment = totalInvestment.add(overheadsApportionedlInvestment);
+		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_I_OVERHEADS, columnEntries);
+		subTotalAfterOverheadsAllocationMobilization = subTotalMobilization.add(overheadsApportionedMobilization);
+		subTotalAfterOverheadsAllocationServicing = subTotalServicing.add(overheadsApportionedServicing);
+		subTotalAfterOverheadsAllocationInvestment = subTotalInvestment.add(overheadsApportionedlInvestment);
 	}
 	
 	private void setTotalAfterOverheadsApportionedRow() {
 		List<BigDecimal> columnEntries = new ArrayList<>(5);
 		BigDecimal totalAmount = BigDecimal.ZERO;
 
-		this.totalMobilization = this.totalMobilization.add(overheadsApportionedMobilization);
-		this.totalServicing = this.totalServicing.add(overheadsApportionedServicing);
-		this.totalInvestment = this.totalInvestment.add(overheadsApportionedlInvestment);
-
 		// Populate overheads apportioned + original total values
-		totalAmount = totalAmount.add(totalMobilization).add(totalServicing).add(totalInvestment);
-		columnEntries.add(totalMobilization);
-		columnEntries.add(totalServicing);
-		columnEntries.add(totalInvestment);
+		totalAmount = totalAmount.add(subTotalAfterOverheadsAllocationMobilization).add(subTotalAfterOverheadsAllocationServicing).add(subTotalAfterOverheadsAllocationInvestment);
+		columnEntries.add(subTotalAfterOverheadsAllocationMobilization);
+		columnEntries.add(subTotalAfterOverheadsAllocationServicing);
+		columnEntries.add(subTotalAfterOverheadsAllocationInvestment);
 		columnEntries.add(null);
 		columnEntries.add(totalAmount);
-		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_SUBTOTAL, columnEntries);
+		setColumnValue(ServiceChargeReportTableHeaders.SUBTOTAL_ALLOCATION, columnEntries);
 
 	}
 	
@@ -325,21 +338,21 @@ public class ServiceChargeFinalSheetData {
 		columnEntries.add(mobilizationApportionedlInvestment);
 		columnEntries.add(null);
 		columnEntries.add(totalAmount);
-		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_MOBILIZATION, columnEntries);
+		setColumnValue(ServiceChargeReportTableHeaders.ALLOCATION_II_MOBILIZATION, columnEntries);
 	}
 	
 	private void setTotalAfterMobilizationApportionedRow() {
 		List<BigDecimal> columnEntries = new ArrayList<>(5);
 		BigDecimal totalAmount = BigDecimal.ZERO;
 
-		this.totalServicing = this.totalServicing.add(overheadsApportionedServicing);
-		this.totalInvestment = this.totalInvestment.add(overheadsApportionedlInvestment);
+		this.finalTotalLoanServicing = this.subTotalAfterOverheadsAllocationServicing.add(mobilizationApportionedServicing);
+		this.finalTotalInvestment = this.subTotalAfterOverheadsAllocationInvestment.add(mobilizationApportionedlInvestment);
 
 		// Populate mobilization apportioned + original total values
-		totalAmount = totalAmount.add(totalServicing).add(totalInvestment);
+		totalAmount = totalAmount.add(finalTotalLoanServicing).add(finalTotalInvestment);
 		columnEntries.add(null);
-		columnEntries.add(totalServicing);
-		columnEntries.add(totalInvestment);
+		columnEntries.add(finalTotalLoanServicing);
+		columnEntries.add(finalTotalInvestment);
 		columnEntries.add(null);
 		columnEntries.add(totalAmount);
 		setColumnValue(ServiceChargeReportTableHeaders.TOTAL_SEGREGATION_COST, columnEntries);
@@ -349,12 +362,11 @@ public class ServiceChargeFinalSheetData {
 	public void setJounEntriesData(BigDecimal totalMobilizationAmount, BigDecimal totalServicingAmount,
 			BigDecimal totalInvestmentAmount, BigDecimal totalOverHeadsAmount, BigDecimal totalProvisionsAmount,
 			BigDecimal totalBFServicingAmount) {
-		this.totalMobilization = totalMobilizationAmount;
-		this.totalServicing = totalServicingAmount;
-		this.totalInvestment = totalInvestmentAmount;
-		this.totalOverHeads = totalOverHeadsAmount;
-		this.totalProvisions = totalProvisionsAmount;
-		this.totalBFServicing = totalBFServicingAmount;
+		this.subTotalMobilization = totalMobilizationAmount;
+		this.subTotalServicing = totalServicingAmount;
+		this.subTotalInvestment = totalInvestmentAmount;
+		this.subTotalOverHeads = totalOverHeadsAmount.add(totalProvisionsAmount);
+		this.subTotalBFServicing = totalBFServicingAmount;
 
 		setBFAmountRow();
 		setSubTotalRow();
@@ -376,9 +388,9 @@ public class ServiceChargeFinalSheetData {
 		setTotalAfterMobilizationApportionedRow();
 	}
 	
-	public void setLoanOutstandingAmount(BigDecimal dLoanOutstandingAmount, BigDecimal NdloanOutstandingAmount){
-		dlOutstandingAmount = dLoanOutstandingAmount;
-		nDlOutstandingAmount = NdloanOutstandingAmount; 
+	public void setLoanOutstandingAmount(BigDecimal dLoanOutstandingAmount, BigDecimal nDloanOutstandingAmount){
+		this.dlOutstandingAmount = dLoanOutstandingAmount;
+		this.nDlOutstandingAmount = nDloanOutstandingAmount; 
 	}
 
 	public int getNoOfDemandLoans() {

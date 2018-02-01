@@ -17,15 +17,12 @@
  * under the License.
  */
 package org.apache.fineract.portfolio.servicecharge.service;
-package org.ideoholic.imifosx.portfolio.servicecharge.service;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,41 +32,41 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
-import org.ideoholic.imifosx.infrastructure.core.data.EnumOptionData;
-import org.ideoholic.imifosx.infrastructure.core.domain.JdbcSupport;
-import org.ideoholic.imifosx.infrastructure.core.service.Page;
-import org.ideoholic.imifosx.infrastructure.core.service.PaginationHelper;
-import org.ideoholic.imifosx.infrastructure.core.service.RoutingDataSource;
-import org.ideoholic.imifosx.infrastructure.core.service.SearchParameters;
-import org.ideoholic.imifosx.infrastructure.security.service.PlatformSecurityContext;
-import org.ideoholic.imifosx.organisation.monetary.data.CurrencyData;
-import org.ideoholic.imifosx.portfolio.account.data.AccountTransferData;
-import org.ideoholic.imifosx.portfolio.accountdetails.service.AccountEnumerations;
-import org.ideoholic.imifosx.portfolio.calendar.data.CalendarData;
-import org.ideoholic.imifosx.portfolio.client.domain.ClientEnumerations;
-import org.ideoholic.imifosx.portfolio.common.service.CommonEnumerations;
-import org.ideoholic.imifosx.portfolio.group.data.GroupGeneralData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanAccountData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanApplicationTimelineData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanChargeData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanInterestRecalculationData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanStatusEnumData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanSummaryData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanTransactionData;
-import org.ideoholic.imifosx.portfolio.loanaccount.data.LoanTransactionEnumData;
-import org.ideoholic.imifosx.portfolio.loanaccount.exception.LoanNotFoundException;
-import org.ideoholic.imifosx.portfolio.loanaccount.service.LoanChargeReadPlatformService;
-import org.ideoholic.imifosx.portfolio.loanaccount.service.LoanReadPlatformService;
-import org.ideoholic.imifosx.portfolio.loanproduct.data.LoanProductData;
-import org.ideoholic.imifosx.portfolio.loanproduct.service.LoanEnumerations;
-import org.ideoholic.imifosx.portfolio.loanproduct.service.LoanProductReadPlatformService;
-import org.ideoholic.imifosx.portfolio.paymentdetail.data.PaymentDetailData;
-import org.ideoholic.imifosx.portfolio.paymenttype.data.PaymentTypeData;
-import org.ideoholic.imifosx.portfolio.servicecharge.constants.QuarterDateRange;
-import org.ideoholic.imifosx.portfolio.servicecharge.constants.ServiceChargeApiConstants;
-import org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
-import org.ideoholic.imifosx.portfolio.servicecharge.util.ServiceChargeOperationUtils;
-import org.ideoholic.imifosx.useradministration.domain.AppUser;
+import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.infrastructure.core.service.PaginationHelper;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.SearchParameters;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.monetary.data.CurrencyData;
+import org.apache.fineract.portfolio.account.data.AccountTransferData;
+import org.apache.fineract.portfolio.accountdetails.service.AccountEnumerations;
+import org.apache.fineract.portfolio.calendar.data.CalendarData;
+import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
+import org.apache.fineract.portfolio.common.service.CommonEnumerations;
+import org.apache.fineract.portfolio.group.data.GroupGeneralData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanInterestRecalculationData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
+import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
+import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
+import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
+import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
+import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
+import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
+import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
+import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,99 +190,102 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	}
 	
 	
-	public void getLoansOutstandingAmount(ServiceChargeFinalSheetData sheetData) throws Exception {
+	public void populateRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData) {
 		logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount");
 
-		
 		BigDecimal dLtotalOutstandingAmount = BigDecimal.ZERO;
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		int noOfDL = 0;
 		// Get the dates
 		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
-		String startDate = quarter.getFormattedFromDateString();
-		String endDate = quarter.getFormattedToDateString();
+		String strStartDate = quarter.getFormattedFromDateString();
+		String strEndDate = quarter.getFormattedToDateString();
+		Date startDate = quarter.getFromDateForCurrentYear();
+		Date endDate = quarter.getToDateForCurrentYear();
 
 		final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
 		Page<LoanAccountData> loanAccountDataForOutstandingAmount = null;
 		try {
-			loanAccountDataForOutstandingAmount = retrieveLoanDisbursementDetailsQuarterly(searchParameters,startDate,endDate);
+			loanAccountDataForOutstandingAmount = retrieveLoanDisbursementDetailsQuarterly(searchParameters, strStartDate, strEndDate);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		if(loanAccountDataForOutstandingAmount!=null){
-		
-		for (int i = 0; i < loanAccountDataForOutstandingAmount.getPageItems().size(); i++) {
-			
-			LoanAccountData loanAccData = loanAccountDataForOutstandingAmount.getPageItems().get(i);
-			LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
-			
-			boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanProduct);
-			if(!isDemandLaon){
-				
-				BigDecimal nonDemandLoanrepaymentAmount = getRepaymentAmount(loanAccData,startDate,endDate);
-				nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(nonDemandLoanrepaymentAmount);
+		if (loanAccountDataForOutstandingAmount != null) {
+			for (int i = 0; i < loanAccountDataForOutstandingAmount.getPageItems().size(); i++) {
+				BigDecimal loanRepaymentAmount = BigDecimal.ZERO;
+				LoanAccountData loanAccData = loanAccountDataForOutstandingAmount.getPageItems().get(i);
+				LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
 
-			}else{
-				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Total Outstanding Amount "+loanAccData.getTotalOutstandingAmount());
-				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::outstanding Amount");
-				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Account Loan id "+loanAccData.getId());
-				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Outstanding Amount: "+loanAccData.getTotalOutstandingAmount());
-				noOfDL++;
-				BigDecimal demandLoanrepaymentAmount = getRepaymentAmount(loanAccData,startDate,endDate);
-				dLtotalOutstandingAmount = dLtotalOutstandingAmount.add(demandLoanrepaymentAmount);
-			}
-			
-		}
-		
-		}
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Total Outstanding Amount " + loanAccData.getTotalOutstandingAmount());
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Account Loan id " + loanAccData.getId());
+				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::Outstanding Amount: " + loanAccData.getTotalOutstandingAmount());
+
+				boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanProduct);
+				if (!isDemandLaon) {
+					loanRepaymentAmount = getRepaymentAmount(sheetData, loanAccData, startDate, endDate);
+					nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(loanRepaymentAmount);
+				} else {
+					Date dateDisbursement = loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate();
+					if (dateDisbursement.compareTo(startDate) >= 0 && dateDisbursement.compareTo(endDate) <= 0) {
+						noOfDL++;
+					}
+					loanRepaymentAmount = getRepaymentAmount(sheetData, loanAccData, startDate, endDate);
+					dLtotalOutstandingAmount = dLtotalOutstandingAmount.add(loanRepaymentAmount);
+				}
+			} // End of for-loop
+		} // End of (loanAccountDataForOutstandingAmount != null)
 		sheetData.setNoOfDemandLoans(noOfDL);
-		nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(nDLtotalOutstandingAmount.divide(new BigDecimal(3),6, RoundingMode.CEILING));
-		dLtotalOutstandingAmount = dLtotalOutstandingAmount.add(dLtotalOutstandingAmount.divide(new BigDecimal(3),6, RoundingMode.CEILING));
+		nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.divide(new BigDecimal(3), 6, RoundingMode.CEILING);
+		dLtotalOutstandingAmount = dLtotalOutstandingAmount.divide(new BigDecimal(3), 6, RoundingMode.CEILING);
 		sheetData.setLoanOutstandingAmount(dLtotalOutstandingAmount, nDLtotalOutstandingAmount);
-		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstanding DL Amount:" + dLtotalOutstandingAmount );
-		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstanding Non DL Amount:" +  nDLtotalOutstandingAmount);
+		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstanding DL Amount:" + dLtotalOutstandingAmount);
+		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getLoansOutstandingAmount::totalOutstanding Non DL Amount:" + nDLtotalOutstandingAmount);
 	}
 
-	private BigDecimal getRepaymentAmount(LoanAccountData loanAccData, String startDate, String endDate)
-			throws ParseException {
-		// Get the total repayment
+	private BigDecimal getRepaymentAmount(ServiceChargeFinalSheetData sheetData, LoanAccountData loanAccData, Date startDate, Date endDate) {
+		// Get the total repayments
 		BigDecimal approvedPricipal = loanAccData.getApprovedPrincipal();
 		BigDecimal totlaRepayment = loanAccData.getApprovedPrincipal();
 		int outstandingAmout = loanAccData.getTotalOutstandingAmount().compareTo(BigDecimal.ZERO);
-		Date date = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
+		Date dateDisbursement = loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate();
+
+		Date date = startDate;
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
-		
+
 		for (int j = 0; j < 3; j++) {
+			// Get to the first day of the next month and then subtract one day
+			// This would get the last day of the current month
 			calendar.add(Calendar.MONTH, 1);
 			calendar.set(Calendar.DAY_OF_MONTH, 1);
 			calendar.add(Calendar.DATE, -1);
 			Date lastDayOfMonth = calendar.getTime();
+			// Ignore if the date of disbursement is after then current date under consideration
+			if (dateDisbursement.compareTo(date) < 0) {
+				// Retrieve the transaction between the given dates for the loan
+				final Collection<LoanTransactionData> currentLoanRepayments = retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),
+						new SimpleDateFormat("yyyy-MM-dd").format(date), new SimpleDateFormat("yyyy-MM-dd").format(lastDayOfMonth));
 
-			final Collection<LoanTransactionData> currentLoanRepayments = retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),
-							new SimpleDateFormat("yyyy-MM-dd").format(date),
-							new SimpleDateFormat("yyyy-MM-dd").format(lastDayOfMonth));
-			 
-			if(currentLoanRepayments.isEmpty() && outstandingAmout != 0){
-				approvedPricipal = approvedPricipal.subtract(BigDecimal.ZERO);
-				totlaRepayment = approvedPricipal.add(totlaRepayment);
-			}else if(!currentLoanRepayments.isEmpty()){
-				BigDecimal repaymentAmount = BigDecimal.ZERO;
-				for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
-					repaymentAmount = repaymentAmount.add(loanTransactionData.getAmount());
+				if (currentLoanRepayments.isEmpty() && outstandingAmout != 0) {
+					approvedPricipal = approvedPricipal.subtract(BigDecimal.ZERO);
+					totlaRepayment = approvedPricipal.add(totlaRepayment);
+				} else if (!currentLoanRepayments.isEmpty()) {
+					BigDecimal repaymentAmount = BigDecimal.ZERO;
+					for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
+						repaymentAmount = repaymentAmount.add(loanTransactionData.getAmount());
+					}
+					sheetData.addTotalLoanRepaymentAmount(repaymentAmount);
+					approvedPricipal = approvedPricipal.subtract(repaymentAmount);
+					totlaRepayment = approvedPricipal.add(totlaRepayment);
 				}
-				approvedPricipal = approvedPricipal.subtract(repaymentAmount);
-				totlaRepayment = approvedPricipal.add(totlaRepayment);
 			}
-			
 			calendar.add(Calendar.MONTH, +1);
 			calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
 			date = calendar.getTime();
 		}
 		return totlaRepayment;
-		
 	}
 
 	@Override
@@ -322,8 +322,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			// TODO: handle exception
 			logger.error(e.getMessage());
 		}
-		
-		
+
 		return result;
 	}
 
@@ -349,99 +348,92 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	}
 
 	private BigDecimal getTotalOutstandingAmountForGivenQuarter(Long loanId, QuarterDateRange range) {
-		
-		
-		BigDecimal totalOutstandingAmount=BigDecimal.ZERO;
+
+		BigDecimal totalOutstandingAmount = BigDecimal.ZERO;
 		// create MathContext object with 2 precision
 		MathContext mc = new MathContext(2);
 		String startDate = range.getFormattedFromDateString();
-		String endDate   = range.getFormattedToDateString();
-		
-			final Collection<LoanTransactionData> currentLoanRepayments = retrieveLoanTransactionsOutstandingPayments(loanId, startDate, endDate);
+		String endDate = range.getFormattedToDateString();
 
-			if(!currentLoanRepayments.isEmpty()){
-			
+		final Collection<LoanTransactionData> currentLoanRepayments = retrieveLoanTransactionsOutstandingPayments(loanId, startDate, endDate);
+
+		if (!currentLoanRepayments.isEmpty()) {
 			for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
 				logger.debug("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getOutstandingLoanBalance());
-
 				// perform add operation on bg1 with augend bg2 and context mc
 				totalOutstandingAmount = totalOutstandingAmount.add(loanTransactionData.getOutstandingLoanBalance(), mc);
 			}
-			}else{
-				//check whether the account is closed or not?
-				final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
-				LoanAccountData loanAccountData = null;
-				try{
-					loanAccountData = checkLoanStatus(searchParameters, loanId);
-				}catch(Exception E){
-					logger.error(E.getMessage());
-				}
-				
-				if (loanAccountData != null) {
-					//Loan is closed
-					logger.info("Loan is closed");
-				}else{
-					
-					//get the last outstanding amount
-					final Collection<LoanTransactionData> loanRepaymentsPreviousData = retrieveLoanTransactionsOutstandingPaymentsPreviuosData(loanId);
-					
-					for (LoanTransactionData loanTransactionData : loanRepaymentsPreviousData) {
-						logger.debug("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getOutstandingLoanBalance());
+		} else {
+			// check whether the account is closed or not?
+			final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
+			LoanAccountData loanAccountData = null;
+			try {
+				loanAccountData = checkLoanStatus(searchParameters, loanId);
+			} catch (Exception E) {
+				logger.error(E.getMessage());
+			}
+			if (loanAccountData != null) {
+				// Loan is closed
+				logger.info("Loan is closed");
+			} else {
+				// get the last outstanding amount
+				final Collection<LoanTransactionData> loanRepaymentsPreviousData = retrieveLoanTransactionsOutstandingPaymentsPreviuosData(loanId);
 
-						// perform add operation on bg1 with augend bg2 and context mc
-						totalOutstandingAmount = totalOutstandingAmount.add(loanTransactionData.getOutstandingLoanBalance(), mc);
-					}
+				for (LoanTransactionData loanTransactionData : loanRepaymentsPreviousData) {
+					logger.debug("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getOutstandingLoanBalance());
+					// perform add operation on bg1 with augend bg2 and context mc
+					totalOutstandingAmount = totalOutstandingAmount.add(loanTransactionData.getOutstandingLoanBalance(), mc);
 				}
 			}
-		logger.debug("Total outstanding amount "+totalOutstandingAmount);
+		}
+		logger.debug("Total outstanding amount " + totalOutstandingAmount);
 		return totalOutstandingAmount;
 	}
 	
 	@Override
-	public Collection<LoanTransactionData> retrieveLoanTransactionsOutstandingPayments(
-			Long loanId,String startDate, String endDate) {
-	    try {
-            final LoanTransactionsMapper rm = new LoanTransactionsMapper();
-            // retrieve all loan transactions that are not invalid and have not
-            // been 'contra'ed by another transaction
-            // repayments at time of disbursement (e.g. charges)
+	public Collection<LoanTransactionData> retrieveLoanTransactionsOutstandingPayments(Long loanId, String startDate, String endDate) {
+		try {
+			final LoanTransactionsMapper rm = new LoanTransactionsMapper();
+			// retrieve all loan transactions that are not invalid and have not
+			// been 'contra'ed by another transaction
+			// repayments at time of disbursement (e.g. charges)
 
-            /***
-             * TODO Vishwas: Remove references to "Contra" from the codebase
-             ***/
-            final String sql = "select "
-                    + rm.LoanPaymentsSchema()
-                   // + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order by tr.transaction_date ASC,id ";
-                     + " where tr.loan_id = ? and tr.transaction_type_enum in (1,2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) and tr.transaction_date between '"+startDate+"' and '"+endDate+"'  order by tr.transaction_date ASC,id";
-            return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
-        } catch (final EmptyResultDataAccessException e) {
-            return null;
-        }
+			/***
+			 * TODO Vishwas: Remove references to "Contra" from the codebase
+			 ***/
+			final String sql = "select " + rm.LoanPaymentsSchema()
+			// + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and
+			// (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order
+			// by tr.transaction_date ASC,id ";
+					+ " where tr.loan_id = ? and tr.transaction_type_enum in (1,2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) and tr.transaction_date between '"
+					+ startDate + "' and '" + endDate + "'  order by tr.transaction_date ASC,id";
+			return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
+		} catch (final EmptyResultDataAccessException e) {
+			return null;
+		}
 	}
 	
 	 @Override
-	 public LoanAccountData checkLoanStatus(final SearchParameters searchParameters,Long loanId) {
-		
-		 try {
-	            final AppUser currentUser = this.context.authenticatedUser();
-	            final String hierarchy = currentUser.getOffice().getHierarchy();
-	            final String hierarchySearchString = hierarchy + "%";
+	public LoanAccountData checkLoanStatus(final SearchParameters searchParameters, Long loanId) {
+		try {
+			final AppUser currentUser = this.context.authenticatedUser();
+			final String hierarchy = currentUser.getOffice().getHierarchy();
+			final String hierarchySearchString = hierarchy + "%";
 
-	            final LoanMapper rm = new LoanMapper();
+			final LoanMapper rm = new LoanMapper();
 
-	            final StringBuilder sqlBuilder = new StringBuilder();
-	            sqlBuilder.append("select ");
-	            sqlBuilder.append(rm.loanSchema());
-	            sqlBuilder.append(" join m_office o on (o.id = c.office_id or o.id = g.office_id) ");
-	            sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
-	            sqlBuilder.append(" where l.id=? and ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.closedon_date IS NOT NULL");
+			final StringBuilder sqlBuilder = new StringBuilder();
+			sqlBuilder.append("select ");
+			sqlBuilder.append(rm.loanSchema());
+			sqlBuilder.append(" join m_office o on (o.id = c.office_id or o.id = g.office_id) ");
+			sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
+			sqlBuilder.append(" where l.id=? and ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.closedon_date IS NOT NULL");
 
-	            return this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, new Object[] { loanId, hierarchySearchString,
-	                    hierarchySearchString });
-	        } catch (final EmptyResultDataAccessException e) {
-	            throw new LoanNotFoundException(loanId);
-	        }
-	 }
+			return this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, new Object[] { loanId, hierarchySearchString, hierarchySearchString });
+		} catch (final EmptyResultDataAccessException e) {
+			throw new LoanNotFoundException(loanId);
+		}
+	}
 	
 	
 	 private static final class LoanTransactionsMapper implements RowMapper<LoanTransactionData> {
@@ -548,28 +540,24 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 	 
 	 @Override
-		public Collection<LoanTransactionData> retrieveLoanTransactionsOutstandingPaymentsPreviuosData(Long loanId) {
-		    try {
-	            
+	public Collection<LoanTransactionData> retrieveLoanTransactionsOutstandingPaymentsPreviuosData(Long loanId) {
+		try {
+			final LoanTransactionsMapper rm = new LoanTransactionsMapper();
 
-	            final LoanTransactionsMapper rm = new LoanTransactionsMapper();
+			// retrieve all loan transactions that are not invalid and have not
+			// been 'contra'ed by another transaction
+			// repayments at time of disbursement (e.g. charges)
 
-	            // retrieve all loan transactions that are not invalid and have not
-	            // been 'contra'ed by another transaction
-	            // repayments at time of disbursement (e.g. charges)
-
-	            /***
-	             * TODO Vishwas: Remove references to "Contra" from the codebase
-	             ***/
-	            final String sql = "select "
-	                    + rm.LoanPaymentsSchema()
-	                   // + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order by tr.transaction_date ASC,id ";
-	                     + " where tr.loan_id = ? and tr.transaction_type_enum in (1,2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) and tr.outstanding_loan_balance_derived IS NOT NULL order by tr.transaction_date DESC LIMIT 1";
-	            return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
-	        } catch (final EmptyResultDataAccessException e) {
-	            return null;
-	        }
+			/***
+			 * TODO Vishwas: Remove references to "Contra" from the codebase
+			 ***/
+			final String sql = "select " + rm.LoanPaymentsSchema()
+					+ " where tr.loan_id = ? and tr.transaction_type_enum in (1,2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) and tr.outstanding_loan_balance_derived IS NOT NULL order by tr.transaction_date DESC LIMIT 1";
+			return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
+		} catch (final EmptyResultDataAccessException e) {
+			return null;
 		}
+	}
 	 
 	 public LoanAccountData retrieveOneLoanForCurrentQuarter(final SearchParameters searchParameters,Long loanId, String startDate, String endDate) {
          final AppUser currentUser = this.context.authenticatedUser();
@@ -580,7 +568,6 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
          final StringBuilder sqlBuilder = new StringBuilder();
 		 try {
-
 	            sqlBuilder.append("select ");
 	            sqlBuilder.append(rm.loanSchema());
 	            sqlBuilder.append(" join m_office o on (o.id = c.office_id or o.id = g.office_id) ");
@@ -596,157 +583,157 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	        }
 	 }
 	 
-	 public Collection<LoanTransactionData> retrieveLoanTransactionsMonthlyPayments(
-				Long loanId,String startDate, String endDate) {
-		    try {
-	            this.context.authenticatedUser();
+	public Collection<LoanTransactionData> retrieveLoanTransactionsMonthlyPayments(Long loanId, String startDate, String endDate) {
+		try {
+			this.context.authenticatedUser();
 
-	            final LoanTransactionsMapper rm = new LoanTransactionsMapper();
+			final LoanTransactionsMapper rm = new LoanTransactionsMapper();
 
-	            // retrieve all loan transactions that are not invalid and have not
-	            // been 'contra'ed by another transaction
-	            // repayments at time of disbursement (e.g. charges)
+			// retrieve all loan transactions that are not invalid and have not
+			// been 'contra'ed by another transaction
+			// repayments at time of disbursement (e.g. charges)
 
-	            /***
-	             * TODO Vishwas: Remove references to "Contra" from the codebase
-	             ***/
-	            final String sql = "select "
-	                    + rm.LoanPaymentsSchema()
-	                   // + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order by tr.transaction_date ASC,id ";
-	                     + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) and tr.transaction_date between '"+startDate+"' and '"+endDate+"'  order by tr.transaction_date ASC,id";
-	            return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
-	        } catch (final EmptyResultDataAccessException e) {
-	            return null;
-	        }
+			/***
+			 * TODO Vishwas: Remove references to "Contra" from the codebase
+			 ***/
+			final String sql = "select " + rm.LoanPaymentsSchema()
+			// + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and
+			// (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order
+			// by tr.transaction_date ASC,id ";
+					+ " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) and tr.transaction_date between '"
+					+ startDate + "' and '" + endDate + "'  order by tr.transaction_date ASC,id";
+			return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
+		} catch (final EmptyResultDataAccessException e) {
+			return null;
 		}
+	}
 	 
 	 
-	 public Page<LoanAccountData> retrieveLoansForCurrentQuarter(final SearchParameters searchParameters, String startDate, String endDate) {
-			
-	        final AppUser currentUser = this.context.authenticatedUser();
-	        final String hierarchy = currentUser.getOffice().getHierarchy();
-	        final String hierarchySearchString = hierarchy + "%";
+	public Page<LoanAccountData> retrieveLoansForCurrentQuarter(final SearchParameters searchParameters, String startDate, String endDate) {
 
-	        final StringBuilder sqlBuilder = new StringBuilder(200);
-	        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
-	        sqlBuilder.append(this.loaanLoanMapper.loanSchema());
+		final AppUser currentUser = this.context.authenticatedUser();
+		final String hierarchy = currentUser.getOffice().getHierarchy();
+		final String hierarchySearchString = hierarchy + "%";
 
-	        // TODO - ideoholic 
-	        //get all the loans which are active in the current quarter
-	        sqlBuilder.append(" join m_office o on o.id = c.office_id");
-	        sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
-	        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.disbursedon_date between '"+startDate+"' and '"+endDate+"'");
+		final StringBuilder sqlBuilder = new StringBuilder(200);
+		sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
+		sqlBuilder.append(this.loaanLoanMapper.loanSchema());
 
-	        int arrayPos = 2;
-	        List<Object> extraCriterias = new ArrayList<>();
-	        extraCriterias.add(hierarchySearchString);
-	        extraCriterias.add(hierarchySearchString);
+		// TODO - ideoholic
+		// get all the loans which are active in the current quarter
+		sqlBuilder.append(" join m_office o on o.id = c.office_id");
+		sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
+		sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.disbursedon_date between '" + startDate + "' and '" + endDate + "'");
 
-	        String sqlQueryCriteria = searchParameters.getSqlSearch();
-	        if (StringUtils.isNotBlank(sqlQueryCriteria)) {
-	            sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
-	            sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
-	        }
+		int arrayPos = 2;
+		List<Object> extraCriterias = new ArrayList<>();
+		extraCriterias.add(hierarchySearchString);
+		extraCriterias.add(hierarchySearchString);
 
-	        if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
-	            sqlBuilder.append(" and l.external_id = ?");
-	            extraCriterias.add(searchParameters.getExternalId());
-	            arrayPos = arrayPos + 1;
-	        }
+		String sqlQueryCriteria = searchParameters.getSqlSearch();
+		if (StringUtils.isNotBlank(sqlQueryCriteria)) {
+			sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
+			sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+		}
 
-	        if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
-	            sqlBuilder.append(" and l.account_no = ?");
-	            extraCriterias.add(searchParameters.getAccountNo());
-	            arrayPos = arrayPos + 1;
-	        }
+		if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
+			sqlBuilder.append(" and l.external_id = ?");
+			extraCriterias.add(searchParameters.getExternalId());
+			arrayPos = arrayPos + 1;
+		}
 
-	        if (searchParameters.isOrderByRequested()) {
-	            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+		if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
+			sqlBuilder.append(" and l.account_no = ?");
+			extraCriterias.add(searchParameters.getAccountNo());
+			arrayPos = arrayPos + 1;
+		}
 
-	            if (searchParameters.isSortOrderProvided()) {
-	                sqlBuilder.append(' ').append(searchParameters.getSortOrder());
-	            }
-	        }
+		if (searchParameters.isOrderByRequested()) {
+			sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
 
-	        if (searchParameters.isLimited()) {
-	            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
-	            if (searchParameters.isOffset()) {
-	                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
-	            }
-	        }
+			if (searchParameters.isSortOrderProvided()) {
+				sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+			}
+		}
 
-	        final Object[] objectArray = extraCriterias.toArray();
-	        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
-	        final String sqlCountRows = "SELECT FOUND_ROWS()";
-	        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray,
-	                this.loaanLoanMapper);
-	    }
+		if (searchParameters.isLimited()) {
+			sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+			if (searchParameters.isOffset()) {
+				sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+			}
+		}
+
+		final Object[] objectArray = extraCriterias.toArray();
+		final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
+		final String sqlCountRows = "SELECT FOUND_ROWS()";
+		return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray, this.loaanLoanMapper);
+	}
 	 
 	 
 	 public Page<LoanAccountData> retrieveLoanDisbursementDetailsQuarterly(final SearchParameters searchParameters, String startDate, String endDate) {
-			
-	        final AppUser currentUser = this.context.authenticatedUser();
-	        final String hierarchy = currentUser.getOffice().getHierarchy();
-	        final String hierarchySearchString = hierarchy + "%";
+		
+        final AppUser currentUser = this.context.authenticatedUser();
+        final String hierarchy = currentUser.getOffice().getHierarchy();
+        final String hierarchySearchString = hierarchy + "%";
 
-	        final StringBuilder sqlBuilder = new StringBuilder(200);
-	        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
-	        sqlBuilder.append(this.loaanLoanMapper.loanSchema());
+        final StringBuilder sqlBuilder = new StringBuilder(200);
+        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
+        sqlBuilder.append(this.loaanLoanMapper.loanSchema());
 
-	        // TODO - for time being this will data scope list of loans returned to
-	        // only loans that have a client associated.
-	        // to support senario where loan has group_id only OR client_id will
-	        // probably require a UNION query
-	        // but that at present is an edge case
-	        sqlBuilder.append(" join m_office o on o.id = c.office_id");
-	        sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
-	        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.loan_status_id='300' or l.closedon_date between '"+startDate+"' and '"+endDate+"' ");
+        // TODO - for time being this will data scope list of loans returned to
+        // only loans that have a client associated.
+        // to support scenario where loan has group_id only OR client_id will
+        // probably require a UNION query
+        // but that at present is an edge case
+		sqlBuilder.append(" join m_office o on o.id = c.office_id");
+		sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
+		sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.loan_status_id='300' or l.closedon_date between '" + startDate + "' and '"
+				+ endDate + "' ");
 
-	        int arrayPos = 2;
-	        List<Object> extraCriterias = new ArrayList<>();
-	        extraCriterias.add(hierarchySearchString);
-	        extraCriterias.add(hierarchySearchString);
+        int arrayPos = 2;
+        List<Object> extraCriterias = new ArrayList<>();
+        extraCriterias.add(hierarchySearchString);
+        extraCriterias.add(hierarchySearchString);
 
-	        String sqlQueryCriteria = searchParameters.getSqlSearch();
-	        if (StringUtils.isNotBlank(sqlQueryCriteria)) {
-	            sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
-	            sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
-	        }
+        String sqlQueryCriteria = searchParameters.getSqlSearch();
+        if (StringUtils.isNotBlank(sqlQueryCriteria)) {
+            sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
+            sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+        }
 
-	        if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
-	            sqlBuilder.append(" and l.external_id = ?");
-	            extraCriterias.add(searchParameters.getExternalId());
-	            arrayPos = arrayPos + 1;
-	        }
+        if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
+            sqlBuilder.append(" and l.external_id = ?");
+            extraCriterias.add(searchParameters.getExternalId());
+            arrayPos = arrayPos + 1;
+        }
 
-	        if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
-	            sqlBuilder.append(" and l.account_no = ?");
-	            extraCriterias.add(searchParameters.getAccountNo());
-	            arrayPos = arrayPos + 1;
-	        }
+        if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
+            sqlBuilder.append(" and l.account_no = ?");
+            extraCriterias.add(searchParameters.getAccountNo());
+            arrayPos = arrayPos + 1;
+        }
 
-	        if (searchParameters.isOrderByRequested()) {
-	            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+        if (searchParameters.isOrderByRequested()) {
+            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
 
-	            if (searchParameters.isSortOrderProvided()) {
-	                sqlBuilder.append(' ').append(searchParameters.getSortOrder());
-	            }
-	        }
+            if (searchParameters.isSortOrderProvided()) {
+                sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+            }
+        }
 
-	        if (searchParameters.isLimited()) {
-	            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
-	            if (searchParameters.isOffset()) {
-	                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
-	            }
-	        }
+        if (searchParameters.isLimited()) {
+            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+            if (searchParameters.isOffset()) {
+                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+            }
+        }
 
-	        final Object[] objectArray = extraCriterias.toArray();
-	        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
-	        final String sqlCountRows = "SELECT FOUND_ROWS()";
-	        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray,
-	                this.loaanLoanMapper);
-	    }
-	 
+        final Object[] objectArray = extraCriterias.toArray();
+        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
+        final String sqlCountRows = "SELECT FOUND_ROWS()";
+        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray, this.loaanLoanMapper);
+    }
+ 
 	 private static final class LoanMapper implements RowMapper<LoanAccountData> {
 
 	        public String loanSchema() {
@@ -1062,7 +1049,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	                        penaltyChargesOverdue, totalExpectedRepayment, totalRepayment, totalExpectedCostOfLoan, totalCostOfLoan,
 	                        totalWaived, totalWrittenOff, totalOutstanding, totalOverdue, overdueSinceDate);
 	            }
-
+	            
 	            GroupGeneralData groupData = null;
 	            if (groupId != null) {
 	                final Integer groupStatusEnum = JdbcSupport.getInteger(rs, "statusEnum");

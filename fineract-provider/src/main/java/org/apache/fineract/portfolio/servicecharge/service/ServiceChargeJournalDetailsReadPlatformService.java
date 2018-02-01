@@ -24,6 +24,7 @@ import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetD
 
 public interface ServiceChargeJournalDetailsReadPlatformService {
 	BigDecimal HUNDRED = new BigDecimal(100);
+	BigDecimal FOUR = new BigDecimal(4);
 	
 	// Add Journal related Service Charge methods here
 	ServiceChargeFinalSheetData generatefinalSheetData(ServiceChargeFinalSheetData finalSheetData);

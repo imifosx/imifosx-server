@@ -33,7 +33,7 @@ public interface ServiceChargeLoanDetailsReadPlatformService {
 
 	BigDecimal getAllLoansRepaymentData() throws Exception;
 
-	void getLoansOutstandingAmount(ServiceChargeFinalSheetData sheetData) throws Exception;
+	void populateRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData);
 
 	boolean findIfLoanDisbursedInCurrentQuarter(Long loanId);
 
