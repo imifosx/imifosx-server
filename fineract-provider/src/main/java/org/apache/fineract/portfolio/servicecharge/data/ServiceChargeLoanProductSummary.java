@@ -60,4 +60,11 @@ public interface ServiceChargeLoanProductSummary {
 	 */
 	BigDecimal getTotalRepayments();
 
+	/**
+	 * This value informs if the summary object is actually of the type of DL 
+	 * 
+	 * @return true for DL <br/> false for non-DL
+	 */
+	boolean isDemandLaon();
+
 }

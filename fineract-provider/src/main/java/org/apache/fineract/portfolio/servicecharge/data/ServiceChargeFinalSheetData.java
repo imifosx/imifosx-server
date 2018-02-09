@@ -28,6 +28,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,8 @@ import org.springframework.stereotype.Service;
 @Service
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class ServiceChargeFinalSheetData {
+	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeFinalSheetData.class);
+
 	private Map<ServiceChargeReportTableHeaders, List<BigDecimal>> resultsDataMap;
 	private StringBuffer resultDataAsHTMLTableString;
 
@@ -153,7 +157,11 @@ public class ServiceChargeFinalSheetData {
 	}
 	
 	public void addTotalLoanRepaymentAmount(BigDecimal amount) {
-		this.totalLoanRepaymentAmount = this.totalLoanRepaymentAmount.add(amount);
+		// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.addTotalLoanRepaymentAmount::totalLoanRepaymentAmount before:" + totalLoanRepaymentAmount);
+		// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.addTotalLoanRepaymentAmount addTotalLoanRepaymentAmount::amount to add:" + amount);
+		logger.debug(amount.toPlainString());
+		totalLoanRepaymentAmount = totalLoanRepaymentAmount.add(amount);
+		// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.addTotalLoanRepaymentAmount::totalLoanRepaymentAmount after:" + totalLoanRepaymentAmount);
 	}
 
 	public BigDecimal getNDlOutstandingAmount() {
