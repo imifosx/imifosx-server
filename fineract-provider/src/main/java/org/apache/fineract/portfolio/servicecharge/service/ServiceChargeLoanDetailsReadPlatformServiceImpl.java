@@ -221,19 +221,19 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 				// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Total Outstanding Amount " + loanAccData.getTotalOutstandingAmount());
 				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Account Loan id " + loanAccData.getId());
-				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Outstanding Amount: " + loanAccData.getTotalOutstandingAmount());
+				// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Outstanding Amount: " + loanAccData.getTotalOutstandingAmount());
 
 				ServiceChargeLoanProductSummary loanSummary = loanSummaryFactory.getLoanSummaryObject(this, loanAccData, loanProduct);
 				if (!loanSummary.isDemandLaon()) {
 					nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(loanSummary.getTotalOutstanding());
 				} else {
-					Date dateDisbursement = loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate();
+					Date dateDisbursement = loanSummary.getDisbursmentDate();
 					if (dateDisbursement.compareTo(startDate) >= 0 && dateDisbursement.compareTo(endDate) <= 0) {
 						noOfDL++;
 					}
 					dLtotalOutstandingAmount = dLtotalOutstandingAmount.add(loanSummary.getTotalOutstanding());
 				}
-				// Add the repayment amount of this loan to sheet data
+				// Add the repayments amount of this loan to sheet data
 				sheetData.addTotalLoanRepaymentAmount(loanSummary.getTotalRepayments());
 			} // End of for-loop
 		} // End of (loanAccountDataForOutstandingAmount != null)
@@ -248,7 +248,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	}
 	
 	public void getRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData) {
-		logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData");
+		// logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData");
 
 		BigDecimal dLtotalOutstandingAmount = BigDecimal.ZERO;
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
@@ -262,12 +262,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 		final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
 		Page<LoanAccountData> loanAccountDataForOutstandingAmount = null;
-		try {
-			loanAccountDataForOutstandingAmount = retrieveLoansToBeConsideredForTheQuarter(searchParameters, strStartDate, strEndDate);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		loanAccountDataForOutstandingAmount = retrieveLoansToBeConsideredForTheQuarter(searchParameters, strStartDate, strEndDate);
 
 		if (loanAccountDataForOutstandingAmount != null) {
 			for (int i = 0; i < loanAccountDataForOutstandingAmount.getPageItems().size(); i++) {
@@ -282,7 +277,6 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 				boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanProduct);
 				loanRepaymentAmount = getRepaymentAmount(sheetData, loanAccData, startDate, endDate);
 				if (!isDemandLaon) {
-					
 					nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.add(loanRepaymentAmount);
 				} else {
 					Date dateDisbursement = loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate();

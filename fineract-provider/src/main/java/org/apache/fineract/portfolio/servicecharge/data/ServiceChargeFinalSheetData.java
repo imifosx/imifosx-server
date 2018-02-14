@@ -159,7 +159,7 @@ public class ServiceChargeFinalSheetData {
 	public void addTotalLoanRepaymentAmount(BigDecimal amount) {
 		// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.addTotalLoanRepaymentAmount::totalLoanRepaymentAmount before:" + totalLoanRepaymentAmount);
 		// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.addTotalLoanRepaymentAmount addTotalLoanRepaymentAmount::amount to add:" + amount);
-		logger.debug(amount.toPlainString());
+		logger.debug("ServiceChargeFinalSheetData:addTotalLoanRepaymentAmount::" + amount.toPlainString());
 		totalLoanRepaymentAmount = totalLoanRepaymentAmount.add(amount);
 		// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.addTotalLoanRepaymentAmount::totalLoanRepaymentAmount after:" + totalLoanRepaymentAmount);
 	}

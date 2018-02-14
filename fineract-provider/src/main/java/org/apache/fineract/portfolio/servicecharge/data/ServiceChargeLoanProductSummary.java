@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.servicecharge.data;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -66,5 +67,12 @@ public interface ServiceChargeLoanProductSummary {
 	 * @return true for DL <br/> false for non-DL
 	 */
 	boolean isDemandLaon();
+	
+	/**
+	 * The date of disbursement of the loan of which this is the summary object
+	 * 
+	 * @return loan disbursement date
+	 */
+	Date getDisbursmentDate();
 
 }

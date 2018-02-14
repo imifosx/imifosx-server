@@ -70,12 +70,15 @@ public class ServiceChargeLoanSummaryFactory {
 	}
 
 	public List<BigDecimal> getMonthWiseOutstandingAmount(boolean isDemandLoan) {
+		// TODO: Code too much dependent on size and position - change to streams
 		List<BigDecimal> result = new LinkedList<>();
 		BigDecimal monthOne, monthTwo, monthThree;
 		monthOne = monthTwo = monthThree = BigDecimal.ZERO;
 		for (Long identifier : loanSummaryObjectMap.keySet()) {
 			ServiceChargeLoanProductSummary summaryObj = loanSummaryObjectMap.get(identifier);
-			if (summaryObj.isDemandLaon() ^ isDemandLoan) {
+			// The condition in the if is the xnor condition by which
+			// the expression becomes true only if both the boolean values are the same
+			if (!(summaryObj.isDemandLaon() ^ isDemandLoan)) {
 				List<BigDecimal> outstanding = summaryObj.getPeriodicOutstanding();
 				int size = outstanding.size();
 				if (size > 0) {
@@ -100,6 +103,7 @@ public class ServiceChargeLoanSummaryFactory {
 		private List<BigDecimal> periodicOutstanding;
 		private List<BigDecimal> periodicRepayments;
 		private boolean isDemandLaon;
+		private Date disbursmentDate;
 
 		LoanSummaryQuarterly() {
 			periodicOutstanding = new LinkedList<>();
@@ -112,6 +116,14 @@ public class ServiceChargeLoanSummaryFactory {
 
 		private void setDemandLaon(boolean isDemandLaon) {
 			this.isDemandLaon = isDemandLaon;
+		}
+
+		public Date getDisbursmentDate() {
+			return disbursmentDate;
+		}
+
+		public void setDisbursmentDate(Date disbursmentDate) {
+			this.disbursmentDate = disbursmentDate;
 		}
 
 		/*
@@ -213,48 +225,72 @@ public class ServiceChargeLoanSummaryFactory {
 			Date lastDayOfMonth = quarter.getToDateForCurrentYear(); // Last day of the quarter
 			// Start with the last outstanding amount
 			BigDecimal loanOutstandingAmount = loanAccData.getTotalOutstandingAmount();
-			int doesLoanHaveOutstandingAmount = loanAccData.getTotalOutstandingAmount().compareTo(BigDecimal.ZERO);
-			Date dateDisbursement = loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate();
+			// int doesLoanHaveOutstandingAmount = loanAccData.getTotalOutstandingAmount().compareTo(BigDecimal.ZERO);
+			setDisbursmentDate(loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate());
 
 			Calendar calendar = Calendar.getInstance();
 			calendar.setTime(lastDayOfMonth);
-			for (int j = 0; j < 3; j++) {
-				// Get to the first day of the current month
+			for (int i = 1; i <= 3; i++) {
+				// Repayments total - start from zero for every iteration
+				BigDecimal repaymentAmount = BigDecimal.ZERO;
+				// Get to the first day of the current calendar
 				Date firstDayOfMonth = getFirstDateOfCurrentMonth(calendar);
 				// Loan will be considered only if the disbursement date is before the date under consideration
-				if (dateDisbursement.compareTo(lastDayOfMonth) < 0) {
-					// Retrieve the transaction between the given dates for the loan
+				if (getDisbursmentDate().compareTo(lastDayOfMonth) < 0) {
+					// Whatever is the current outstanding is the outstanding for the current month
+					outstanding.add(loanOutstandingAmount);
+
+					/*
+					 * Retrieve the transaction between the given dates for the loan. If there are repayments then
+					 * update the outstanding Updated outstanding will be added to the list in the next iteration
+					 */
 					final Collection<LoanTransactionData> currentLoanRepayments = scLoanDetailsReadPlatform
 							.retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),
 									new SimpleDateFormat("yyyy-MM-dd").format(firstDayOfMonth),
 									new SimpleDateFormat("yyyy-MM-dd").format(lastDayOfMonth));
-
-					if (currentLoanRepayments.isEmpty() && doesLoanHaveOutstandingAmount != 0) {
-						// There are no repayments and so the outstanding amount remains the same
-						outstanding.add(loanOutstandingAmount);
-					} else if (!currentLoanRepayments.isEmpty()) {
-						// Whatever is the current outstanding is the outstanding for the current month
-						outstanding.add(loanOutstandingAmount);
+					if (!currentLoanRepayments.isEmpty()) {
 						// There are some repayments so add them back to the outstanding amount
-						BigDecimal repaymentAmount = BigDecimal.ZERO;
 						for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
-							repaymentAmount = repaymentAmount.add(loanTransactionData.getAmount());
+							// Add only those transactions that are for repayment, reject others
+							if (isRepaymentTransaction(loanTransactionData)) {
+								repaymentAmount = repaymentAmount.add(loanTransactionData.getAmount());
+							}
 						}
-						addPeriodicRepayments(repaymentAmount);
 						loanOutstandingAmount = loanOutstandingAmount.add(repaymentAmount);
 					}
+				} else {
+					// Adding Zero to make sure that each list contains the same number of elements
+					outstanding.add(BigDecimal.ZERO);
 				}
+				addPeriodicRepayments(repaymentAmount);
 				lastDayOfMonth = getLastDateOfPreviousMonth(calendar, firstDayOfMonth);
 			}
 			addPeriodicOutstandingReversed(outstanding);
 			return loanOutstandingAmount;
 		}
 
+		/**
+		 * Method to validate if the loan transaction entry is a repayments entry
+		 * Current check is for repayment or repayment at disbursement, similar other checks can be placed here
+		 * 
+		 * @param LoanTransactionData
+		 * @return true - if transaction is of repayment type
+		 *         false - otherwise
+		 */
+		private boolean isRepaymentTransaction(LoanTransactionData loanTransactionData) {
+			boolean result = loanTransactionData.getType().isRepayment() || 
+					loanTransactionData.getType().isRepaymentAtDisbursement();
+			return result;
+		}
+
 		private void addPeriodicOutstandingReversed(List<BigDecimal> outstanding) {
+			// System.out.println("ServiceChargeLoanSummaryFactory.LoanSummaryQuarterly:addPeriodicOutstandingReversed::");
 			for (int iCount = outstanding.size() - 1; iCount >= 0; iCount--) {
 				BigDecimal amount = outstanding.get(iCount);
+				System.out.print(amount + ", ");
 				addPeriodicOutstanding(amount);
 			}
+			// System.out.println();
 		}
 
 	}
