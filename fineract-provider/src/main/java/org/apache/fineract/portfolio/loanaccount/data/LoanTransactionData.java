@@ -345,4 +345,8 @@ public class LoanTransactionData {
 	public BigDecimal getOutstandingLoanBalance() {
 		return outstandingLoanBalance;
 	}
+	
+	public LoanTransactionEnumData getType() {
+		return type;
+	}
 }
