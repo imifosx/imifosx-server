@@ -19,7 +19,6 @@
 package org.apache.fineract.useradministration.data;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.fineract.organisation.office.data.OfficeData;
@@ -40,12 +39,6 @@ public class AppUserData {
     private final String email;
     private final Boolean passwordNeverExpires;
 
-    //import fields
-    private List<Long> roles;
-    private Boolean sendPasswordToEmail;
-    private Long staffId;
-    private transient Integer rowIndex;
-
     @SuppressWarnings("unused")
     private final Collection<OfficeData> allowedOffices;
     private final Collection<RoleData> availableRoles;
@@ -55,39 +48,6 @@ public class AppUserData {
     
 	@SuppressWarnings("unused")
     private Set<ClientData> clients;
-
-	public static AppUserData importInstance(Long officeId,Long staffId,String userName, String firstName, String lastName,
-            String email,Boolean sendPasswordToEmail,Boolean passwordNeverExpires, List<Long> roleIds,
-            Integer rowIndex){
-	    return new AppUserData(officeId,staffId,userName,firstName,lastName,email,
-                sendPasswordToEmail,passwordNeverExpires,roleIds,rowIndex);
-    }
-    private AppUserData(Long officeId,Long staffId,String username, String firstname, String lastname,
-            String email,Boolean sendPasswordToEmail,Boolean passwordNeverExpires, List<Long> roleIds,
-            Integer rowIndex) {
-        this.id = null;
-        this.username = username;
-        this.officeId = officeId;
-        this.officeName = null;
-        this.firstname = firstname;
-        this.lastname = lastname;
-        this.email = email;
-        this.passwordNeverExpires = passwordNeverExpires;
-        this.roles = roleIds;
-        this.sendPasswordToEmail = sendPasswordToEmail;
-        this.staffId = staffId;
-        this.rowIndex = rowIndex;
-        this.allowedOffices = null;
-        this.availableRoles = null;
-        this.selectedRoles = null;
-        this.staff = null;
-        this.isSelfServiceUser = null;
-        this.clients = null;
-    }
-
-    public Integer getRowIndex() {
-        return rowIndex;
-    }
 
     public static AppUserData template(final AppUserData user, final Collection<OfficeData> officesForDropdown) {
         return new AppUserData(user.id, user.username, user.email, user.officeId, user.officeName, user.firstname, user.lastname,

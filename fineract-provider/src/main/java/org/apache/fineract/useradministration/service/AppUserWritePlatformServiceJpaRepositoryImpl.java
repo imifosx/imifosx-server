@@ -39,7 +39,6 @@ import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityEx
 import org.apache.fineract.infrastructure.core.service.PlatformEmailSendException;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.notification.service.TopicDomainService;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
 import org.apache.fineract.organisation.staff.domain.Staff;
@@ -88,14 +87,13 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     private final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository;
     private final StaffRepositoryWrapper staffRepositoryWrapper;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
-    private final TopicDomainService topicDomainService;
 
     @Autowired
     public AppUserWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final AppUserRepository appUserRepository,
             final UserDomainService userDomainService, final OfficeRepositoryWrapper officeRepositoryWrapper, final RoleRepository roleRepository,
             final PlatformPasswordEncoder platformPasswordEncoder, final UserDataValidator fromApiJsonDeserializer,
             final AppUserPreviousPasswordRepository appUserPreviewPasswordRepository, final StaffRepositoryWrapper staffRepositoryWrapper,
-            final ClientRepositoryWrapper clientRepositoryWrapper, final TopicDomainService topicDomainService) {
+            final ClientRepositoryWrapper clientRepositoryWrapper) {
         this.context = context;
         this.appUserRepository = appUserRepository;
         this.userDomainService = userDomainService;
@@ -106,7 +104,6 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         this.appUserPreviewPasswordRepository = appUserPreviewPasswordRepository;
         this.staffRepositoryWrapper = staffRepositoryWrapper;
         this.clientRepositoryWrapper = clientRepositoryWrapper;
-        this.topicDomainService = topicDomainService;
     }
 
     @Transactional
@@ -153,8 +150,6 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
             final Boolean sendPasswordToEmail = command.booleanObjectValueOfParameterNamed("sendPasswordToEmail");
             this.userDomainService.create(appUser, sendPasswordToEmail);
-            
-            this.topicDomainService.subscribeUserToTopic(appUser);
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
@@ -218,7 +213,6 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
             final Map<String, Object> changes = userToUpdate.update(command, this.platformPasswordEncoder, clients);
 
-            this.topicDomainService.updateUserSubscription(userToUpdate, changes);
             if (changes.containsKey("officeId")) {
                 final Long officeId = (Long) changes.get("officeId");
                 final Office office = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
@@ -330,7 +324,6 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         if (user == null || user.isDeleted()) { throw new UserNotFoundException(userId); }
 
         user.delete();
-        this.topicDomainService.unsubcribeUserFromTopic(user);
         this.appUserRepository.save(user);
 
         return new CommandProcessingResultBuilder().withEntityId(userId).withOfficeId(user.getOffice().getId()).build();

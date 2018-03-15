@@ -21,7 +21,7 @@ package org.apache.fineract.infrastructure.campaigns.constants;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
 public enum CampaignType {
-    INVALID(0, "campaignType.invalid"), SMS(1, "campaignType.sms"), NOTIFICATION(2, "campaignType.notification");
+    INVALID(0, "campaignType.invalid"), SMS(1, "campaignType.sms");
 
     private Integer value;
     private String code;
@@ -48,9 +48,6 @@ public enum CampaignType {
             case 1:
                 type = SMS;
             break;
-            case 2:
-                type = NOTIFICATION;
-            break;
         }
         return type;
     }
@@ -69,18 +66,11 @@ public enum CampaignType {
             case SMS:
                 optionData = new EnumOptionData(CampaignType.SMS.getValue().longValue(), CampaignType.SMS.getCode(), "SMS");
             break;
-            case NOTIFICATION:
-                optionData = new EnumOptionData(CampaignType.NOTIFICATION.getValue().longValue(), CampaignType.NOTIFICATION.getCode(), "NOTIFICATION");
-            break;
         }
         return optionData;
     }
 
     public boolean isSms() {
         return this.value.equals(CampaignType.SMS.getValue());
-    }
-
-    public boolean isNotificaion() {
-        return this.value.equals(CampaignType.NOTIFICATION.getValue());
     }
 }

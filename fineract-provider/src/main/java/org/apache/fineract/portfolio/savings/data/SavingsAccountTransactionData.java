@@ -51,99 +51,28 @@ public class SavingsAccountTransactionData {
     private final AccountTransferData transfer;
     private final LocalDate submittedOnDate;
     private final boolean interestedPostedAsOn;
-    private final String submittedByUsername;
-    private final String note ;
-    
+
     // templates
     final Collection<PaymentTypeData> paymentTypeOptions;
-
-    //import fields
-    private transient Integer rowIndex;
-    private transient Long savingsAccountId;
-    private String dateFormat;
-    private String locale;
-    private LocalDate transactionDate;
-    private BigDecimal transactionAmount;
-    private Long paymentTypeId;
-    private String accountNumber;
-    private String checkNumber;
-    private String routingCode;
-    private String receiptNumber;
-    private String bankNumber;
-
-    public static SavingsAccountTransactionData importInstance(BigDecimal transactionAmount,LocalDate transactionDate,
-            Long paymentTypeId,String accountNumber, String checkNumber, String routingCode,
-            String receiptNumber, String bankNumber,Long savingsAccountId,
-            SavingsAccountTransactionEnumData transactionType, Integer rowIndex,String locale,String dateFormat){
-        return new SavingsAccountTransactionData(transactionAmount, transactionDate, paymentTypeId, accountNumber,
-                checkNumber, routingCode, receiptNumber, bankNumber, savingsAccountId, transactionType, rowIndex,locale,dateFormat);
-    }
-
-    private SavingsAccountTransactionData(BigDecimal transactionAmount,LocalDate transactionDate,
-            Long paymentTypeId,String accountNumber, String checkNumber, String routingCode,
-            String receiptNumber, String bankNumber,Long savingsAccountId,
-            SavingsAccountTransactionEnumData transactionType, Integer rowIndex,String locale,String dateFormat){
-        this.id = null;
-        this.transactionType = transactionType;
-        this.accountId = null;
-        this.accountNo = null;
-        this.date = null;
-        this.currency = null;
-        this.paymentDetailData = null;
-        this.amount = null;
-        this.outstandingChargeAmount = null;
-        this.runningBalance = null;
-        this.reversed = false;
-        this.transfer = null;
-        this.submittedOnDate = null;
-        this.interestedPostedAsOn = false;
-        this.rowIndex = rowIndex;
-        this.savingsAccountId=savingsAccountId;
-        this.dateFormat= dateFormat;
-        this.locale= locale;
-        this.transactionDate = transactionDate;
-        this.transactionAmount = transactionAmount;
-        this.paymentTypeId = paymentTypeId;
-        this.accountNumber = accountNumber;
-        this.checkNumber = checkNumber;
-        this.routingCode = routingCode;
-        this.receiptNumber = receiptNumber;
-        this.bankNumber = bankNumber;
-        this.paymentTypeOptions = null;
-        this.submittedByUsername = null;
-        this.note = null;
-    }
-
-    public Integer getRowIndex() {
-        return rowIndex;
-    }
-
-    public Long getSavingsAccountId() {
-        return savingsAccountId;
-    }
-
-    public SavingsAccountTransactionEnumData getTransactionType() {
-        return transactionType;
-    }
 
     public static SavingsAccountTransactionData create(final Long id, final SavingsAccountTransactionEnumData transactionType,
             final PaymentDetailData paymentDetailData, final Long savingsId, final String savingsAccountNo, final LocalDate date,
             final CurrencyData currency, final BigDecimal amount, final BigDecimal outstandingChargeAmount,final BigDecimal runningBalance, final boolean reversed,
-            final AccountTransferData transfer, final boolean interestedPostedAsOn, final String submittedByUsername, final String note) {
+            final AccountTransferData transfer, final boolean interestedPostedAsOn) {
         final Collection<PaymentTypeData> paymentTypeOptions = null;
         return new SavingsAccountTransactionData(id, transactionType, paymentDetailData, savingsId, savingsAccountNo, date, currency,
-                amount, outstandingChargeAmount,runningBalance, reversed, transfer, paymentTypeOptions, interestedPostedAsOn, submittedByUsername, note);
+                amount, outstandingChargeAmount,runningBalance, reversed, transfer, paymentTypeOptions, interestedPostedAsOn);
     }
 
     public static SavingsAccountTransactionData create(final Long id, final SavingsAccountTransactionEnumData transactionType,
             final PaymentDetailData paymentDetailData, final Long savingsId, final String savingsAccountNo, final LocalDate date,
             final CurrencyData currency, final BigDecimal amount, final BigDecimal outstandingChargeAmount,
             final BigDecimal runningBalance, final boolean reversed, final AccountTransferData transfer, final LocalDate submittedOnDate,
-            final boolean interestedPostedAsOn, final String submittedByUsername, final String note) {
+            final boolean interestedPostedAsOn) {
         final Collection<PaymentTypeData> paymentTypeOptions = null;
         return new SavingsAccountTransactionData(id, transactionType, paymentDetailData, savingsId, savingsAccountNo, date, currency,
                 amount, outstandingChargeAmount, runningBalance, reversed, transfer, paymentTypeOptions, submittedOnDate,
-                interestedPostedAsOn, submittedByUsername, note);
+                interestedPostedAsOn);
     }
 
     public static SavingsAccountTransactionData template(final Long savingsId, final String savingsAccountNo,
@@ -157,10 +86,8 @@ public class SavingsAccountTransactionData {
         final PaymentDetailData paymentDetailData = null;
         final Collection<CodeValueData> paymentTypeOptions = null;
         final boolean interestedPostedAsOn = false;
-        final String submittedByUsername = null;
-        final String note = null ;
         return new SavingsAccountTransactionData(id, transactionType, paymentDetailData, savingsId, savingsAccountNo, defaultLocalDate,
-                currency, amount, outstandingChargeAmount, runningBalance, reversed, null, null, interestedPostedAsOn, submittedByUsername, note);
+                currency, amount, outstandingChargeAmount, runningBalance, reversed, null, null, interestedPostedAsOn);
     }
 
     public static SavingsAccountTransactionData templateOnTop(final SavingsAccountTransactionData savingsAccountTransactionData,
@@ -169,25 +96,24 @@ public class SavingsAccountTransactionData {
                 savingsAccountTransactionData.paymentDetailData, savingsAccountTransactionData.accountId,
                 savingsAccountTransactionData.accountNo, savingsAccountTransactionData.date, savingsAccountTransactionData.currency,
                 savingsAccountTransactionData.amount,savingsAccountTransactionData.outstandingChargeAmount, savingsAccountTransactionData.runningBalance, savingsAccountTransactionData.reversed,
-                savingsAccountTransactionData.transfer, paymentTypeOptions, savingsAccountTransactionData.interestedPostedAsOn, 
-                savingsAccountTransactionData.submittedByUsername, savingsAccountTransactionData.note);
+                savingsAccountTransactionData.transfer, paymentTypeOptions, savingsAccountTransactionData.interestedPostedAsOn);
     }
 
     private SavingsAccountTransactionData(final Long id, final SavingsAccountTransactionEnumData transactionType,
             final PaymentDetailData paymentDetailData, final Long savingsId, final String savingsAccountNo, final LocalDate date,
             final CurrencyData currency, final BigDecimal amount, final BigDecimal outstandingChargeAmount,
             final BigDecimal runningBalance, final boolean reversed, final AccountTransferData transfer,
-            final Collection<PaymentTypeData> paymentTypeOptions, final boolean interestedPostedAsOn, final String submittedByUsername, final String note) {
+            final Collection<PaymentTypeData> paymentTypeOptions, final boolean interestedPostedAsOn) {
 
         this(id, transactionType, paymentDetailData, savingsId, savingsAccountNo, date, currency, amount, outstandingChargeAmount,
-                runningBalance, reversed, transfer, paymentTypeOptions, null, interestedPostedAsOn, submittedByUsername, note);
+                runningBalance, reversed, transfer, paymentTypeOptions, null, interestedPostedAsOn);
     }
 
     private SavingsAccountTransactionData(final Long id, final SavingsAccountTransactionEnumData transactionType,
             final PaymentDetailData paymentDetailData, final Long savingsId, final String savingsAccountNo, final LocalDate date,
             final CurrencyData currency, final BigDecimal amount,final BigDecimal outstandingChargeAmount, final BigDecimal runningBalance, final boolean reversed,
             final AccountTransferData transfer, final Collection<PaymentTypeData> paymentTypeOptions, final LocalDate submittedOnDate,
-            final boolean interestedPostedAsOn, final String submittedByUsername, final String note) {
+            final boolean interestedPostedAsOn) {
         this.id = id;
         this.transactionType = transactionType;
         this.paymentDetailData = paymentDetailData;
@@ -203,8 +129,6 @@ public class SavingsAccountTransactionData {
         this.paymentTypeOptions = paymentTypeOptions;
         this.submittedOnDate = submittedOnDate;
         this.interestedPostedAsOn = interestedPostedAsOn;
-        this.submittedByUsername = submittedByUsername ;
-        this.note = note ;
     }
 
     public static SavingsAccountTransactionData withWithDrawalTransactionDetails(
@@ -220,6 +144,6 @@ public class SavingsAccountTransactionData {
                 savingsAccountTransactionData.amount, savingsAccountTransactionData.outstandingChargeAmount,
                 savingsAccountTransactionData.runningBalance, savingsAccountTransactionData.reversed,
                 savingsAccountTransactionData.transfer, savingsAccountTransactionData.paymentTypeOptions,
-                savingsAccountTransactionData.interestedPostedAsOn,savingsAccountTransactionData.submittedByUsername, savingsAccountTransactionData.note);
+                savingsAccountTransactionData.interestedPostedAsOn);
     }
 }

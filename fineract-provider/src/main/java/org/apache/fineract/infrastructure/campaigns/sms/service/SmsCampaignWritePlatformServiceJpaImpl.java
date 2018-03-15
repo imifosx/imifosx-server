@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.fineract.infrastructure.campaigns.constants.CampaignType;
 import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignStatus;
 import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignTriggerType;
 import org.apache.fineract.infrastructure.campaigns.sms.data.CampaignPreviewData;
@@ -55,8 +56,6 @@ import org.apache.fineract.infrastructure.dataqueries.domain.ReportRepository;
 import org.apache.fineract.infrastructure.dataqueries.exception.ReportNotFoundException;
 import org.apache.fineract.infrastructure.dataqueries.service.GenericDataService;
 import org.apache.fineract.infrastructure.dataqueries.service.ReadReportingService;
-import org.apache.fineract.infrastructure.gcm.domain.DeviceRegistration;
-import org.apache.fineract.infrastructure.gcm.domain.DeviceRegistrationRepositoryWrapper;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.exception.JobExecutionException;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
@@ -110,7 +109,6 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
     private final ReadReportingService readReportingService;
     private final GenericDataService genericDataService;
     private final FromJsonHelper fromJsonHelper;
-    private final DeviceRegistrationRepositoryWrapper deviceRegistrationRepository;
 
     private final SmsMessageScheduledJobService smsMessageScheduledJobService;
     
@@ -120,7 +118,7 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
             final SmsMessageRepository smsMessageRepository, final ClientRepositoryWrapper clientRepositoryWrapper,
             final ReadReportingService readReportingService, final GenericDataService genericDataService,
             final FromJsonHelper fromJsonHelper, final GroupRepository groupRepository,
-            final SmsMessageScheduledJobService smsMessageScheduledJobService, final DeviceRegistrationRepositoryWrapper deviceRegistrationRepository) {
+            final SmsMessageScheduledJobService smsMessageScheduledJobService) {
         this.context = context;
         this.smsCampaignRepository = smsCampaignRepository;
         this.smsCampaignValidator = smsCampaignValidator;
@@ -132,7 +130,6 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
         this.fromJsonHelper = fromJsonHelper;
         this.groupRepository = groupRepository;
         this.smsMessageScheduledJobService = smsMessageScheduledJobService ;
-        this.deviceRegistrationRepository = deviceRegistrationRepository;
     }
 
     @Transactional
@@ -231,14 +228,10 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
                     Object mobileNo = entry.get("mobileNo");
 
                     Client client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId.longValue());
-                    if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
+                    if (mobileNo != null) {
 //                        String countryCode = this.smsReadPlatformService.retrieveCountryCode(client.getOffice().getId()).getCountryCode();
-                    	String mobileNumber = null;
-                    	if(mobileNo != null){
-                    		mobileNumber = mobileNo.toString();
-                    	}
-                        SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, textMessage, mobileNumber,
-                                smsCampaign, smsCampaign.isNotification());
+                        SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, textMessage, mobileNo.toString(),
+                                smsCampaign);
                         this.smsMessageRepository.save(smsMessage);
                     }
                 }
@@ -248,8 +241,6 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
         }
 
     }
-
-
 
     @Override
     public void insertDirectCampaignIntoSmsOutboundTable(final Loan loan, final SmsCampaign smsCampaign) {
@@ -287,13 +278,9 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
                         String textMessage = this.compileSmsTemplate(smsCampaign.getMessage(), smsCampaign.getCampaignName(), entry);
                         Object mobileNo = entry.get("mobileNo");
                         
-                        if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
-                        	String mobileNumber = null;
-                        	if(mobileNo != null){
-                        		mobileNumber = mobileNo.toString();
-                        	}
-                            SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, textMessage, mobileNumber,
-                                    smsCampaign, smsCampaign.isNotification());
+                        if (mobileNo != null) {
+                            SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, textMessage, mobileNo.toString(),
+                                    smsCampaign);
                             smsMessage.setStatusType(SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT.getValue());
                             this.smsMessageRepository.save(smsMessage);
                             Collection<SmsMessage> messages = new ArrayList<>() ;
@@ -333,13 +320,9 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
 							smsCampaign.getCampaignName(), entry);
 					Object mobileNo = entry.get("mobileNo");
 
-					if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
-						String mobileNumber = null;
-                    	if(mobileNo != null){
-                    		mobileNumber = mobileNo.toString();
-                    	}
+					if (mobileNo != null) {
 						SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, textMessage,
-								mobileNumber, smsCampaign, smsCampaign.isNotification());
+								mobileNo.toString(), smsCampaign);
 						smsMessage.setStatusType(SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT.getValue());
 						this.smsMessageRepository.save(smsMessage);
 						Collection<SmsMessage> messages = new ArrayList<>();
@@ -377,13 +360,9 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
 							smsCampaign.getCampaignName(), entry);
 					Object mobileNo = entry.get("mobileNo");
 
-					if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
-						String mobileNumber = null;
-                    	if(mobileNo != null){
-                    		mobileNumber = mobileNo.toString();
-                    	}
+					if (mobileNo != null) {
 						SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, textMessage,
-								mobileNumber, smsCampaign, smsCampaign.isNotification());
+								mobileNo.toString(), smsCampaign);
 						smsMessage.setStatusType(SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT.getValue());
 						this.smsMessageRepository.save(smsMessage);
 						Collection<SmsMessage> messages = new ArrayList<>();
@@ -535,7 +514,7 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
         final String reportType = "report";
 
         List<HashMap<String, Object>> resultList = new ArrayList<>();
-        final GenericResultsetData results = this.readReportingService.retrieveGenericResultSetForSmsEmailCampaign(reportName, reportType,
+        final GenericResultsetData results = this.readReportingService.retrieveGenericResultSetForSmsCampaign(reportName, reportType,
                 queryParams);
 
         try {
@@ -655,8 +634,8 @@ public class SmsCampaignWritePlatformServiceJpaImpl implements SmsCampaignWriteP
     @Override
     @CronTarget(jobName = JobName.UPDATE_SMS_OUTBOUND_WITH_CAMPAIGN_MESSAGE)
     public void storeTemplateMessageIntoSmsOutBoundTable() throws JobExecutionException {
-        final Collection<SmsCampaign> smsCampaignDataCollection = this.smsCampaignRepository.findByTriggerTypeAndStatus(
-                SmsCampaignTriggerType.SCHEDULE.getValue(), SmsCampaignStatus.ACTIVE.getValue());
+        final Collection<SmsCampaign> smsCampaignDataCollection = this.smsCampaignRepository.findByCampaignTypeAndTriggerTypeAndStatus(
+                CampaignType.SMS.getValue(), SmsCampaignTriggerType.SCHEDULE.getValue(), SmsCampaignStatus.ACTIVE.getValue());
         if (smsCampaignDataCollection != null) {
             for (SmsCampaign smsCampaign : smsCampaignDataCollection) {
                 LocalDateTime tenantDateNow = tenantDateTime();

@@ -35,7 +35,6 @@ import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignTri
 import org.apache.fineract.infrastructure.campaigns.sms.domain.SmsCampaign;
 import org.apache.fineract.infrastructure.campaigns.sms.domain.SmsCampaignRepository;
 import org.apache.fineract.infrastructure.campaigns.sms.exception.SmsRuntimeException;
-import org.apache.fineract.infrastructure.campaigns.sms.serialization.SmsCampaignValidator;
 import org.apache.fineract.infrastructure.sms.domain.SmsMessage;
 import org.apache.fineract.infrastructure.sms.domain.SmsMessageRepository;
 import org.apache.fineract.infrastructure.sms.scheduler.SmsMessageScheduledJobService;
@@ -78,15 +77,13 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
     private final GroupRepository groupRepository;
 
     private final SmsMessageScheduledJobService smsMessageScheduledJobService; 
-    private final SmsCampaignValidator smsCampaignValidator;
     
     @Autowired
     public SmsCampaignDomainServiceImpl(final SmsCampaignRepository smsCampaignRepository, final SmsMessageRepository smsMessageRepository,
                                         final BusinessEventNotifierService businessEventNotifierService, final OfficeRepository officeRepository,
                                         final SmsCampaignWritePlatformService smsCampaignWritePlatformCommandHandler,
                                         final GroupRepository groupRepository,
-                                        final SmsMessageScheduledJobService smsMessageScheduledJobService,
-                                        final SmsCampaignValidator smsCampaignValidator){
+                                        final SmsMessageScheduledJobService smsMessageScheduledJobService){
         this.smsCampaignRepository = smsCampaignRepository;
         this.smsMessageRepository = smsMessageRepository;
         this.businessEventNotifierService = businessEventNotifierService;
@@ -94,7 +91,6 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
         this.smsCampaignWritePlatformCommandHandler = smsCampaignWritePlatformCommandHandler;
         this.groupRepository = groupRepository;
         this.smsMessageScheduledJobService = smsMessageScheduledJobService ;
-        this.smsCampaignValidator = smsCampaignValidator;
     }
 
     @PostConstruct
@@ -221,13 +217,10 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
 							String message = this.smsCampaignWritePlatformCommandHandler.compileSmsTemplate(
 									smsCampaign.getMessage(), smsCampaign.getCampaignName(), smsParams);
 							Object mobileNo = smsParams.get("mobileNo");
-							if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
-								String mobileNumber = null;
-		                    	if(mobileNo != null){
-		                    		mobileNumber = mobileNo.toString();
-		                    	}
+							if (mobileNo != null) {
 								SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, message,
-										mobileNumber, smsCampaign, smsCampaign.isNotification());
+										mobileNo.toString(), smsCampaign);
+								this.smsMessageRepository.save(smsMessage);
 								Collection<SmsMessage> messages = new ArrayList<>();
 								messages.add(smsMessage);
 								Map<SmsCampaign, Collection<SmsMessage>> smsDataMap = new HashMap<>();
@@ -280,13 +273,9 @@ public class SmsCampaignDomainServiceImpl implements SmsCampaignDomainService {
 					String message = this.smsCampaignWritePlatformCommandHandler
 							.compileSmsTemplate(smsCampaign.getMessage(), smsCampaign.getCampaignName(), smsParams);
 					Object mobileNo = smsParams.get("mobileNo");
-					if (this.smsCampaignValidator.isValidNotificationOrSms(client, smsCampaign, mobileNo)) {
-						String mobileNumber = null;
-                    	if(mobileNo != null){
-                    		mobileNumber = mobileNo.toString();
-                    	}
+					if (mobileNo != null) {
 						SmsMessage smsMessage = SmsMessage.pendingSms(null, null, client, null, message,
-								mobileNumber, smsCampaign, smsCampaign.isNotification());
+								mobileNo.toString(), smsCampaign);
 						this.smsMessageRepository.save(smsMessage);
 						Collection<SmsMessage> messages = new ArrayList<>();
 						messages.add(smsMessage);

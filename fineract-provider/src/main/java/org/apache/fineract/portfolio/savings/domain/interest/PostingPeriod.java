@@ -22,10 +22,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.TreeSet;
 
 import org.apache.fineract.infrastructure.core.domain.LocalDateInterval;
-import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.savings.SavingsCompoundingInterestPeriodType;
@@ -35,7 +33,8 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
 public class PostingPeriod {
-    
+
+    @SuppressWarnings("unused")
     private final LocalDateInterval periodInterval;
     private final MonetaryCurrency currency;
     private final SavingsCompoundingInterestPeriodType interestCompoundingType;
@@ -61,15 +60,13 @@ public class PostingPeriod {
     private final Money minBalanceForInterestCalculation;
 	private BigDecimal overdraftInterestRateAsFraction;
 	private Money minOverdraftForInterestCalculation;
- 
-    private Integer financialYearBeginningMonth;
 
     public static PostingPeriod createFrom(final LocalDateInterval periodInterval, final Money periodStartingBalance,
             final List<SavingsAccountTransaction> orderedListOfTransactions, final MonetaryCurrency currency,
             final SavingsCompoundingInterestPeriodType interestCompoundingPeriodType,
             final SavingsInterestCalculationType interestCalculationType, final BigDecimal interestRateAsFraction, final long daysInYear,
             final LocalDate upToInterestCalculationDate, Collection<Long> interestPostTransactions, boolean isInterestTransfer,
-            final Money minBalanceForInterestCalculation, final boolean isSavingsInterestPostingAtCurrentPeriodEnd,final boolean isUserPosting, Integer financialYearBeginningMonth) {
+            final Money minBalanceForInterestCalculation, final boolean isSavingsInterestPostingAtCurrentPeriodEnd,final boolean isUserPosting) {
 
     	final BigDecimal overdraftInterestRateAsFraction = BigDecimal.ZERO;
     	final Money minOverdraftForInterestCalculation = Money.zero(currency);
@@ -78,7 +75,7 @@ public class PostingPeriod {
     			interestCompoundingPeriodType, interestCalculationType, interestRateAsFraction, daysInYear, 
     			upToInterestCalculationDate, interestPostTransactions, isInterestTransfer, 
     			minBalanceForInterestCalculation, isSavingsInterestPostingAtCurrentPeriodEnd, 
-    			overdraftInterestRateAsFraction, minOverdraftForInterestCalculation, isUserPosting, financialYearBeginningMonth);
+    			overdraftInterestRateAsFraction, minOverdraftForInterestCalculation, isUserPosting);
     }
 
     // isInterestTransfer boolean is to identify newly created transaction is
@@ -89,7 +86,7 @@ public class PostingPeriod {
             final SavingsInterestCalculationType interestCalculationType, final BigDecimal interestRateAsFraction, final long daysInYear,
             final LocalDate upToInterestCalculationDate, Collection<Long> interestPostTransactions, boolean isInterestTransfer,
             final Money minBalanceForInterestCalculation, final boolean isSavingsInterestPostingAtCurrentPeriodEnd,
-            final BigDecimal overdraftInterestRateAsFraction, final Money minOverdraftForInterestCalculation, boolean isUserPosting, int financialYearBeginningMonth) {
+            final BigDecimal overdraftInterestRateAsFraction, final Money minOverdraftForInterestCalculation, boolean isUserPosting) {
 
         final List<EndOfDayBalance> accountEndOfDayBalances = new ArrayList<>();
         boolean interestTransfered = false;
@@ -146,12 +143,12 @@ public class PostingPeriod {
         }
 
         final List<CompoundingPeriod> compoundingPeriods = compoundingPeriodsInPostingPeriod(periodInterval, interestCompoundingPeriodType,
-                accountEndOfDayBalances, upToInterestCalculationDate, financialYearBeginningMonth);
+                accountEndOfDayBalances, upToInterestCalculationDate);
 
         return new PostingPeriod(periodInterval, currency, periodStartingBalance, openingDayBalance, interestCompoundingPeriodType,
                 interestCalculationType, interestRateAsFraction, daysInYear, compoundingPeriods, interestTransfered,
                 minBalanceForInterestCalculation, isSavingsInterestPostingAtCurrentPeriodEnd,
-                overdraftInterestRateAsFraction, minOverdraftForInterestCalculation, isUserPosting, financialYearBeginningMonth);
+                overdraftInterestRateAsFraction, minOverdraftForInterestCalculation, isUserPosting);
     }
 
     private PostingPeriod(final LocalDateInterval periodInterval, final MonetaryCurrency currency, final Money openingBalance,
@@ -159,7 +156,7 @@ public class PostingPeriod {
             final SavingsInterestCalculationType interestCalculationType, final BigDecimal interestRateAsFraction, final long daysInYear,
             final List<CompoundingPeriod> compoundingPeriods, boolean interestTransfered, final Money minBalanceForInterestCalculation,
             final boolean isSavingsInterestPostingAtCurrentPeriodEnd, final BigDecimal overdraftInterestRateAsFraction, 
-            final Money minOverdraftForInterestCalculation, boolean isUserPosting, Integer financialYearBeginningMonth) {
+            final Money minOverdraftForInterestCalculation, boolean isUserPosting) {
         this.periodInterval = periodInterval;
         this.currency = currency;
         this.openingBalance = openingBalance;
@@ -179,7 +176,6 @@ public class PostingPeriod {
         this.overdraftInterestRateAsFraction = overdraftInterestRateAsFraction;
         this.minOverdraftForInterestCalculation = minOverdraftForInterestCalculation;
         this.isUserPosting = isUserPosting;
-        this.financialYearBeginningMonth = financialYearBeginningMonth;
     }
 
     public Money interest() {
@@ -215,7 +211,7 @@ public class PostingPeriod {
 			if (!SavingsCompoundingInterestPeriodType.DAILY.equals(this.interestCompoundingType)) {
 				compoundingPeriodEndDate = determineInterestPeriodEndDateFrom(
 						compoundingPeriod.getPeriodInterval().startDate(), this.interestCompoundingType,
-						compoundingPeriod.getPeriodInterval().endDate(), this.getFinancialYearBeginningMonth());
+						compoundingPeriod.getPeriodInterval().endDate());
 			}
 
 			if (compoundingPeriodEndDate.equals(compoundingPeriod.getPeriodInterval().endDate())) {
@@ -239,7 +235,7 @@ public class PostingPeriod {
 
     private static List<CompoundingPeriod> compoundingPeriodsInPostingPeriod(final LocalDateInterval postingPeriodInterval,
             final SavingsCompoundingInterestPeriodType interestPeriodType, final List<EndOfDayBalance> allEndOfDayBalances,
-            final LocalDate upToInterestCalculationDate, int financialYearBeginningMonth) {
+            final LocalDate upToInterestCalculationDate) {
 
         final List<CompoundingPeriod> compoundingPeriods = new ArrayList<>();
 
@@ -260,7 +256,7 @@ public class PostingPeriod {
 
                 while (!periodStartDate.isAfter(postingPeriodEndDate) && !periodEndDate.isAfter(postingPeriodEndDate)) {
 
-                    periodEndDate = determineInterestPeriodEndDateFrom(periodStartDate, interestPeriodType, upToInterestCalculationDate, financialYearBeginningMonth);
+                    periodEndDate = determineInterestPeriodEndDateFrom(periodStartDate, interestPeriodType, upToInterestCalculationDate);
                     if (periodEndDate.isAfter(postingPeriodEndDate)) {
                         periodEndDate = postingPeriodEndDate;
                     }
@@ -289,7 +285,7 @@ public class PostingPeriod {
 
                 while (!periodStartDate.isAfter(qPostingPeriodEndDate) && !periodEndDate.isAfter(qPostingPeriodEndDate)) {
 
-                    periodEndDate = determineInterestPeriodEndDateFrom(periodStartDate, interestPeriodType, upToInterestCalculationDate, financialYearBeginningMonth);
+                    periodEndDate = determineInterestPeriodEndDateFrom(periodStartDate, interestPeriodType, upToInterestCalculationDate);
                     if (periodEndDate.isAfter(qPostingPeriodEndDate)) {
                         periodEndDate = qPostingPeriodEndDate;
                     }
@@ -314,7 +310,7 @@ public class PostingPeriod {
 
                 while (!periodStartDate.isAfter(bPostingPeriodEndDate) && !periodEndDate.isAfter(bPostingPeriodEndDate)) {
 
-                    periodEndDate = determineInterestPeriodEndDateFrom(periodStartDate, interestPeriodType, upToInterestCalculationDate, financialYearBeginningMonth);
+                    periodEndDate = determineInterestPeriodEndDateFrom(periodStartDate, interestPeriodType, upToInterestCalculationDate);
                     if (periodEndDate.isAfter(bPostingPeriodEndDate)) {
                         periodEndDate = bPostingPeriodEndDate;
                     }
@@ -339,7 +335,7 @@ public class PostingPeriod {
 
                 while (!periodStartDate.isAfter(aPostingPeriodEndDate) && !periodEndDate.isAfter(aPostingPeriodEndDate)) {
 
-                    periodEndDate = determineInterestPeriodEndDateFrom(periodStartDate, interestPeriodType, upToInterestCalculationDate, financialYearBeginningMonth);
+                    periodEndDate = determineInterestPeriodEndDateFrom(periodStartDate, interestPeriodType, upToInterestCalculationDate);
                     if (periodEndDate.isAfter(aPostingPeriodEndDate)) {
                         periodEndDate = aPostingPeriodEndDate;
                     }
@@ -364,14 +360,10 @@ public class PostingPeriod {
     }
 
     private static LocalDate determineInterestPeriodEndDateFrom(final LocalDate periodStartDate,
-            final SavingsCompoundingInterestPeriodType interestPeriodType, final LocalDate upToInterestCalculationDate, int financialYearBeginningMonth) {
+            final SavingsCompoundingInterestPeriodType interestPeriodType, final LocalDate upToInterestCalculationDate) {
 
         LocalDate periodEndDate = upToInterestCalculationDate;
-        int previousMonth = financialYearBeginningMonth-1;
-        if(previousMonth==0){
-            previousMonth = 12;
-        }
-        int periodsInMonth = 1;
+
         switch (interestPeriodType) {
             case INVALID:
             break;
@@ -391,20 +383,34 @@ public class PostingPeriod {
                 periodEndDate = periodStartDate.dayOfMonth().withMaximumValue();
             break;
             case QUATERLY:
-                periodsInMonth = 4;
-                periodEndDate = getPeriodEndDate(periodEndDate, previousMonth, periodsInMonth, periodStartDate);
+                // // jan 1st to mar 31st, 1st apr to jun 30, jul 1st to sept
+                // 30,
+                // // oct 1st to dec 31
+                int year = periodStartDate.getYearOfEra();
+                int monthofYear = periodStartDate.getMonthOfYear();
+                if (monthofYear <= 3) {
+                    periodEndDate = new DateTime().withDate(year, 3, 31).toLocalDate();
+                } else if (monthofYear <= 6) {
+                    periodEndDate = new DateTime().withDate(year, 6, 30).toLocalDate();
+                } else if (monthofYear <= 9) {
+                    periodEndDate = new DateTime().withDate(year, 9, 30).toLocalDate();
+                } else if (monthofYear <= 12) {
+                    periodEndDate = new DateTime().withDate(year, 12, 31).toLocalDate();
+                }
             break;
-            case BI_ANNUAL:                
-                periodsInMonth = 2;
-                periodEndDate = getPeriodEndDate(periodEndDate, previousMonth, periodsInMonth, periodStartDate);
-                
+            case BI_ANNUAL:
+                // // jan 1st to 30, jul 1st to dec 31
+                year = periodStartDate.getYearOfEra();
+                monthofYear = periodStartDate.getMonthOfYear();
+                if (monthofYear <= 6) {
+                    periodEndDate = new DateTime().withDate(year, 6, 30).toLocalDate();
+                } else if (monthofYear <= 12) {
+                    periodEndDate = new DateTime().withDate(year, 12, 31).toLocalDate();
+                }
             break;
             case ANNUAL:
-                periodEndDate = periodStartDate.withMonthOfYear(previousMonth);
+                periodEndDate = periodStartDate.monthOfYear().withMaximumValue();
                 periodEndDate = periodEndDate.dayOfMonth().withMaximumValue();
-                if(periodEndDate.isBefore(periodStartDate)){
-                    periodEndDate = periodEndDate.plusYears(1);
-                }
             break;
 
         // case NO_COMPOUNDING_SIMPLE_INTEREST:
@@ -413,40 +419,6 @@ public class PostingPeriod {
         // break;
         }
 
-        return periodEndDate;
-    }
-
-    private static LocalDate getPeriodEndDate(LocalDate periodEndDate, int previousMonth, int periodsInMonth, LocalDate periodStartDate) {
-        int year = periodStartDate.getYearOfEra();
-        int monthofYear = periodStartDate.getMonthOfYear();
-        LocalDate date = DateUtils.getLocalDateOfTenant();
-        TreeSet<Integer> monthSet = new TreeSet<>();
-        date = date.withMonthOfYear(previousMonth);
-        monthSet.add(date.getMonthOfYear());
-        int count =0;
-        while(count<(periodsInMonth-1)){
-            date = date.plusMonths((12/periodsInMonth));
-            monthSet.add(date.getMonthOfYear());
-            count++;
-        }
-        boolean notInRange = true;
-        /*
-         * if strt date is 2016-10-05
-         * if financial year set to 4 then applicable month will be march and september that is (3,9)
-         * if start date fall in month of oct,nov or dec then month will be 10, 11 or 12
-         * so period end date should be taken from next year for march month
-         */
-        
-        for (Integer month : monthSet) {
-            if(monthofYear<=month.intValue()){
-                periodEndDate = new DateTime().withDate(year, month, DateUtils.getLocalDateOfTenant().withMonthOfYear(month).dayOfMonth().withMaximumValue().getDayOfMonth()).toLocalDate();
-                notInRange = false;
-                break;
-            }
-        }
-        if(notInRange){
-            periodEndDate = new DateTime().withDate(year+1, monthSet.first(), DateUtils.getLocalDateOfTenant().withMonthOfYear(monthSet.first()).dayOfMonth().withMaximumValue().getDayOfMonth()).toLocalDate();
-        }
         return periodEndDate;
     }
 
@@ -461,11 +433,4 @@ public class PostingPeriod {
     public boolean isUserPosting() {
         return this.isUserPosting;
     }
-
-    
-    public Integer getFinancialYearBeginningMonth() {
-        return this.financialYearBeginningMonth;
-    }
-    
-    
 }

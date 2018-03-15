@@ -71,12 +71,10 @@ public class SmsMessageAssembler {
         }
 
         SmsCampaign smsCampaign = null;
-        boolean isNotification = false;
         if (this.fromApiJsonHelper.parameterExists(SmsApiConstants.campaignIdParamName, element)) {
             final Long campaignId = this.fromApiJsonHelper.extractLongNamed(SmsApiConstants.campaignIdParamName, element);
             smsCampaign = this.smsCampaignRepository.findOne(campaignId);
             if (smsCampaign == null) { throw new SmsCampaignNotFound(campaignId); }
-            isNotification = smsCampaign.isNotification();
         }
 
         Client client = null;
@@ -95,7 +93,7 @@ public class SmsMessageAssembler {
 
         final String message = this.fromApiJsonHelper.extractStringNamed(SmsApiConstants.messageParamName, element);
 
-        return SmsMessage.pendingSms(externalId, group, client, staff, message, mobileNo, smsCampaign, isNotification);
+        return SmsMessage.pendingSms(externalId, group, client, staff, message, mobileNo, smsCampaign);
     }
 
     public SmsMessage assembleFromResourceId(final Long resourceId) {

@@ -44,8 +44,6 @@ public class SmsCampaignData {
     private final DateTime recurrenceStartDate;
     private final String recurrence;
     private final Long providerId;
-    private final boolean isNotification;
-    
 
     private final Collection<SmsProviderData> smsProviderOptions;
 
@@ -72,7 +70,7 @@ public class SmsCampaignData {
             final Collection<SmsProviderData> smsProviderOptions, final Collection<EnumOptionData> campaignTypeOptions,
             final Collection<EnumOptionData> triggerTypeOptions, final Collection<EnumOptionData> months, 
             final Collection<EnumOptionData> weekDays, final Collection<EnumOptionData> frequencyTypeOptions, 
-            final Collection<EnumOptionData> periodFrequencyOptions, final boolean isNotification) {
+            final Collection<EnumOptionData> periodFrequencyOptions) {
         this.id = id;
         this.campaignName = campaignName;
         this.campaignType = campaignType;
@@ -92,7 +90,6 @@ public class SmsCampaignData {
         } else {
             this.lastTriggerDate = null;
         }
-        this.isNotification = isNotification;
         this.smsCampaignTimeLine = smsCampaignTimeLine;
         this.recurrenceStartDate = recurrenceStartDate;
         this.recurrence = recurrence;
@@ -112,7 +109,7 @@ public class SmsCampaignData {
             final Long runReportId, final String reportName, final String paramValue, final EnumOptionData campaignStatus,
             final String message, final DateTime nextTriggerDate, final LocalDate lastTriggerDate,
             final SmsCampaignTimeLine smsCampaignTimeLine, final DateTime recurrenceStartDate, final String recurrence,
-            final Long providerId, final boolean isNotification) {
+            final Long providerId) {
         final Collection<SmsBusinessRulesData> businessRulesOptions = null;
         final Collection<SmsProviderData> smsProviderOptions = null;
         final Collection<EnumOptionData> campaignTypeOptions = null;
@@ -125,7 +122,7 @@ public class SmsCampaignData {
         return new SmsCampaignData(id, campaignName, campaignType, triggerType, runReportId,
                 reportName, paramValue, campaignStatus, message, nextTriggerDate, lastTriggerDate, smsCampaignTimeLine,
                 recurrenceStartDate, recurrence, providerId, businessRulesOptions, smsProviderOptions, campaignTypeOptions,
-                triggerTypeOptions, months, weekDays, frequencyTypeOptions, periodFrequencyOptions, isNotification);
+                triggerTypeOptions, months, weekDays, frequencyTypeOptions, periodFrequencyOptions);
     }
 
     public static SmsCampaignData template(final Collection<SmsProviderData> smsProviderOptions,
@@ -148,11 +145,10 @@ public class SmsCampaignData {
         final EnumOptionData triggerType = null;
         final String reportName = null;
         final Long providerId = null;
-        final boolean isNotification = false;
         return new SmsCampaignData(id, campaignName, campaignType, triggerType, runReportId,
                 reportName, paramValue, campaignStatus, message, nextTriggerDate, lastTriggerDate, smsCampaignTimeLine,
                 recurrenceStartDate, recurrence, providerId, businessRulesOptions, smsProviderOptions, campaignTypeOptions,
-                triggerTypeOptions, months, weekDays, frequencyTypeOptions, periodFrequencyOptions, isNotification);
+                triggerTypeOptions, months, weekDays, frequencyTypeOptions, periodFrequencyOptions);
     }
 
     public Long getId() {
@@ -206,9 +202,5 @@ public class SmsCampaignData {
     public Long providerId() {
         return this.providerId;
     }
-
-	public boolean isNotification() {
-		return this.isNotification;
-	}
 
 }

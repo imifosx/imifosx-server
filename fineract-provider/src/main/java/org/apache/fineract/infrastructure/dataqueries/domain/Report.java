@@ -276,8 +276,4 @@ public final class Report extends AbstractPersistableCustom<Long> {
 
         return false;
     }
-	
-	public Set<ReportParameterUsage> getReportParameterUsages() {
-        return this.reportParameterUsages;
-    }
 }

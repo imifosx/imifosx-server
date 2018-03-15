@@ -61,9 +61,6 @@ public class SmsCampaignEnumerations {
             case SMS:
                 optionData = new EnumOptionData(CampaignType.SMS.getValue().longValue(), CampaignType.SMS.getCode(), "SMS");
             break;
-            case NOTIFICATION:
-                optionData = new EnumOptionData(CampaignType.NOTIFICATION.getValue().longValue(), CampaignType.NOTIFICATION.getCode(), "NOTIFICATION");
-            break;
         }
         return optionData;
     }

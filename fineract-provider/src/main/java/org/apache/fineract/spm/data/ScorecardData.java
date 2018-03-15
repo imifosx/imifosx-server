@@ -18,45 +18,51 @@
  */
 package org.apache.fineract.spm.data;
 
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class ScorecardData {
 
-    private Long id;
     private Long userId;
-    private String username;
     private Long clientId;
-    private Long surveyId;
-    private String surveyName;
+    private Date createdOn;
     private List<ScorecardValue> scorecardValues;
 
     public ScorecardData() {
         super();
     }
 
-    private ScorecardData(final Long id, final Long userId, final String username, final Long surveyId, final String surveyName,
-            final Long clientId) {
-        this.id = id;
+    public ScorecardData(final Long userId, final Long clientId, final Date createdOn,
+                         final List<ScorecardValue> scorecardValues) {
+        super();
         this.userId = userId;
         this.clientId = clientId;
-        this.scorecardValues = new ArrayList<>();
-        this.surveyId = surveyId;
-        this.surveyName = surveyName;
-        this.username = username;
-    }
-
-    public static ScorecardData instance(final Long id, final Long userId, final String username, final Long surveyId,
-            final String surveyName, final Long clientId) {
-        return new ScorecardData(id, userId, username, surveyId, surveyName, clientId);
+        this.createdOn = createdOn;
+        this.scorecardValues = scorecardValues;
     }
 
     public Long getUserId() {
         return userId;
     }
 
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
     public Long getClientId() {
         return clientId;
+    }
+
+    public void setClientId(Long clientId) {
+        this.clientId = clientId;
+    }
+
+    public Date getCreatedOn() {
+        return createdOn;
+    }
+
+    public void setCreatedOn(Date createdOn) {
+        this.createdOn = createdOn;
     }
 
     public List<ScorecardValue> getScorecardValues() {
@@ -64,50 +70,6 @@ public class ScorecardData {
     }
 
     public void setScorecardValues(List<ScorecardValue> scorecardValues) {
-        if (this.scorecardValues == null) {
-            this.scorecardValues = new ArrayList<>();
-        }
-        this.scorecardValues.addAll(scorecardValues);
+        this.scorecardValues = scorecardValues;
     }
-
-    public String getUsername() {
-        return this.username;
-    }
-
-    public Long getSurveyId() {
-        return this.surveyId;
-    }
-
-    public String getSurveyName() {
-        return this.surveyName;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setClientId(Long clientId) {
-        this.clientId = clientId;
-    }
-
-    public void setSurveyId(Long surveyId) {
-        this.surveyId = surveyId;
-    }
-
-    public void setSurveyName(String surveyName) {
-        this.surveyName = surveyName;
-    }
-
 }

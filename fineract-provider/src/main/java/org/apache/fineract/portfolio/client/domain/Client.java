@@ -114,9 +114,6 @@ public final class Client extends AbstractPersistableCustom<Long> {
 
     @Column(name = "mobile_no", length = 50, nullable = false, unique = true)
     private String mobileNo;
-	
-	@Column(name = "email_address", length = 50, unique = true)
-    private String emailAddress;
 
 	@Column(name = "is_staff", nullable = false)
     private boolean isStaff;
@@ -239,7 +236,6 @@ public final class Client extends AbstractPersistableCustom<Long> {
         final String accountNo = command.stringValueOfParameterNamed(ClientApiConstants.accountNoParamName);
         final String externalId = command.stringValueOfParameterNamed(ClientApiConstants.externalIdParamName);
         final String mobileNo = command.stringValueOfParameterNamed(ClientApiConstants.mobileNoParamName);
-		final String emailAddress = command.stringValueOfParameterNamed(ClientApiConstants.emailAddressParamName);
 
         final String firstname = command.stringValueOfParameterNamed(ClientApiConstants.firstnameParamName);
         final String middlename = command.stringValueOfParameterNamed(ClientApiConstants.middlenameParamName);
@@ -273,7 +269,7 @@ public final class Client extends AbstractPersistableCustom<Long> {
         }
         final Long savingsAccountId = null;
         return new Client(currentUser, status, clientOffice, clientParentGroup, accountNo, firstname, middlename, lastname, fullname,
-                activationDate, officeJoiningDate, externalId, mobileNo, emailAddress, staff, submittedOnDate, savingsProductId, savingsAccountId, dataOfBirth,
+                activationDate, officeJoiningDate, externalId, mobileNo, staff, submittedOnDate, savingsProductId, savingsAccountId, dataOfBirth,
                 gender, clientType, clientClassification, legalForm, isStaff);
     }
 
@@ -283,7 +279,7 @@ public final class Client extends AbstractPersistableCustom<Long> {
 
     private Client(final AppUser currentUser, final ClientStatus status, final Office office, final Group clientParentGroup,
             final String accountNo, final String firstname, final String middlename, final String lastname, final String fullname,
-            final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo, final String emailAddress,
+            final LocalDate activationDate, final LocalDate officeJoiningDate, final String externalId, final String mobileNo,
             final Staff staff, final LocalDate submittedOnDate, final Long savingsProductId, final Long savingsAccountId,
             final LocalDate dateOfBirth, final CodeValue gender, final CodeValue clientType, final CodeValue clientClassification, final Integer legalForm, final Boolean isStaff) {
 
@@ -309,12 +305,6 @@ public final class Client extends AbstractPersistableCustom<Long> {
             this.mobileNo = mobileNo.trim();
         } else {
             this.mobileNo = null;
-        }
-
-		if (StringUtils.isNotBlank(emailAddress)) {
-            this.emailAddress = emailAddress.trim();
-        } else {
-            this.emailAddress = null;
         }
 
         if (activationDate != null) {
@@ -507,12 +497,6 @@ public final class Client extends AbstractPersistableCustom<Long> {
             final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.mobileNoParamName);
             actualChanges.put(ClientApiConstants.mobileNoParamName, newValue);
             this.mobileNo = StringUtils.defaultIfEmpty(newValue, null);
-        }
-		
-		if (command.isChangeInStringParameterNamed(ClientApiConstants.emailAddressParamName, this.emailAddress)) {
-            final String newValue = command.stringValueOfParameterNamed(ClientApiConstants.emailAddressParamName);
-            actualChanges.put(ClientApiConstants.emailAddressParamName, newValue);
-            this.emailAddress = StringUtils.defaultIfEmpty(newValue, null);
         }
 
         if (command.isChangeInStringParameterNamed(ClientApiConstants.firstnameParamName, this.firstname)) {
@@ -787,10 +771,6 @@ public final class Client extends AbstractPersistableCustom<Long> {
         return this.mobileNo;
     }
 
-	public String emailAddress() {
-        return this.emailAddress;
-    }
-
     public void setMobileNo(final String mobileNo) {
         this.mobileNo = mobileNo;
     }
@@ -806,10 +786,6 @@ public final class Client extends AbstractPersistableCustom<Long> {
 	public String getExternalId() {
 		return this.externalId; 
 	}
-
-	public void setEmailAddress(final String emailAddress) {
-        this.emailAddress = emailAddress;
-    }
 
     public String getDisplayName() {
         return this.displayName;

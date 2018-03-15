@@ -162,8 +162,6 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
         if (parameters.isOrderByRequested()) {
             sqlBuilder.append(" order by ").append(searchParameters.getOrderBy()).append(' ').append(searchParameters.getSortOrder());
-            this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy(),
-            		searchParameters.getSortOrder());
         }
 
         if (parameters.isLimited()) {
@@ -190,24 +188,19 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         sqlBuilder.append(" where o.hierarchy like ?");
         List<Object> paramList = new ArrayList<>(
                 Arrays.asList(hierarchySearchString));
-        if (searchParameters!=null) {
-            final String extraCriteria = getGroupExtraCriteria(this.allGroupTypesDataMapper.schema(), paramList, searchParameters);
-
-            if (StringUtils.isNotBlank(extraCriteria)) {
-                sqlBuilder.append(" and (").append(extraCriteria).append(")");
-            }
+        final String extraCriteria = getGroupExtraCriteria(this.allGroupTypesDataMapper.schema(), paramList, searchParameters);
+        if (StringUtils.isNotBlank(extraCriteria)) {
+            sqlBuilder.append(" and (").append(extraCriteria).append(")");
         }
-        if (parameters!=null) {
-            if (parameters.isOrderByRequested()) {
-                sqlBuilder.append(parameters.orderBySql());
-                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), parameters.orderBySql());
-            }
 
-            if (parameters.isLimited()) {
-                sqlBuilder.append(parameters.limitSql());
-                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), parameters.limitSql());
-            }
+        if (parameters.isOrderByRequested()) {
+            sqlBuilder.append(parameters.orderBySql());
         }
+
+        if (parameters.isLimited()) {
+            sqlBuilder.append(parameters.limitSql());
+        }
+
         return this.jdbcTemplate.query(sqlBuilder.toString(), this.allGroupTypesDataMapper, paramList.toArray());
     }
 
@@ -218,57 +211,58 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
         StringBuffer extraCriteria = new StringBuffer(200);
         extraCriteria.append(" and g.level_Id = ").append(GroupTypes.GROUP.getId());
-            String sqlSearch = searchCriteria.getSqlSearch();
-            if (sqlSearch != null) {
-                SQLInjectionValidator.validateSQLInput(sqlSearch);
-                sqlSearch = sqlSearch.replaceAll(" display_name ", " g.display_name ");
-                sqlSearch = sqlSearch.replaceAll("display_name ", "g.display_name ");
-                extraCriteria.append(" and ( ").append(sqlSearch).append(") ");
-                this.columnValidator.validateSqlInjection(schemaSql, sqlSearch);
-            }
+        String sqlSearch = searchCriteria.getSqlSearch();
+        if (sqlSearch != null) {
+        	SQLInjectionValidator.validateSQLInput(sqlSearch);
+            sqlSearch = sqlSearch.replaceAll(" display_name ", " g.display_name ");
+            sqlSearch = sqlSearch.replaceAll("display_name ", "g.display_name ");
+            extraCriteria.append(" and ( ").append(sqlSearch).append(") ");
+            this.columnValidator.validateSqlInjection(schemaSql, sqlSearch);
+        }
 
-            final Long officeId = searchCriteria.getOfficeId();
-            if (officeId != null) {
-                paramList.add(officeId);
-                extraCriteria.append(" and g.office_id = ? ");
-            }
+        final Long officeId = searchCriteria.getOfficeId();
+        if (officeId != null) {
+        	paramList.add(officeId);
+            extraCriteria.append(" and g.office_id = ? ");
+        }
 
-            final String externalId = searchCriteria.getExternalId();
-            if (externalId != null) {
-                paramList.add(ApiParameterHelper.sqlEncodeString(externalId));
-                extraCriteria.append(" and g.external_id = ? ");
-            }
+        final String externalId = searchCriteria.getExternalId();
+        if (externalId != null) {
+        	paramList.add(ApiParameterHelper.sqlEncodeString(externalId));
+            extraCriteria.append(" and g.external_id = ? ");
+        }
 
         final String name = searchCriteria.getName();
         if (name != null) {
-        	paramList.add("%" + name + "%");
+        	paramList.add(ApiParameterHelper.sqlEncodeString("%" + name + "%"));
             extraCriteria.append(" and g.display_name like ? ");
         }
 
-            final String hierarchy = searchCriteria.getHierarchy();
-            if (hierarchy != null) {
-                paramList.add(ApiParameterHelper.sqlEncodeString(hierarchy + "%"));
-                extraCriteria.append(" and o.hierarchy like ? ");
-            }
+        final String hierarchy = searchCriteria.getHierarchy();
+        if (hierarchy != null) {
+        	paramList.add(ApiParameterHelper.sqlEncodeString(hierarchy + "%"));
+            extraCriteria.append(" and o.hierarchy like ? ");
+        }
 
-            if (searchCriteria.isStaffIdPassed()) {
-                paramList.add(searchCriteria.getStaffId());
-                extraCriteria.append(" and g.staff_id = ? ");
-            }
+        if (searchCriteria.isStaffIdPassed()) {
+        	paramList.add(searchCriteria.getStaffId());
+            extraCriteria.append(" and g.staff_id = ? ");
+        }
 
-            if (StringUtils.isNotBlank(extraCriteria.toString())) {
-                extraCriteria.delete(0, 4);
-            }
+        if (StringUtils.isNotBlank(extraCriteria.toString())) {
+            extraCriteria.delete(0, 4);
+        }
 
-            final Long staffId = searchCriteria.getStaffId();
-            if (staffId != null) {
-                paramList.add(staffId);
-                extraCriteria.append(" and g.staff_id = ? ");
-            }
+        final Long staffId = searchCriteria.getStaffId();
+        if (staffId != null) {
+        	paramList.add(staffId);
+            extraCriteria.append(" and g.staff_id = ? ");
+        }
+        
+        if(searchCriteria.isOrphansOnly()){
+        	extraCriteria.append(" and g.parent_id IS NULL");
+        }
 
-            if (searchCriteria.isOrphansOnly()) {
-                extraCriteria.append(" and g.parent_id IS NULL");
-            }
         return extraCriteria.toString();
     }
 

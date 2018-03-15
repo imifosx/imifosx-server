@@ -37,16 +37,6 @@ public class CurrencyData {
         return new CurrencyData("", "", 0, 0, "", "");
     }
 
-    public CurrencyData(String code) {
-        this.code = code;
-        this.name = null;
-        this.decimalPlaces =0;
-        this.inMultiplesOf = null;
-        this.displaySymbol = null;
-        this.nameCode = null;
-        this.displayLabel = null;
-    }
-
     public CurrencyData(final String code, final String name, final int decimalPlaces, final Integer inMultiplesOf,
             final String displaySymbol, final String nameCode) {
         this.code = code;
@@ -92,9 +82,5 @@ public class CurrencyData {
         }
 
         return builder.toString();
-    }
-
-    public String getName() {
-        return name;
     }
 }

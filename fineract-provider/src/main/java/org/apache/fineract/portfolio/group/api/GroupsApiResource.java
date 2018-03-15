@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.group.api;
 
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -37,18 +36,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import com.sun.jersey.core.header.FormDataContentDisposition;
-import com.sun.jersey.multipart.FormDataParam;
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
-import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
-import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
-import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
 import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.api.JsonQuery;
@@ -111,9 +104,6 @@ public class GroupsApiResource {
     private final CalendarReadPlatformService calendarReadPlatformService;
     private final MeetingReadPlatformService meetingReadPlatformService;
     private final EntityDatatableChecksReadService entityDatatableChecksReadService;
-    private final BulkImportWorkbookService bulkImportWorkbookService;
-    private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
-
 
     @Autowired
     public GroupsApiResource(final PlatformSecurityContext context, final GroupReadPlatformService groupReadPlatformService,
@@ -127,9 +117,7 @@ public class GroupsApiResource {
             final GroupRolesReadPlatformService groupRolesReadPlatformService,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService,
             final CalendarReadPlatformService calendarReadPlatformService, final MeetingReadPlatformService meetingReadPlatformService,
-            final EntityDatatableChecksReadService entityDatatableChecksReadService,
-            final BulkImportWorkbookService bulkImportWorkbookService,
-            final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService) {
+            final EntityDatatableChecksReadService entityDatatableChecksReadService) {
 
         this.context = context;
         this.groupReadPlatformService = groupReadPlatformService;
@@ -147,8 +135,6 @@ public class GroupsApiResource {
         this.calendarReadPlatformService = calendarReadPlatformService;
         this.meetingReadPlatformService = meetingReadPlatformService;
         this.entityDatatableChecksReadService = entityDatatableChecksReadService;
-        this.bulkImportWorkbookPopulatorService=bulkImportWorkbookPopulatorService;
-        this.bulkImportWorkbookService=bulkImportWorkbookService;
     }
 
     @GET
@@ -454,25 +440,5 @@ public class GroupsApiResource {
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.groupSummaryToApiJsonSerializer.serialize(settings, groupAccount, GROUP_ACCOUNTS_DATA_PARAMETERS);
-    }
-
-    @GET
-    @Path("downloadtemplate")
-    @Produces("application/vnd.ms-excel")
-    public Response getGroupsTemplate(@QueryParam("officeId")final Long officeId,
-            @QueryParam("staffId")final Long staffId,@QueryParam("dateFormat") final String dateFormat) {
-        return bulkImportWorkbookPopulatorService.getTemplate(GlobalEntityType.GROUPS.toString(),
-                officeId, staffId,dateFormat);
-    }
-
-    @POST
-    @Path("uploadtemplate")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public String postGroupTemplate(@FormDataParam("file") InputStream uploadedInputStream,
-            @FormDataParam("file") FormDataContentDisposition fileDetail,
-            @FormDataParam("locale") final String locale, @FormDataParam("dateFormat") final String dateFormat){
-        final Long importDocumentId = this. bulkImportWorkbookService.importWorkbook(GlobalEntityType.GROUPS.toString(),
-                uploadedInputStream,fileDetail,locale,dateFormat);
-        return this.toApiJsonSerializer.serialize(importDocumentId);
     }
 }

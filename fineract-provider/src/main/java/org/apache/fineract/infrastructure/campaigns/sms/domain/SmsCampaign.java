@@ -67,7 +67,7 @@ public class SmsCampaign extends AbstractPersistableCustom<Long> {
     @Column(name = "campaign_trigger_type", nullable = false)
     private Integer triggerType; //defines direct, scheduled, transaction
     
-    @Column(name = "provider_id", nullable = true)//null for notifications
+    @Column(name = "provider_id", nullable = false)
     private Long providerId; // defined provider details
 
     @ManyToOne
@@ -124,16 +124,13 @@ public class SmsCampaign extends AbstractPersistableCustom<Long> {
 
     @Column(name = "is_visible", nullable = true)
     private boolean isVisible;
-    
-    @Column(name = "is_notification", nullable = true)
-    private boolean isNotification;
 
     public SmsCampaign() {}
 
     private SmsCampaign(final String campaignName, final Integer campaignType, 
             final Integer triggerType, final Report businessRuleId, final Long providerId, final String paramValue,
             final String message, final LocalDate submittedOnDate, final AppUser submittedBy, final String recurrence,
-            final LocalDateTime localDateTime, final boolean isNotification) {
+            final LocalDateTime localDateTime) {
         this.campaignName = campaignName;
         this.campaignType = campaignType;
         this.triggerType = SmsCampaignTriggerType.fromInt(triggerType).getValue();
@@ -152,7 +149,6 @@ public class SmsCampaign extends AbstractPersistableCustom<Long> {
         } else {
             this.recurrenceStartDate = recurrenceStartDate.toDate();
         }
-        this.isNotification = isNotification;
     }
 
     public static SmsCampaign instance(final AppUser submittedBy, final Report report, final JsonCommand command) {
@@ -160,15 +156,7 @@ public class SmsCampaign extends AbstractPersistableCustom<Long> {
         final String campaignName = command.stringValueOfParameterNamed(SmsCampaignValidator.campaignName);
         final Long campaignType = command.longValueOfParameterNamed(SmsCampaignValidator.campaignType);
         final Long triggerType = command.longValueOfParameterNamed(SmsCampaignValidator.triggerType);
-        boolean isNotification = false;
-        if(command.parameterExists(SmsCampaignValidator.isNotificationParamName)){
-        	isNotification = command.booleanPrimitiveValueOfParameterNamed(SmsCampaignValidator.isNotificationParamName);
-        }
-        Long providerId = null;
-        if(!isNotification){
-        	providerId = command.longValueOfParameterNamed(SmsCampaignValidator.providerId);
-        }
-        
+        final Long providerId = command.longValueOfParameterNamed(SmsCampaignValidator.providerId);
         final String paramValue = command.jsonFragment(SmsCampaignValidator.paramValue);
 
         final String message = command.stringValueOfParameterNamed(SmsCampaignValidator.message);
@@ -177,7 +165,6 @@ public class SmsCampaign extends AbstractPersistableCustom<Long> {
             submittedOnDate = command.localDateValueOfParameterNamed(SmsCampaignValidator.submittedOnDateParamName);
         }
         String recurrence = null;
-        
 
         LocalDateTime recurrenceStartDate = new LocalDateTime();
         if (SmsCampaignTriggerType.fromInt(triggerType.intValue()).isSchedule()) {
@@ -197,7 +184,7 @@ public class SmsCampaign extends AbstractPersistableCustom<Long> {
         }
 
         return new SmsCampaign(campaignName, campaignType.intValue(), triggerType.intValue(), report,
-                providerId, paramValue, message, submittedOnDate, submittedBy, recurrence, recurrenceStartDate, isNotification);
+                providerId, paramValue, message, submittedOnDate, submittedBy, recurrence, recurrenceStartDate);
     }
 
     public Map<String, Object> update(JsonCommand command) {
@@ -244,11 +231,6 @@ public class SmsCampaign extends AbstractPersistableCustom<Long> {
         if (command.isChangeInLongParameterNamed(SmsCampaignValidator.providerId, this.providerId)) {
             final Long newValue = command.longValueOfParameterNamed(SmsCampaignValidator.providerId);
             actualChanges.put(SmsCampaignValidator.providerId, newValue);
-        }
-        if (command.isChangeInBooleanParameterNamed(SmsCampaignValidator.isNotificationParamName, this.isNotification)) {
-            final Boolean newValue = command.booleanObjectValueOfParameterNamed(SmsCampaignValidator.isNotificationParamName);
-            this.isNotification = newValue;
-            actualChanges.put(SmsCampaignValidator.isNotificationParamName, newValue);
         }
 
         if (SmsCampaignTriggerType.fromInt(this.triggerType).isSchedule()) {
@@ -576,14 +558,4 @@ public class SmsCampaign extends AbstractPersistableCustom<Long> {
         }
         return recurrenceBuilder.toString();
     }
-
-	public boolean isNotification() {
-		return this.isNotification;
-	}
-
-	public void setNotification(boolean isNotification) {
-		this.isNotification = isNotification;
-	}
-    
-    
 }

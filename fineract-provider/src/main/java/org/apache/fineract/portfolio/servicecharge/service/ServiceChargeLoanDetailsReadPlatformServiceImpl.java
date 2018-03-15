@@ -809,9 +809,9 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	                    + " l.closedon_date as closedOnDate, cbu.username as closedByUsername, cbu.firstname as closedByFirstname, cbu.lastname as closedByLastname, l.writtenoffon_date as writtenOffOnDate, "
 	                    + " l.expected_firstrepaymenton_date as expectedFirstRepaymentOnDate, l.interest_calculated_from_date as interestChargedFromDate, l.expected_maturedon_date as expectedMaturityDate, "
 	                    + " l.principal_amount_proposed as proposedPrincipal, l.principal_amount as principal, l.approved_principal as approvedPrincipal, l.arrearstolerance_amount as inArrearsTolerance, l.number_of_repayments as numberOfRepayments, l.repay_every as repaymentEvery,"
-	                    + " l.grace_on_principal_periods as graceOnPrincipalPayment, l.grace_on_interest_periods as graceOnInterestPayment, l.grace_interest_free_periods as graceOnInterestCharged,l.grace_on_arrears_ageing as graceOnArrearsAgeing,"
+	                    + " l.grace_on_principal_periods as graceOnPrincipalPayment, l.recurring_moratorium_principal_periods as recurringMoratoriumOnPrincipalPeriods, l.grace_on_interest_periods as graceOnInterestPayment, l.grace_interest_free_periods as graceOnInterestCharged,l.grace_on_arrears_ageing as graceOnArrearsAgeing,"
 	                    + " l.nominal_interest_rate_per_period as interestRatePerPeriod, l.annual_nominal_interest_rate as annualInterestRate, "
-	                    + " l.repayment_period_frequency_enum as repaymentFrequencyType, l.repayment_frequency_nth_day_enum as repaymentFrequencyNthDayType, l.repayment_frequency_day_of_week_enum as repaymentFrequencyDayOfWeekType, l.interest_period_frequency_enum as interestRateFrequencyType, "
+	                    + " l.repayment_period_frequency_enum as repaymentFrequencyType, l.interest_period_frequency_enum as interestRateFrequencyType, "
 	                    + " l.term_frequency as termFrequency, l.term_period_frequency_enum as termPeriodFrequencyType, "
 	                    + " l.amortization_method_enum as amortizationType, l.interest_method_enum as interestType, l.interest_calculated_in_period_enum as interestCalculationPeriodType,"
 	                    + " l.allow_partial_period_interest_calcualtion as allowPartialPeriodInterestCalcualtion,"
@@ -845,10 +845,13 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	                    + " l.total_costofloan_derived as totalCostOfLoan,"
 	                    + " l.total_waived_derived as totalWaived,"
 	                    + " l.total_writtenoff_derived as totalWrittenOff,"
+	                    + " l.writeoff_reason_cv_id as writeoffReasonId,"
+	                    + " codev.code_value as writeoffReason,"
 	                    + " l.total_outstanding_derived as totalOutstanding,"
 	                    + " l.total_overpaid_derived as totalOverpaid,"
 	                    + " l.fixed_emi_amount as fixedEmiAmount,"
 	                    + " l.max_outstanding_loan_balance as outstandingLoanBalance,"
+	                    + " l.loan_sub_status_id as loanSubStatusId,"
 	                    + " la.principal_overdue_derived as principalOverdue,"
 	                    + " la.interest_overdue_derived as interestOverdue,"
 	                    + " la.fee_charges_overdue_derived as feeChargesOverdue,"
@@ -861,13 +864,24 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	                    + " l.interest_recalculation_enabled as isInterestRecalculationEnabled, "
 	                    + " lir.id as lirId, lir.loan_id as loanId, lir.compound_type_enum as compoundType, lir.reschedule_strategy_enum as rescheduleStrategy, "
 	                    + " lir.rest_frequency_type_enum as restFrequencyEnum, lir.rest_frequency_interval as restFrequencyInterval, "
-	                    + " lir.rest_freqency_date as restFrequencyDate, "
+	                    + " lir.rest_frequency_nth_day_enum as restFrequencyNthDayEnum, "
+	                    + " lir.rest_frequency_weekday_enum as restFrequencyWeekDayEnum, "
+	                    + " lir.rest_frequency_on_day as restFrequencyOnDay, "
 	                    + " lir.compounding_frequency_type_enum as compoundingFrequencyEnum, lir.compounding_frequency_interval as compoundingInterval, "
-	                    + " lir.compounding_freqency_date as compoundingFrequencyDate, "
+	                    + " lir.compounding_frequency_nth_day_enum as compoundingFrequencyNthDayEnum, "
+	                    + " lir.compounding_frequency_weekday_enum as compoundingFrequencyWeekDayEnum, "
+	                    + " lir.compounding_frequency_on_day as compoundingFrequencyOnDay, "
+	                    + " lir.is_compounding_to_be_posted_as_transaction as isCompoundingToBePostedAsTransaction, "
+	                    + " lir.allow_compounding_on_eod as allowCompoundingOnEod, "
 	                    + " l.is_floating_interest_rate as isFloatingInterestRate, "
 	                    + " l.interest_rate_differential as interestRateDifferential, "
 	                    + " l.create_standing_instruction_at_disbursement as createStandingInstructionAtDisbursement, "
-	                    + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap "
+	                    + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap, "
+	                    + " lp.can_use_for_topup as canUseForTopup, "
+	                    + " l.is_topup as isTopup, "
+	                    + " topup.closure_loan_id as closureLoanId, "
+	                    + " topuploan.account_no as closureLoanAccountNo, "
+	                    + " topup.topup_amount as topupAmount "
 	                    + " from m_loan l" //
 	                    + " join m_product_loan lp on lp.id = l.product_id" //
 	                    + " left join m_loan_recalculation_details lir on lir.loan_id = l.id "
@@ -884,8 +898,11 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	                    + " left join m_appuser dbu on dbu.id = l.disbursedon_userid"
 	                    + " left join m_appuser cbu on cbu.id = l.closedon_userid"
 	                    + " left join m_code_value cv on cv.id = l.loanpurpose_cv_id"
+	                    + " left join m_code_value codev on codev.id = l.writeoff_reason_cv_id"
 	                    + " left join ref_loan_transaction_processing_strategy lps on lps.id = l.loan_transaction_strategy_id"
-	                    + " left join m_product_loan_variable_installment_config lpvi on lpvi.loan_product_id = l.product_id";
+	                    + " left join m_product_loan_variable_installment_config lpvi on lpvi.loan_product_id = l.product_id"
+	                    + " left join m_loan_topup as topup on l.id = topup.loan_id"
+	                    + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id";
 
 	        }
 
@@ -1023,7 +1040,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	            final int amortizationTypeInt = JdbcSupport.getInteger(rs, "amortizationType");
 	            final int interestTypeInt = JdbcSupport.getInteger(rs, "interestType");
 	            final int interestCalculationPeriodTypeInt = JdbcSupport.getInteger(rs, "interestCalculationPeriodType");
-	            final boolean isEqualAmortization = rs.getBoolean("isEqualAmortization");
+
 	            final EnumOptionData amortizationType = LoanEnumerations.amortizationType(amortizationTypeInt);
 	            final EnumOptionData interestType = LoanEnumerations.interestType(interestTypeInt);
 	            final EnumOptionData interestCalculationPeriodType = LoanEnumerations
@@ -1198,8 +1215,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	                    loanProductCounter, multiDisburseLoan, canDefineInstallmentAmount, fixedEmiAmount, outstandingLoanBalance, inArrears,
 	                    graceOnArrearsAgeing, isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
 	                    interestRecalculationData, createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap,
-	                    maximumGap, loanSubStatus, canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization);
+	                    maximumGap, loanSubStatus, canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount);
 	        }
 	    }
-
 }

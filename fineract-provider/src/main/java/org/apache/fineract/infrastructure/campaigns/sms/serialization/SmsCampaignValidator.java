@@ -28,16 +28,12 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignTriggerType;
-import org.apache.fineract.infrastructure.campaigns.sms.domain.SmsCampaign;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.infrastructure.gcm.domain.DeviceRegistration;
-import org.apache.fineract.infrastructure.gcm.domain.DeviceRegistrationRepositoryWrapper;
 import org.apache.fineract.portfolio.calendar.domain.CalendarFrequencyType;
-import org.apache.fineract.portfolio.client.domain.Client;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -71,21 +67,19 @@ public class SmsCampaignValidator {
     public static final String frequencyParamName = "frequency";
     public static final String intervalParamName = "interval";
     public static final String repeatsOnDayParamName = "repeatsOnDay";
-    public static final String isNotificationParamName = "isNotification";
 
     private final FromJsonHelper fromApiJsonHelper;
-    private final DeviceRegistrationRepositoryWrapper deviceRegistrationRepository;
 
     protected static final Set<String> supportedParams = new HashSet<>(Arrays.asList(campaignName, campaignType,
             localeParamName,
             dateFormatParamName, runReportId, paramValue, message, recurrenceStartDate, activationDateParamName, submittedOnDateParamName,
             closureDateParamName, recurrenceParamName, providerId, triggerType, frequencyParamName, intervalParamName,
-            repeatsOnDayParamName, triggerEntityType, triggerActionType, dateTimeFormat, isNotificationParamName));
+            repeatsOnDayParamName, triggerEntityType, triggerActionType, dateTimeFormat));
 
     protected static final Set<String> supportedParamsForUpdate = new HashSet<>(Arrays.asList(campaignName, campaignType,
             localeParamName,
             dateFormatParamName, runReportId, paramValue, message, recurrenceStartDate, activationDateParamName, recurrenceParamName,
-            providerId, triggerType, triggerEntityType, triggerActionType, dateTimeFormat, isNotificationParamName));
+            providerId, triggerType, triggerEntityType, triggerActionType, dateTimeFormat));
 
     protected static final Set<String> ACTIVATION_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName,
             dateFormatParamName,
@@ -98,9 +92,8 @@ public class SmsCampaignValidator {
     protected static final Set<String> PREVIEW_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(paramValue, message));
 
     @Autowired
-    public SmsCampaignValidator(FromJsonHelper fromApiJsonHelper, final DeviceRegistrationRepositoryWrapper deviceRegistrationRepository) {
+    public SmsCampaignValidator(FromJsonHelper fromApiJsonHelper) {
         this.fromApiJsonHelper = fromApiJsonHelper;
-        this.deviceRegistrationRepository = deviceRegistrationRepository;
     }
 
     public void validateCreate(String json) {
@@ -166,12 +159,6 @@ public class SmsCampaignValidator {
                     element);
             baseDataValidator.reset().parameter(SmsCampaignValidator.submittedOnDateParamName).value(submittedOnDate).notNull();
         }
-        
-        if (this.fromApiJsonHelper.parameterExists(SmsCampaignValidator.isNotificationParamName, element)) {
-            final Boolean isNotification = this.fromApiJsonHelper.extractBooleanNamed(SmsCampaignValidator.isNotificationParamName,
-                    element);
-            baseDataValidator.reset().parameter(SmsCampaignValidator.submittedOnDateParamName).trueOrFalseRequired(isNotification);
-        }
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
     }
@@ -227,11 +214,7 @@ public class SmsCampaignValidator {
                 }
             }
         }
-        if (this.fromApiJsonHelper.parameterExists(SmsCampaignValidator.isNotificationParamName, element)) {
-            final Boolean isNotification = this.fromApiJsonHelper.extractBooleanNamed(SmsCampaignValidator.isNotificationParamName,
-                    element);
-            baseDataValidator.reset().parameter(SmsCampaignValidator.submittedOnDateParamName).trueOrFalseRequired(isNotification);
-        }
+
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
 
     }
@@ -320,17 +303,4 @@ public class SmsCampaignValidator {
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
     }
-    
-	public boolean isValidNotificationOrSms(Client client, SmsCampaign smsCampaign, Object mobileNo) {
-		if (smsCampaign.isNotification()) {
-			if (client != null) {
-				DeviceRegistration deviceRegistration = this.deviceRegistrationRepository
-						.findDeviceRegistrationByClientId(client.getId());
-				return (deviceRegistration != null);
-			}
-			return false;
-		}
-		return (mobileNo != null);
-	}
-    
 }

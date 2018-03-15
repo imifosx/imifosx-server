@@ -50,12 +50,4 @@ public class PaymentTypeData {
         Long position = null;
         return new PaymentTypeData(id, name, description, isCashPayment, position);
     }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
 }

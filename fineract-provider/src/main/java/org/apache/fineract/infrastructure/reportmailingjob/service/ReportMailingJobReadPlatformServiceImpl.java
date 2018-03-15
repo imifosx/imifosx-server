@@ -36,7 +36,6 @@ import org.apache.fineract.infrastructure.reportmailingjob.data.ReportMailingJob
 import org.apache.fineract.infrastructure.reportmailingjob.data.ReportMailingJobStretchyReportParamDateOption;
 import org.apache.fineract.infrastructure.reportmailingjob.data.ReportMailingJobTimelineData;
 import org.apache.fineract.infrastructure.reportmailingjob.exception.ReportMailingJobNotFoundException;
-import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,13 +47,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class ReportMailingJobReadPlatformServiceImpl implements ReportMailingJobReadPlatformService {
     private final JdbcTemplate jdbcTemplate;
-    private final ColumnValidator columnValidator;
     
     @Autowired
-    public ReportMailingJobReadPlatformServiceImpl(final RoutingDataSource dataSource,
-    		final ColumnValidator columnValidator) {
+    public ReportMailingJobReadPlatformServiceImpl(final RoutingDataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.columnValidator = columnValidator;
     }
 
     @Override
@@ -70,10 +66,9 @@ public class ReportMailingJobReadPlatformServiceImpl implements ReportMailingJob
         
         if (searchParameters.isOrderByRequested()) {
             sqlStringBuilder.append(" order by ").append(searchParameters.getOrderBy());
-            this.columnValidator.validateSqlInjection(sqlStringBuilder.toString(), searchParameters.getOrderBy());
+
             if (searchParameters.isSortOrderProvided()) {
                 sqlStringBuilder.append(" ").append(searchParameters.getSortOrder());
-                this.columnValidator.validateSqlInjection(sqlStringBuilder.toString(), searchParameters.getSortOrder());
             }
         } else {
             sqlStringBuilder.append(" order by rmj.name ");

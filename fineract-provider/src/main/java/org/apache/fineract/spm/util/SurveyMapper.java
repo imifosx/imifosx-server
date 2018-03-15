@@ -45,7 +45,8 @@ public class SurveyMapper {
         return surveyData;
     }
 
-    public static Survey map(final SurveyData surveyData, Survey survey) {        
+    public static Survey map(final SurveyData surveyData) {
+        final Survey survey = new Survey();
         survey.setComponents(SurveyMapper.mapComponentDatas(surveyData.getComponentDatas(), survey));
         survey.setQuestions(SurveyMapper.mapQuestionDatas(surveyData.getQuestionDatas(), survey));
         survey.setKey(surveyData.getKey());

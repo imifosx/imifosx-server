@@ -66,7 +66,7 @@ public class SmsMessage extends AbstractPersistableCustom<Long> {
     @Column(name = "status_enum", nullable = false)
     private Integer statusType;
 
-    @Column(name = "mobile_no", nullable = true, length = 50)
+    @Column(name = "mobile_no", nullable = false, length = 50)
     private String mobileNo;
 
     @Column(name = "message", nullable = false)
@@ -84,25 +84,22 @@ public class SmsMessage extends AbstractPersistableCustom<Long> {
 
     @Column(name = "delivered_on_date", nullable = true)
     @Temporal(TemporalType.TIMESTAMP)
-    private Date deliveredOnDate; 
-    
-    @Column(name = "is_notification", nullable = true)
-    private boolean isNotification;
+    private Date deliveredOnDate;
 
     public static SmsMessage pendingSms(final String externalId, final Group group, final Client client, final Staff staff,
-            final String message, final String mobileNo, final SmsCampaign smsCampaign, final boolean isNotification) {
-        return new SmsMessage(externalId, group, client, staff, SmsMessageStatusType.PENDING, message, mobileNo, smsCampaign, isNotification);
+            final String message, final String mobileNo, final SmsCampaign smsCampaign) {
+        return new SmsMessage(externalId, group, client, staff, SmsMessageStatusType.PENDING, message, mobileNo, smsCampaign);
     }
 
     public static SmsMessage sentSms(final String externalId, final Group group, final Client client, final Staff staff,
-            final String message, final String mobileNo, final SmsCampaign smsCampaign, final boolean isNotification) {
-        return new SmsMessage(externalId, group, client, staff, SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT, message, mobileNo, smsCampaign, isNotification);
+            final String message, final String mobileNo, final SmsCampaign smsCampaign) {
+        return new SmsMessage(externalId, group, client, staff, SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT, message, mobileNo, smsCampaign);
     }
 
     public static SmsMessage instance(String externalId, final Group group, final Client client, final Staff staff,
-            final SmsMessageStatusType statusType, final String message, final String mobileNo, final SmsCampaign smsCampaign, final boolean isNotification) {
+            final SmsMessageStatusType statusType, final String message, final String mobileNo, final SmsCampaign smsCampaign) {
 
-        return new SmsMessage(externalId, group, client, staff, statusType, message, mobileNo, smsCampaign, isNotification);
+        return new SmsMessage(externalId, group, client, staff, statusType, message, mobileNo, smsCampaign);
     }
 
     protected SmsMessage() {
@@ -110,7 +107,7 @@ public class SmsMessage extends AbstractPersistableCustom<Long> {
     }
 
     private SmsMessage(String externalId, final Group group, final Client client, final Staff staff, final SmsMessageStatusType statusType,
-            final String message, final String mobileNo, final SmsCampaign smsCampaign, final boolean isNotification) {
+            final String message, final String mobileNo, final SmsCampaign smsCampaign) {
         this.externalId = externalId;
         this.group = group;
         this.client = client;
@@ -120,7 +117,6 @@ public class SmsMessage extends AbstractPersistableCustom<Long> {
         this.message = message;
         this.smsCampaign = smsCampaign;
         this.submittedOnDate = LocalDate.now().toDate();
-        this.isNotification = isNotification;
     }
 
     public Map<String, Object> update(final JsonCommand command) {
@@ -187,14 +183,4 @@ public class SmsMessage extends AbstractPersistableCustom<Long> {
     public void setDeliveredOnDate(final Date deliveredOnDate) {
         this.deliveredOnDate = deliveredOnDate;
     }
-
-	public boolean isNotification() {
-		return this.isNotification;
-	}
-
-	public void setNotification(boolean isNotification) {
-		this.isNotification = isNotification;
-	}
-    
-    
 }
