@@ -40,6 +40,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeCalculationPlatformServiceImpl.class);
 
+	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
 	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
 	private final ServiceChargeReadPlatformService scChargeReadPlatformService;
 	@Autowired
@@ -49,6 +50,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 	public ServiceChargeCalculationPlatformServiceImpl(final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
 			final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService,
 			ServiceChargeReadPlatformService scChargeReadPlatformService) {
+		this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
 		this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
 		this.scChargeReadPlatformService = scChargeReadPlatformService;
 	}
@@ -166,6 +168,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		BigDecimal totalRepaymensts = BigDecimal.ZERO; // Assuming that on loan-payout, there is no repayments yet
 		BigDecimal totalOutstanding = principal; // The current amount being disbursed is the outstanding loan amount
 		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 		return serviceChargeCalculationLogic(finalSheetData, isDisbursed, totalRepaymensts, totalOutstanding);
 	}
 

@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
-import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeNotFoundException;
+import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -189,7 +189,7 @@ public class ServiceChargeFinalSheetData {
 	public BigDecimal getColumnValue(ServiceChargeReportTableHeaders header, int columnNumber) {
 		List<BigDecimal> dataList = getResultsDataMap().get(header);
 		if (columnNumber >= dataList.size()) {
-			throw new ServiceChargeNotFoundException(header.getValue().longValue());
+			throw new ServiceChargeException(header.getValue().longValue());
 		}
 		return dataList.get(columnNumber);
 	}
