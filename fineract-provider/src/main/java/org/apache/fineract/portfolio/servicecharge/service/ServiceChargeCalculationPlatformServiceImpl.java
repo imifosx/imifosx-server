@@ -86,9 +86,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		}
 		Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
 		if (retrivedSCList == null || retrivedSCList.isEmpty()) {
-			ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
-			scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
-			return calculateServiceChargeForCurrentQuarter(finalSheetData, isDisbursed, totalRepaymensts, totalOutstanding);
+			return calculateServiceChargeForCurrentQuarter(isDisbursed, totalRepaymensts, totalOutstanding);
 		}
 		return calculateServiceChargeFromDBValues(isDisbursed, totalRepaymensts, totalOutstanding, retrivedSCList);
 	}
@@ -125,7 +123,10 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		return serviceCharge;
 	}
 
-	private BigDecimal calculateServiceChargeForCurrentQuarter(ServiceChargeFinalSheetData finalSheetData, boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
+	private BigDecimal calculateServiceChargeForCurrentQuarter(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
+
 		BigDecimal repaymentCostPerRupee = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
 		BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
 		BigDecimal serviceCostPerLoan = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
