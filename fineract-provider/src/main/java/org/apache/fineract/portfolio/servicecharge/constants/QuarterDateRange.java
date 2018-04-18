@@ -141,7 +141,7 @@ public enum QuarterDateRange {
 	}
 
 	private static class QuarterYearHolder {
-		private static String quarter = "";
+		private static String quarter = StringUtils.EMPTY;
 		private static int year = 0;
 
 		static void setQuarterAndYear(String quarterParam, int yearParam) {
