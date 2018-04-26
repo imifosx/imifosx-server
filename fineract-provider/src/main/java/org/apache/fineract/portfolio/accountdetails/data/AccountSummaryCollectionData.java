@@ -75,5 +75,17 @@ public class AccountSummaryCollectionData {
         }
         return returnCollection;
     }
+    
+	public final Collection<LoanAccountSummaryData> getLoanAccounts() {
+		return loanAccounts;
+	}
+
+	public final Collection<SavingsAccountSummaryData> getSavingsAccounts() {
+		return savingsAccounts;
+	}
+
+	public final Collection<ShareAccountSummaryData> getShareAccounts() {
+		return shareAccounts;
+	}
 
 }

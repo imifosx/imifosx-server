@@ -49,4 +49,8 @@ public class ShareAccountStatusEnumData {
     public Long id() {
         return this.id;
     }
+    
+    public boolean isClosed() {
+    	return closed;
+    }
 }
