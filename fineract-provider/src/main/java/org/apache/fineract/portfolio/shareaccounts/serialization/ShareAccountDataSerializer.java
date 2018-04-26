@@ -1027,7 +1027,7 @@ public class ShareAccountDataSerializer {
         Collection<LoanAccountSummaryData> loanAccounts = clientAccount.getLoanAccounts();
         for (LoanAccountSummaryData loanAccount : loanAccounts) {
 			if(!loanAccount.getStatus().isClosed()) {
-				baseDataValidator.reset().parameter("Account Name").value(loanAccount.geAccountNo())
+				baseDataValidator.reset().parameter("Account Name").value(loanAccount.getAccountNo())
 				.failWithCodeNoParameterAddedToErrorCode("share.account.cannot.be.closed.before.closing.existing.loan", "Share account cannot be closed before closing existing loan account");
 				break;
 			}
@@ -1036,7 +1036,7 @@ public class ShareAccountDataSerializer {
         Collection<SavingsAccountSummaryData> savingsAccounts = clientAccount.getSavingsAccounts();
         for (SavingsAccountSummaryData savingsAccount : savingsAccounts) {
 			if(!savingsAccount.getStatus().isClosed()) {
-				baseDataValidator.reset().parameter("Account Name").value(savingsAccount.geAccountNo())
+				baseDataValidator.reset().parameter("Account Name").value(savingsAccount.getAccountNo())
 				.failWithCodeNoParameterAddedToErrorCode("share.account.cannot.be.closed.before.closing.existing.savings", "Share account cannot be closed before closing existing savings account");
 				break;
 			}

@@ -68,7 +68,7 @@ public class LoanAccountSummaryData {
 		return status;
 	}
 	
-	public String geAccountNo() {
+	public String getAccountNo() {
 		return accountNo;
 	}
 }
