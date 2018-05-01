@@ -34,7 +34,8 @@ public interface ServiceChargeCalculationPlatformService {
 	 * assumes that the loan is disbursed, no repayments yet made and principal amount is the outstanding amount of the loan.
 	 * 
 	 * @param principal
+	 * @param totalRepaymensts
 	 * @return Service Charge
 	 */
-	BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal);
+	BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer totalRepaymensts);
 }

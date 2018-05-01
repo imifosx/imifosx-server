@@ -69,5 +69,9 @@ public class ShareAccountSummaryData {
     public String getAccountNo() {
         return this.accountNo;
     }
+    
+    public ShareAccountStatusEnumData getStatus() {
+    	return status;
+    }
 
 }

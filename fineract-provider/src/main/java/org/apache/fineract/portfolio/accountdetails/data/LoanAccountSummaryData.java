@@ -63,4 +63,12 @@ public class LoanAccountSummaryData {
         this.originalLoan = originalLoan;
         this.amountPaid = amountPaid;
     }
+    
+	public LoanStatusEnumData getStatus() {
+		return status;
+	}
+	
+	public String getAccountNo() {
+		return accountNo;
+	}
 }

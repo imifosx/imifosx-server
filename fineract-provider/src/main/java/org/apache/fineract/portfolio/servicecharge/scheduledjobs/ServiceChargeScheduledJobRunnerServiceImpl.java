@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.servicecharge.scheduledjobs;
 
 import java.math.BigDecimal;
 import java.util.Calendar;
+import java.util.Collection;
 
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
@@ -28,6 +29,7 @@ import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReport
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeData;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
+import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeWritePlatformService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,12 +45,14 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
 	@Autowired
 	private ApplicationContext appContext;
 	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
+	private final ServiceChargeReadPlatformService scChargeReadPlatformService;
 	private final ServiceChargeWritePlatformService scWritePlatformService;
 
 	@Autowired
 	public ServiceChargeScheduledJobRunnerServiceImpl(final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
-			ServiceChargeWritePlatformService scWritePlatformService) {
+			ServiceChargeWritePlatformService scWritePlatformService, ServiceChargeReadPlatformService scChargeReadPlatformService) {
 		this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
+		this.scChargeReadPlatformService = scChargeReadPlatformService;
 		this.scWritePlatformService = scWritePlatformService;
 	}
 
@@ -59,6 +63,12 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
 
 		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
 		int year = Calendar.getInstance().get(Calendar.YEAR);
+		
+		Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
+		if (retrivedSCList != null && !retrivedSCList.isEmpty()) {
+			// The calculation has already been done for this quarter and so skip it
+			return;
+		}
 		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
 		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 
