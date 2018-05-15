@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import javax.sql.DataSource;
 import javax.ws.rs.core.StreamingOutput;
@@ -170,9 +169,9 @@ public class ReadReportingServiceImpl implements ReadReportingService {
 
         final long startTime = System.currentTimeMillis();
         logger.info("STARTING REPORT: " + name + "   Type: " + type);
-        
+
         final String sql = getSQLtoRun(name, type, queryParams);
-        logger.info("Generic Resutlset Data SQL**************** "+sql);
+
         final GenericResultsetData result = this.genericDataService.fillGenericResultSet(sql);
 
         final long elapsed = System.currentTimeMillis() - startTime;
@@ -187,7 +186,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
         final Set<String> keys = queryParams.keySet();
         for (final String key : keys) {
             final String pValue = queryParams.get(key);
-            logger.info("(" + key + " : " + pValue + ")");
+            // logger.info("(" + key + " : " + pValue + ")");
             sql = this.genericDataService.replace(sql, key, pValue);
         }
 
@@ -208,11 +207,10 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     private String getSql(final String name, final String type) {
 
         final String inputSql = "select " + type + "_sql as the_sql from stretchy_" + type + " where " + type + "_name = '" + name + "'";
-        logger.info("SQL Is "+inputSql);
         final String inputSqlWrapped = this.genericDataService.wrapSQL(inputSql);
 
         final SqlRowSet rs = this.jdbcTemplate.queryForRowSet(inputSqlWrapped);
-        logger.info("RS Is "+rs.getString("the_sql"));
+
         if (rs.next() && rs.getString("the_sql") != null) { return rs.getString("the_sql"); }
         throw new ReportNotFoundException(inputSql);
     }
@@ -221,7 +219,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
     public String getReportType(final String reportName) {
 
         final String sql = "SELECT ifnull(report_type,'') as report_type FROM `stretchy_report` where report_name = '" + reportName + "'";
-       logger.info("getReportType SQL "+sql);
+
         final String sqlWrapped = this.genericDataService.wrapSQL(sql);
 
         final SqlRowSet rs = this.jdbcTemplate.queryForRowSet(sqlWrapped);
