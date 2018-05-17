@@ -86,4 +86,11 @@ public interface ConfigurationDomainService {
 
     void removeGlobalConfigurationPropertyDataFromCache(String propertyName);
     
+    boolean isShareWithdrawalLimitEnabled();
+
+    Integer retrieveShareWithdrawalLimitPercent();
+
+    boolean isShareBuyingLimitEnabled();
+
+    Integer retrieveShareBuyingLimitPercent();
 }

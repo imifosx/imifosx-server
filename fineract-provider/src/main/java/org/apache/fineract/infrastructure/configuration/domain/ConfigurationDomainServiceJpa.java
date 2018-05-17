@@ -286,6 +286,34 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         String key = identifier + "_" + propertyName;
         configurations.remove(key);
     }
+    
+    @Override
+	public boolean isShareWithdrawalLimitEnabled() {
+    	final String propertyName = "Share-Withdrawal-Limit";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+    
+    @Override
+    public Integer retrieveShareWithdrawalLimitPercent() {
+    	 final String propertyName = "Share-Withdrawal-Limit";
+         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+         return property.getValue().intValue();
+    }
+    
+    @Override
+	public boolean isShareBuyingLimitEnabled() {
+    	final String propertyName = "Share-Buying-Limit";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+    
+    @Override
+    public Integer retrieveShareBuyingLimitPercent() {
+    	 final String propertyName = "Share-Buying-Limit";
+         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+         return property.getValue().intValue();
+    }
 
     private GlobalConfigurationPropertyData getGlobalConfigurationPropertyData(final String propertyName) {
         String identifier = ThreadLocalContextUtil.getTenant().getTenantIdentifier();
