@@ -93,4 +93,10 @@ public interface ConfigurationDomainService {
     boolean isShareBuyingLimitEnabled();
 
     Integer retrieveShareBuyingLimitPercent();
+
+    boolean isMaxDepositLimitEnabled();
+
+    Integer retrieveMaxDepositMultiplier();
+
+    Long retrieveAvgDepositInSavings();
 }

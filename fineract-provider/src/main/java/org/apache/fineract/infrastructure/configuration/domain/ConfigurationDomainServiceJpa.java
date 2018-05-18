@@ -315,6 +315,27 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
          return property.getValue().intValue();
     }
 
+    @Override
+    public boolean isMaxDepositLimitEnabled() {
+    	final String propertyName = "Limit-Max-Deposit-With-Multiplier";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+    
+    @Override
+    public Integer retrieveMaxDepositMultiplier() {
+    	final String propertyName = "Limit-Max-Deposit-With-Multiplier";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.getValue().intValue();
+    }
+
+    @Override
+    public Long retrieveAvgDepositInSavings() {
+    	final String propertyName = "Avg-Deposit-In-Savings";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.getValue();
+    }
+
     private GlobalConfigurationPropertyData getGlobalConfigurationPropertyData(final String propertyName) {
         String identifier = ThreadLocalContextUtil.getTenant().getTenantIdentifier();
         String key = identifier + "_" + propertyName;

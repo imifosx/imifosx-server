@@ -19,5 +19,5 @@
 
 
 INSERT INTO `c_configuration` (`name`, `value`, `date_value`, `enabled`, `is_trap_door`, `description`) VALUES
-	('Share-Withdrawal-Limit', 10, NULL, 1, 0, 'Members cannot withdraw more than this value (in percentage) of paid-up share capital in one financial year'),
-	('Share-Buying-Limit', 20, NULL, 1, 0, 'One member cannot subscribe to more than this value(in percentage) of paid-up share capital');
+	('Limit-Max-Deposit-With-Multiplier', 10, NULL, 1, 0, 'If enabled, this will add limits on how much can be deposited into a savings account, the value is the multiplier which is multiplied with the Avg-Deposit-In-Savings to determine the limiting value'),
+	('Avg-Deposit-In-Savings', 0, NULL, 1, 0, 'The average deposit value in the savings account that is used in conjunction with Limit-Max-Deposit-With-Multiplier');
