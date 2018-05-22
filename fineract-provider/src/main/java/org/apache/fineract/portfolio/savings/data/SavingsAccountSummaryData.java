@@ -66,4 +66,8 @@ public class SavingsAccountSummaryData {
         this.lastInterestCalculationDate = lastInterestCalculationDate;
         this.availableBalance = availableBalance;
     }
+
+	public BigDecimal getAvailableBalance() {
+		return availableBalance;
+	}
 }

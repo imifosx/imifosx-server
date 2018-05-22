@@ -570,4 +570,8 @@ public class SavingsAccountData {
     public void setDatatables(final List<DatatableData> datatables) {
         this.datatables = datatables;
     }
+
+	public SavingsAccountSummaryData getSummary() {
+		return summary;
+	}
 }
