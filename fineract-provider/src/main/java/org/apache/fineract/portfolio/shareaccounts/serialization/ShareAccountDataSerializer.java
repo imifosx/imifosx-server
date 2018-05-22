@@ -61,6 +61,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountNotFoundException;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountReadPlatformService;
+import org.apache.fineract.portfolio.servicecharge.share.ShareLimitingService;
 import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccount;
 import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountCharge;
 import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountChargePaidBy;
@@ -98,6 +99,8 @@ public class ShareAccountDataSerializer {
     private final SavingsAccountReadPlatformService savingsAccountReadPlatformService ;
     
     private final AccountDetailsReadPlatformService accountDetailsReadPlatformService;
+    
+    private final ShareLimitingService shareLimitingService;
 
     private static final Set<String> approvalParameters = new HashSet<>(Arrays.asList(ShareAccountApiConstants
                     .locale_paramname,
@@ -124,7 +127,7 @@ public class ShareAccountDataSerializer {
             final ChargeRepositoryWrapper chargeRepository, final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper,
             final ClientRepositoryWrapper clientRepositoryWrapper, final ShareProductRepositoryWrapper shareProductRepository,
             final SavingsAccountReadPlatformService savingsAccountReadPlatformService,
-            final AccountDetailsReadPlatformService accountDetailsReadPlatformService) {
+            final AccountDetailsReadPlatformService accountDetailsReadPlatformService, ShareLimitingService shareLimitingService) {
         this.platformSecurityContext = platformSecurityContext;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.chargeRepository = chargeRepository;
@@ -133,6 +136,7 @@ public class ShareAccountDataSerializer {
         this.shareProductRepository = shareProductRepository;
         this.savingsAccountReadPlatformService = savingsAccountReadPlatformService;
         this.accountDetailsReadPlatformService = accountDetailsReadPlatformService;
+        this.shareLimitingService = shareLimitingService;
     }
 
     public ShareAccount validateAndCreate(JsonCommand jsonCommand) {
@@ -502,6 +506,7 @@ public class ShareAccountDataSerializer {
             baseDataValidator.reset().parameter(ShareAccountApiConstants.requestedshares_paramname).value(requested)
             .failWithCodeNoParameterAddedToErrorCode("shares.requested.can.not.be.approved.exceeding.totalshares.issuable");
         }
+        shareLimitingService.validateSharesSubscriptionWithPaidupCapital(account, transaction, baseDataValidator);
     }
     private void updateTotalChargeDerived(final ShareAccount shareAccount) {
         // Set<ShareAccountCharge> charges = shareAccount.getCharges() ;
