@@ -1,6 +1,8 @@
 package org.apache.fineract.portfolio.servicecharge.saving;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -33,6 +35,7 @@ import org.apache.fineract.portfolio.savings.data.SavingsAccountSummaryData;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountSubStatusEnum;
 import org.apache.fineract.portfolio.savings.service.SavingsEnumerations;
+import org.apache.fineract.portfolio.servicecharge.exception.DepositAccountTransactionUpperLimitException;
 import org.apache.fineract.portfolio.tax.data.TaxGroupData;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
@@ -42,6 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 
 @Service
 public class SavingAccountsCalculationPlatformServiceImpl implements SavingAccountsCalculationPlatformService {
@@ -66,10 +70,20 @@ public class SavingAccountsCalculationPlatformServiceImpl implements SavingAccou
     }
 
     @Override
+    public void validateDepositUpperLimit(BigDecimal accountBalance, Long savingsId) {
+
+        BigDecimal totalAverageSavingDeposit = calculateAverageSavings();
+
+        if (accountBalance.compareTo(totalAverageSavingDeposit) == 1) { throw new DepositAccountTransactionUpperLimitException(savingsId); }
+
+    }
+
+    @Override
     public BigDecimal calculateAverageSavings() {
 
         Collection<SavingsAccountData> listSavingsAccount = retrieveAllSavingAccounts();
         BigDecimal totalSavingsBalance = BigDecimal.ZERO;
+        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
 
         // Get configuration id
         final String propertyName = "Avg-Deposit-In-Savings";
@@ -79,9 +93,9 @@ public class SavingAccountsCalculationPlatformServiceImpl implements SavingAccou
             totalSavingsBalance = totalSavingsBalance.add(savingsAccountData.getSummary().getAvailableBalance());
         }
 
-        BigDecimal averageSavingDeposit = totalSavingsBalance.divide(new BigDecimal(listSavingsAccount.size()));
+        BigDecimal averageSavingDeposit = totalSavingsBalance.divide(new BigDecimal(listSavingsAccount.size()), roundingMode);
 
-        logger.info("total Current Account Balance " + totalSavingsBalance);
+        logger.info("total Current Account Balance " + averageSavingDeposit);
 
         updateConfiguration((long) configuration.getId(), "{\"enabled\":\"true\", \"value\":" + totalSavingsBalance.longValue() + "}");
         return totalSavingsBalance;

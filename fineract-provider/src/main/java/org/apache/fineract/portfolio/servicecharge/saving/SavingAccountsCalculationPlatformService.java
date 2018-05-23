@@ -11,4 +11,6 @@ public interface SavingAccountsCalculationPlatformService {
      */
     BigDecimal calculateAverageSavings();
 
+    void validateDepositUpperLimit(BigDecimal accountBalance, Long savingsId);
+
 }
