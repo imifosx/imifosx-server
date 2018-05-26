@@ -919,6 +919,7 @@ public class ShareAccountDataSerializer {
                     .value(redeemTransaction.getTotalShares())
                     .failWithCodeNoParameterAddedToErrorCode("cannot.be.redeemed.due.to.lockinperiod");
         }
+        shareLimitingService.validateSharesRedemptionWithPaidupCapital(account, redeemTransaction, baseDataValidator);
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
     }
     
