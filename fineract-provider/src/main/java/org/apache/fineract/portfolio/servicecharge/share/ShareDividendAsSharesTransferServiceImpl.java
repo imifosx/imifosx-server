@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.portfolio.shareaccounts.domain.PurchasedSharesStatusType;
 import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountStatusType;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProduct;
@@ -23,9 +24,9 @@ public class ShareDividendAsSharesTransferServiceImpl implements ShareDividendAs
     private final DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd");
 
     @Autowired
-    public ShareDividendAsSharesTransferServiceImpl(final ShareProductRepository shareProductRepository, final JdbcTemplate jdbcTemplate) {
+    public ShareDividendAsSharesTransferServiceImpl(final RoutingDataSource dataSource, final ShareProductRepository shareProductRepository) {
         this.shareProductRepository = shareProductRepository;
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Override
