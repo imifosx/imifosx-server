@@ -30,5 +30,5 @@ public interface ServiceChargeApiConstants {
 	BigDecimal HUNDRED = new BigDecimal("100");
 	BigDecimal _365 = new BigDecimal("365");
 	String SERVICE_CHARGE_NAME = "Service Charge";
-
+	String dividendDistribution = "dividendDistribution";
 }

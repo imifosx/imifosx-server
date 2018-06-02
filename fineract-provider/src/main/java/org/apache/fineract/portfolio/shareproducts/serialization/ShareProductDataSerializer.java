@@ -45,6 +45,7 @@ import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.loanproduct.exception.InvalidCurrencyException;
+import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.apache.fineract.portfolio.shareproducts.constants.ShareProductApiConstants;
 import org.apache.fineract.portfolio.shareproducts.data.ShareProductMarketPriceData;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProduct;
@@ -92,7 +93,7 @@ public class ShareProductDataSerializer {
 	private static final Set<String> supportedParametersForDivident = new HashSet<>(Arrays.asList(
 			ShareProductApiConstants.locale_paramname, ShareProductApiConstants.dateFormatParamName,
 			ShareProductApiConstants.dividendPeriodStartDateParamName,
-			ShareProductApiConstants.dividendPeriodEndDateParamName, ShareProductApiConstants.dividendAmountParamName));
+			ShareProductApiConstants.dividendPeriodEndDateParamName, ShareProductApiConstants.dividendAmountParamName, ServiceChargeApiConstants.dividendDistribution));
 
     @Autowired
     public ShareProductDataSerializer(final FromJsonHelper fromApiJsonHelper, final ChargeRepositoryWrapper chargeRepository,
@@ -495,6 +496,10 @@ public class ShareProductDataSerializer {
                 ShareProductApiConstants.dividendAmountParamName, element);
         baseDataValidator.reset().parameter(ShareProductApiConstants.dividendAmountParamName).value(dividendAmount).notBlank()
                 .positiveAmount();
+        final String dividendDistribution = this.fromApiJsonHelper.extractStringNamed(
+                ServiceChargeApiConstants.dividendDistribution, element);
+        baseDataValidator.reset().parameter(ServiceChargeApiConstants.dividendDistribution).value(dividendDistribution).notBlank();
+        
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
     }
 

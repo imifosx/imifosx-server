@@ -436,4 +436,9 @@ public class ShareProduct extends AbstractAuditableCustom<AppUser, Long> {
     public Long getDefaultClientShares() {
         return this.nominalShares ;
     }
+
+    
+    public Boolean getAllowDividendCalculationForInactiveClients() {
+        return this.allowDividendCalculationForInactiveClients;
+    }
 }

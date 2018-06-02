@@ -61,4 +61,14 @@ public class ShareAccountDividendDetails extends AbstractPersistableCustom<Long>
         return this.amount;
     }
 
+    
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    
+    public Long getShareAccountId() {
+        return this.shareAccountId;
+    }
+
 }

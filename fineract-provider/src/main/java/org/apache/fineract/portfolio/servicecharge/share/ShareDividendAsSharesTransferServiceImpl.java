@@ -2,13 +2,20 @@ package org.apache.fineract.portfolio.servicecharge.share;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.portfolio.shareaccounts.domain.PurchasedSharesStatusType;
+import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountDividendDetails;
 import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountStatusType;
+import org.apache.fineract.portfolio.shareaccounts.service.ShareAccountWritePlatformService;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProduct;
+import org.apache.fineract.portfolio.shareproducts.domain.ShareProductDividendPayOutDetails;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProductRepository;
+import org.apache.fineract.portfolio.shareproducts.exception.DividentProcessingException;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -16,24 +23,31 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+
 @Service
 public class ShareDividendAsSharesTransferServiceImpl implements ShareDividendAsSharesTransferService {
 
     private final ShareProductRepository shareProductRepository;
     private final JdbcTemplate jdbcTemplate;
     private final DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd");
+    private final ShareAccountWritePlatformService shareAccountWritePlatformService;
 
     @Autowired
-    public ShareDividendAsSharesTransferServiceImpl(final RoutingDataSource dataSource, final ShareProductRepository shareProductRepository) {
+    public ShareDividendAsSharesTransferServiceImpl(final RoutingDataSource dataSource, final ShareProductRepository shareProductRepository,
+            final ShareAccountWritePlatformService shareAccountWritePlatformService) {
         this.shareProductRepository = shareProductRepository;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.shareAccountWritePlatformService = shareAccountWritePlatformService;
     }
 
     @Override
-    public void validateIfDividendCanBeTransferredAsShares(final Long productId, BigDecimal dividendAmount,
-            final boolean fetchInActiveAccounts, final LocalDate startDate) {
-        ShareProduct product = this.shareProductRepository.findOne(productId);
-        validateIfDividendCanBeTransferredAsShares(product, dividendAmount, fetchInActiveAccounts, startDate);
+    public void validateIfDividendCanBeTransferredAsShares(final ShareProduct shareProduct, BigDecimal dividendAmount,
+            final LocalDate startDate) {
+
+        validateIfDividendCanBeTransferredAsShares(shareProduct, dividendAmount,
+                shareProduct.getAllowDividendCalculationForInactiveClients(), startDate);
     }
 
     @Override
@@ -43,14 +57,72 @@ public class ShareDividendAsSharesTransferServiceImpl implements ShareDividendAs
         BigDecimal unitPrice = shareProduct.getUnitPrice();
         BigDecimal numberOfSharesForDividendAmount = dividendAmount.divide(unitPrice);
         if (numberOfSharesForDividendAmount.doubleValue() < 0) {
-            // Need to throw exception here saying that dividend amount cannot
-            // be divided over the shares
-        }
+
+        throw new DividentProcessingException("dividend.amount.cannot.divide", "Dividend amount cannot be divided over the shares"); }
         BigDecimal numberOfSharesPerClient = numberOfSharesForDividendAmount.divide(new BigDecimal(numberOfShareAccounts));
         if (numberOfSharesPerClient.doubleValue() < 0) {
-            // Need to throw exception here saying that the number of shares is
-            // less than the needed count
+
+        throw new DividentProcessingException("shares.number.less.count", "The number of shares is less than the needed count"); }
+    }
+
+    @Override
+    public BigDecimal validateDividendTransferAsShares(final ShareProduct shareProduct, BigDecimal dividendAmount) {
+
+        if (dividendAmount.compareTo(BigDecimal.ZERO) == 0) { return BigDecimal.ZERO; }
+
+        BigDecimal unitPrice = shareProduct.getUnitPrice();
+        BigDecimal numberOfSharesForDividendAmount = dividendAmount.divide(unitPrice);
+        if (numberOfSharesForDividendAmount.doubleValue() < 1.000d) { throw new DividentProcessingException("dividend.amount.cannot.divide",
+                "dividend amount cannot be divided over the shares"); }
+        return numberOfSharesForDividendAmount;
+    }
+
+    @Override
+    public ShareProductDividendPayOutDetails transferSharesAndReturnRemainingDividend(String cashOrShare, Long productId,
+            ShareProductDividendPayOutDetails dividendPayOutDetails) {
+
+        if ("cash".equalsIgnoreCase(cashOrShare)) { return dividendPayOutDetails; }
+
+        ShareProduct product = this.shareProductRepository.findOne(productId);
+        Map<Long, JsonCommand> applyAdditionalShareMap = new HashMap<Long, JsonCommand>();
+        int totalSharesAsDividend = 0;
+
+        for (ShareAccountDividendDetails shareAccountDividendDetails : dividendPayOutDetails.getAccountDividendDetails()) {
+            BigDecimal numberOfSharesForDividendAmount = validateDividendTransferAsShares(product, shareAccountDividendDetails.getAmount());
+            int noOfShares = numberOfSharesForDividendAmount.intValue();
+            totalSharesAsDividend = totalSharesAsDividend + noOfShares;
+
+            // Add shares
+            LocalDate todayDate = new LocalDate();
+            DateTimeFormatter fmt = DateTimeFormat.forPattern("dd MMMM yyyy");
+            String requestedDate = todayDate.toString(fmt);
+            JsonElement jsonElement = new JsonParser().parse("{\"unitPrice\":" + product.getUnitPrice() + ",\"requestedDate\":\""
+                    + requestedDate + "\",\"requestedShares\":\"" + noOfShares + "\",\"locale\":\"en\",\"dateFormat\":\"dd MMMM yyyy\"}");
+            JsonCommand jsonCommand = JsonCommand.from(
+                    "{\"unitPrice\":" + product.getUnitPrice() + ",\"requestedDate\":\"" + requestedDate + "\",\"requestedShares\":\""
+                            + noOfShares + "\",\"locale\":\"en\",\"dateFormat\":\"dd MMMM yyyy\"}",
+                    jsonElement, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            applyAdditionalShareMap.put(shareAccountDividendDetails.getShareAccountId(), jsonCommand);
+
+            double remainingAmount = numberOfSharesForDividendAmount.doubleValue() - noOfShares;
+            BigDecimal amountToDeposit = new BigDecimal(remainingAmount).multiply(product.getUnitPrice());
+            shareAccountDividendDetails.setAmount(amountToDeposit);
         }
+
+        // Now get the product details of subscribed and issuable shares
+        Long totalSharesIssuable = product.getSharesIssued();
+        if (totalSharesIssuable == null) {
+            totalSharesIssuable = product.getTotalShares();
+        } else {
+            totalSharesIssuable = product.getTotalShares() - totalSharesIssuable;
+        }
+
+        if (totalSharesAsDividend > totalSharesIssuable) { throw new DividentProcessingException("shares.not.enough",
+                "Not enough shares to be divided among all the client"); }
+
+        applyAdditionalShareMap.forEach((key, value) -> shareAccountWritePlatformService.applyAddtionalShares(key, value));
+
+        return dividendPayOutDetails;
     }
 
     private Long fetchCountOfShareAccountsForShareProduct(final Long productId, final boolean fetchInActiveAccounts,
