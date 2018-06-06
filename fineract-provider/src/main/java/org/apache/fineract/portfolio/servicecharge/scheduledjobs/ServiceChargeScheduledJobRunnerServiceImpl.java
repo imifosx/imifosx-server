@@ -20,7 +20,6 @@ package org.apache.fineract.portfolio.servicecharge.scheduledjobs;
 
 import java.math.BigDecimal;
 import java.util.Calendar;
-import java.util.Collection;
 
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
@@ -31,6 +30,7 @@ import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetD
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeWritePlatformService;
+import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,9 +63,10 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
 
 		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
 		int year = Calendar.getInstance().get(Calendar.YEAR);
+		QuarterDateRange.setQuarterAndYear(quarter.name(), year);
 		
-		Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
-		if (retrivedSCList != null && !retrivedSCList.isEmpty()) {
+		ServiceChargeData serviceCharge = ServiceChargeOperationUtils.getServiceChargeForCurrentQuarter(scChargeReadPlatformService);
+		if (serviceCharge != null) {
 			// The calculation has already been done for this quarter and so skip it
 			return;
 		}
