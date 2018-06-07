@@ -165,16 +165,19 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 	}
 
 	@Override
-	public BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer totalRepaymensts) {
-		boolean isDisbursed = true; // Assuming that it will be disbursed
-		BigDecimal totalOutstanding = principal; // The current amount being disbursed is the outstanding loan amount
-		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: principal=" + principal.toPlainString());
-		// QuarterDateRange.setQuarterAndYear("Q1", 2018);
-		BigDecimal totalRepaymenstsBigDecimal = new BigDecimal(totalRepaymensts);
-		BigDecimal totalServiceChargeAmount = serviceChargeCalculationLogic(isDisbursed, totalRepaymenstsBigDecimal, totalOutstanding);
-		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: serviceChargeAmount=" + totalServiceChargeAmount.toPlainString());
-		BigDecimal serviceChargeAmount = totalServiceChargeAmount.divide(totalRepaymenstsBigDecimal);
-		return serviceChargeAmount;
-	}
+    public BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer numberOfRepayments) {
+        // Assuming that it will be disbursed
+        boolean isDisbursed = true;
+        // The current amount being disbursed is the outstanding loan amount
+        BigDecimal totalOutstanding = principal;
+        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: principal=" + principal.toPlainString());
+        // QuarterDateRange.setQuarterAndYear("Q1", 2018);
+        BigDecimal numberOfRepaymentsBigDecimal = new BigDecimal(numberOfRepayments);
+        BigDecimal totalServiceChargeAmount = serviceChargeCalculationLogic(isDisbursed, BigDecimal.ZERO, totalOutstanding);
+        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: serviceChargeAmount="
+                + totalServiceChargeAmount.toPlainString());
+        BigDecimal serviceChargeAmount = totalServiceChargeAmount.divide(numberOfRepaymentsBigDecimal);
+        return serviceChargeAmount;
+    }
 
 }
