@@ -21,30 +21,33 @@ package org.apache.fineract.portfolio.servicecharge.service;
 import java.math.BigDecimal;
 import java.util.Collection;
 
+import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 
 public interface ServiceChargeLoanDetailsReadPlatformService {
-	// Add Loan related Service Charge methods here
+    // Add Loan related Service Charge methods here
 
-	BigDecimal getTotalLoansForCurrentQuarter();
+    BigDecimal getTotalLoansForCurrentQuarter();
 
-	BigDecimal getAllLoansRepaymentData() throws Exception;
+    BigDecimal getAllLoansRepaymentData() throws Exception;
 
-	void populateRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData);
+    void populateRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData);
 
-	boolean findIfLoanDisbursedInCurrentQuarter(Long loanId);
+    boolean findIfLoanDisbursedInCurrentQuarter(Long loanId);
 
-	BigDecimal getTotalRepaymentsForCurrentQuarter(Long loanId);
+    BigDecimal getTotalRepaymentsForCurrentQuarter(Long loanId);
 
-	BigDecimal getTotalOutstandingAmountForCurrentQuarter(Long loanId);
+    BigDecimal getTotalOutstandingAmountForCurrentQuarter(Long loanId);
 
-	Collection<LoanTransactionData> retrieveLoanTransactionsOutstandingPayments(Long loanId, String startDate, String endDate);
+    Collection<LoanTransactionData> retrieveLoanTransactionsOutstandingPayments(Long loanId, String startDate, String endDate);
 
-	LoanAccountData checkLoanStatus(SearchParameters searchParameters, Long loanId);
+    LoanAccountData checkLoanStatus(SearchParameters searchParameters, Long loanId);
 
-	Collection<LoanTransactionData> retrieveLoanTransactionsOutstandingPaymentsPreviuosData(Long loanId);
+    Collection<LoanTransactionData> retrieveLoanTransactionsOutstandingPaymentsPreviuosData(Long loanId);
+
+    Page<LoanAccountData> retrieveLoansToBeConsideredForTheCurrentQuarter();
 
 }

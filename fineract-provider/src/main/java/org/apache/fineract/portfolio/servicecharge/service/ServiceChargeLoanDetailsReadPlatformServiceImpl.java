@@ -720,9 +720,21 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		final String sqlCountRows = "SELECT FOUND_ROWS()";
 		return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray, this.loaanLoanMapper);
 	}
+
+    @Override
+    public Page<LoanAccountData> retrieveLoansToBeConsideredForTheCurrentQuarter() {
+        // Get the dates
+        QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+        String strStartDate = quarter.getFormattedFromDateString();
+        String strEndDate = quarter.getFormattedToDateString();
+
+        final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
+        return retrieveLoansToBeConsideredForTheQuarter(searchParameters, strStartDate, strEndDate);
+
+    }
 	 
 	 
-	 public Page<LoanAccountData> retrieveLoansToBeConsideredForTheQuarter(final SearchParameters searchParameters, String startDate, String endDate) {
+	private Page<LoanAccountData> retrieveLoansToBeConsideredForTheQuarter(final SearchParameters searchParameters, String startDate, String endDate) {
 		
         final AppUser currentUser = this.context.authenticatedUser();
         final String hierarchy = currentUser.getOffice().getHierarchy();
