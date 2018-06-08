@@ -912,6 +912,10 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
     public BigDecimal amountOrPercentage() {
         return this.amountOrPercentage;
     }
+    
+    public void updateAmountOrPercentage(BigDecimal amountOrPercentage) {
+        this.amountOrPercentage = amountOrPercentage;
+    }
 
     public BigDecimal chargeAmount() {
         BigDecimal totalChargeAmount = this.amountOutstanding;

@@ -41,6 +41,7 @@ import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiCon
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeCalculationPlatformService;
+import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeInstallmentCalculatorService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,98 +54,89 @@ import org.springframework.stereotype.Component;
 @Scope("singleton")
 public class ServiceChargeApiResource {
 
-	private final Set<String> CHARGES_DATA_PARAMETERS = new HashSet<>(Arrays.asList("id", "name", "amount", "currency", "active", "chargeAppliesTo",
-			"chargeTimeType", "chargeCalculationType", "chargeCalculationTypeOptions", "chargeAppliesToOptions", "chargeTimeTypeOptions",
-			"currencyOptions", "loanChargeCalculationTypeOptions", "loanChargeTimeTypeOptions", "incomeAccount",
-			"clientChargeCalculationTypeOptions", "clientChargeTimeTypeOptions"));
+    private final Set<String> CHARGES_DATA_PARAMETERS = new HashSet<>(Arrays.asList("id", "name", "amount", "currency", "active",
+            "chargeAppliesTo", "chargeTimeType", "chargeCalculationType", "chargeCalculationTypeOptions", "chargeAppliesToOptions",
+            "chargeTimeTypeOptions", "currencyOptions", "loanChargeCalculationTypeOptions", "loanChargeTimeTypeOptions", "incomeAccount",
+            "clientChargeCalculationTypeOptions", "clientChargeTimeTypeOptions"));
 
-	private final String resourceNameForPermissions = "SERVICECHARGE";
+    private final ServiceChargeInstallmentCalculatorService scCalculator;
+    private final ServiceChargeCalculationPlatformService serviceChargeCalculator;
+    private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
+    @Autowired
+    private ApplicationContext appContext;
 
-	private final DefaultToApiJsonSerializer<ChargeData> toApiJsonSerializer;
-	private final ApiRequestParameterHelper apiRequestParameterHelper;
-	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
-	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
-	private final ServiceChargeCalculationPlatformService serviceChargeCalculator;
-	@Autowired
-	private ApplicationContext appContext;
+    @Autowired
+    public ServiceChargeApiResource(final ServiceChargeInstallmentCalculatorService scCalculator,
+            final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
+            final ServiceChargeCalculationPlatformService serviceChargeCalculator) {
+        this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
+        this.serviceChargeCalculator = serviceChargeCalculator;
+        this.scCalculator=scCalculator;
+    }
 
-	@Autowired
-	public ServiceChargeApiResource(final DefaultToApiJsonSerializer<ChargeData> toApiJsonSerializer,
-			final ApiRequestParameterHelper apiRequestParameterHelper,
-			final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
-			final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService,
-			final ServiceChargeCalculationPlatformService serviceChargeCalculator) {
-		this.toApiJsonSerializer = toApiJsonSerializer;
-		this.apiRequestParameterHelper = apiRequestParameterHelper;
-		this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
-		this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
-		this.serviceChargeCalculator = serviceChargeCalculator;
-	}
+    @GET
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveServiceCharge(@Context final UriInfo uriInfo) {
+        ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
+        scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 
-	@GET
-	@Consumes({ MediaType.APPLICATION_JSON })
-	@Produces({ MediaType.APPLICATION_JSON })
-	public String retrieveServiceCharge(@Context final UriInfo uriInfo) {
-		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
-		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
+        BigDecimal disbursmentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
+        BigDecimal mobilizationCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
+        BigDecimal repaymentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
 
-		BigDecimal disbursmentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
-		BigDecimal mobilizationCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
-		BigDecimal repaymentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
+        StringBuffer result = new StringBuffer();
+        result.append("{");
+        result.append("Disbursement:").append(disbursmentCost.toPlainString());
+        result.append(",");
+        result.append("Mobilisation:").append(mobilizationCost.toPlainString());
+        result.append(",");
+        result.append("Repayment:").append(repaymentCost.toPlainString());
+        result.append("}");
+        return result.toString();
+    }
 
-		StringBuffer result = new StringBuffer();
-		result.append("{");
-		result.append("Disbursement:").append(disbursmentCost.toPlainString());
-		result.append(",");
-		result.append("Mobilisation:").append(mobilizationCost.toPlainString());
-		result.append(",");
-		result.append("Repayment:").append(repaymentCost.toPlainString());
-		result.append("}");
-		return result.toString();
-	}
+    @GET
+    @Path("{loandId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveServiceChargeForGivenLoan(@PathParam("loandId") final Long loanId, @Context final UriInfo uriInfo) {
+        BigDecimal serviceCharge = serviceChargeCalculator.calculateServiceChargeForLoan(loanId);
 
-	@GET
-	@Path("{loandId}")
-	@Consumes({ MediaType.APPLICATION_JSON })
-	@Produces({ MediaType.APPLICATION_JSON })
-	public String retrieveServiceChargeForGivenLoan(@PathParam("loandId") final Long loanId, @Context final UriInfo uriInfo) {
-		BigDecimal serviceCharge = serviceChargeCalculator.calculateServiceChargeForLoan(loanId);
+        return serviceCharge.toPlainString();
+    }
 
-		return serviceCharge.toPlainString();
-	}
+    @GET
+    @Path("getJournalEntries")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("table") final boolean displayTable) {
+        String result = null;
+        ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
+        scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
+        if (!displayTable) {
+            result = finalSheetData.getResultsDataMap().toString();
+        } else {
+            result = finalSheetData.generateResultAsHTMLTable(false).toString();
+        }
+        return result;
+    }
 
-	@GET
-	@Path("getJournalEntries")
-	@Consumes({ MediaType.APPLICATION_JSON })
-	@Produces({ MediaType.APPLICATION_JSON })
-	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("table") final boolean displayTable) {
-		String result = null;
-		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
-		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
-		if (!displayTable) {
-			result = finalSheetData.getResultsDataMap().toString();
-		} else {
-			result = finalSheetData.generateResultAsHTMLTable(false).toString();
-		}
-		return result;
-	}
-	
-	@GET
-	@Path("getQuarterJournalEntries")
-	@Consumes({ MediaType.APPLICATION_JSON })	
-	@Produces({ MediaType.APPLICATION_JSON })
-	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("quarter") final String quarter, @QueryParam("year") final int year, 
-			@QueryParam("table") final boolean displayTable) {
-		String result = null;
-		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData)appContext.getBean("serviceChargeFinalSheetData");
-		QuarterDateRange.setQuarterAndYear(quarter, year);
-		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
-		if (!displayTable) {
-			result = finalSheetData.getResultsDataMap().toString();
-		} else {
-			result = finalSheetData.generateResultAsHTMLTable(false).toString();
-		}
-		return result;
-	}
-
+    @GET
+    @Path("getQuarterJournalEntries")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("quarter") final String quarter,
+            @QueryParam("year") final int year, @QueryParam("table") final boolean displayTable) {
+        String result = null;
+        ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
+        QuarterDateRange.setQuarterAndYear(quarter, year);
+        scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
+        if (!displayTable) {
+            result = finalSheetData.getResultsDataMap().toString();
+        } else {
+            result = finalSheetData.generateResultAsHTMLTable(false).toString();
+        }
+        return result;
+    }
 }
