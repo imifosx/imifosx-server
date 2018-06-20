@@ -1274,7 +1274,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         this.actualMaturityDate = determineExpectedMaturityDate().toDate();
     }
 
-    private void updateLoanSummaryDerivedFields() {
+    public void updateLoanSummaryDerivedFields() {
 
         if (isNotDisbursed()) {
             this.summary.zeroFields();
