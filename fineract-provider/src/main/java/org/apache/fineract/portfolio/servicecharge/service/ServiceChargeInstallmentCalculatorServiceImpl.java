@@ -11,23 +11,27 @@ import java.util.Set;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeNotFoundException;
+import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanChargeRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallmentRepository;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTransactionProcessorFactory;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionComparator;
-import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.LoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
+import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
+import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException.SERVICE_CHARGE_EXCEPTION_REASON;
+import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeLoanSummaryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -38,22 +42,45 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
     private final LoanAssembler loanAssembler;
     private final LoanChargeRepository loanChargeRepository;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final LoanProductReadPlatformService loanProductReadPlatformService;
     private final ServiceChargeCalculationPlatformService serviceChargeCalculationService;
     private final LoanRepaymentScheduleInstallmentRepository repaymentScheduleInstallmentRepository;
-    private final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory;
+    private final ServiceChargeLoanDetailsReadPlatformService serviceChargeLoanDetailsReadPlatformService;
 
     @Autowired
-    public ServiceChargeInstallmentCalculatorServiceImpl(final LoanAssembler loanAssembler,
+    public ServiceChargeInstallmentCalculatorServiceImpl(final LoanAssembler loanAssembler, final LoanChargeRepository loanChargeRepository,
+            final LoanRepositoryWrapper loanRepositoryWrapper, final LoanProductReadPlatformService loanProductReadPlatformService,
             final ServiceChargeCalculationPlatformService serviceChargeCalculationService,
-            final LoanRepaymentScheduleTransactionProcessorFactory loanRepaymentScheduleTransactionProcessorFactory,
-            LoanChargeRepository loanChargeRepository, LoanRepaymentScheduleInstallmentRepository repaymentScheduleInstallmentRepository,
-            LoanRepositoryWrapper loanRepositoryWrapper) {
+            final LoanRepaymentScheduleInstallmentRepository repaymentScheduleInstallmentRepository,
+            final ServiceChargeLoanDetailsReadPlatformService serviceChargeLoanDetailsReadPlatformService) {
         this.loanAssembler = loanAssembler;
         this.loanChargeRepository = loanChargeRepository;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
+        this.loanProductReadPlatformService = loanProductReadPlatformService;
         this.serviceChargeCalculationService = serviceChargeCalculationService;
         this.repaymentScheduleInstallmentRepository = repaymentScheduleInstallmentRepository;
-        this.loanRepaymentScheduleTransactionProcessorFactory = loanRepaymentScheduleTransactionProcessorFactory;
+        this.serviceChargeLoanDetailsReadPlatformService = serviceChargeLoanDetailsReadPlatformService;
+    }
+
+    @Override
+    public void recalculateServiceChargeForAllLoans() {
+        final Page<LoanAccountData> currentQuarterLoans = serviceChargeLoanDetailsReadPlatformService
+                .retrieveLoansToBeConsideredForTheCurrentQuarter();
+        ServiceChargeLoanSummaryFactory loanSummaryFactory = new ServiceChargeLoanSummaryFactory();
+        if (currentQuarterLoans != null) {
+            for (int i = 0; i < currentQuarterLoans.getPageItems().size(); i++) {
+                LoanAccountData loanAccData = currentQuarterLoans.getPageItems().get(i);
+                LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
+                ServiceChargeLoanProductSummary loanSummary = loanSummaryFactory.getLoanSummaryObject(
+                        (ServiceChargeLoanDetailsReadPlatformServiceImpl) serviceChargeLoanDetailsReadPlatformService, loanAccData,
+                        loanProduct);
+                // Only if it is demand loan
+                if (loanSummary.isDemandLaon()) {
+                    // Re-calculate charge based on Service Charge calculation
+                    recalculateServiceChargeForGivenLoan(loanAccData.getId(), 1L);
+                }
+            }
+        }
     }
 
     @Override

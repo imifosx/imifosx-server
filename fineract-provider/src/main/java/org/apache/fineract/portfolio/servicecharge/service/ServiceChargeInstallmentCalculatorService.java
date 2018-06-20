@@ -6,9 +6,11 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleInstallment;
 
 public interface ServiceChargeInstallmentCalculatorService {
-    
+
     void recalculateServiceChargeForGivenLoan(Long loanId, Long loanChargeId);
-    
+
     List<LoanRepaymentScheduleInstallment> recalculateServiceChargeForGivenLoan(Loan loan, Long loanChargeId);
+
+    void recalculateServiceChargeForAllLoans();
 
 }
