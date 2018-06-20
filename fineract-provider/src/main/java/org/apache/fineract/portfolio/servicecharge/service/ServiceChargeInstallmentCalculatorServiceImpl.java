@@ -14,6 +14,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
@@ -25,6 +26,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleIns
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionComparator;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
@@ -87,6 +89,7 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
     public void recalculateServiceChargeForGivenLoan(Long loanId, Long loanChargeId) {
         final Loan loan = this.loanAssembler.assembleFrom(loanId);
         List<LoanRepaymentScheduleInstallment> installments = recalculateServiceChargeForGivenLoan(loan, loanChargeId);
+        loan.updateLoanSummaryDerivedFields();
         saveLoanWithDataIntegrityViolationChecks(loan, installments);
     }
 
@@ -100,25 +103,26 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
         // The generated total service charge needs to be divided over the total
         // number of pending installments
         int loanInstallmentCount = getPendingLoanInstallmentCount(installments, allNonContraTransactionsPostDisbursement);
-        serviceChargeForLoan = serviceChargeForLoan.divide(new BigDecimal(loanInstallmentCount));
-        loanCharge.updateAmountOrPercentage(serviceChargeForLoan);
+        Money amount = Money.zero(loan.getCurrency());
+        amount = amount.plus(serviceChargeForLoan).dividedBy(loanInstallmentCount, MoneyHelper.getRoundingMode());
+        loanCharge.updateAmountOrPercentage(amount.getAmount());
 
         generatePendingLoanInstallmentCharges(loanCharge, installments, loanInstallmentCount, loan.getCurrency());
 
         Set<LoanCharge> loanCharges = new HashSet<>();
         loanCharges.add(loanCharge);
-        
-        /*final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = loanRepaymentScheduleTransactionProcessorFactory
-                .determineProcessor(loan.transactionProcessingStrategy());
-
-        loanRepaymentScheduleTransactionProcessor.handleTransaction(loan.getDisbursementDate(), allNonContraTransactionsPostDisbursement,
-                loan.getCurrency(), installments, loanCharges);*/
         return installments;
     }
 
     private int getPendingLoanInstallmentCount(List<LoanRepaymentScheduleInstallment> installments,
             List<LoanTransaction> loanTransactions) {
-        int paidTransactions = loanTransactions.size();
+        int paidTransactions = 0;
+        for (LoanTransaction transaction : loanTransactions) {
+            LoanTransactionType type = transaction.getTypeOf();
+            if (type.isRepayment()) {
+                paidTransactions++;
+            }
+        }
         int totalTransactions = installments.size();
         return totalTransactions - paidTransactions;
     }
@@ -200,7 +204,8 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
                 final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
                 loanChargePerInstallments.add(loanInstallmentCharge);
                 Money installAmount = loanInstallmentCharge.getAmount(loanCurrency);
-                installment.updateChargePortion(installAmount, installAmount, installAmount, installAmount, installAmount, installAmount);
+                Money zero = Money.zero(loanCurrency);
+                installment.updateChargePortion(installAmount, zero, zero, zero, zero, zero);
             }
         }
         return loanChargePerInstallments;
@@ -235,7 +240,6 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
 
     private void saveLoanWithDataIntegrityViolationChecks(final Loan loan, List<LoanRepaymentScheduleInstallment> installments) {
         try {
-            // List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
             for (LoanRepaymentScheduleInstallment installment : installments) {
                 this.repaymentScheduleInstallmentRepository.save(installment);
             }
