@@ -182,7 +182,8 @@ public enum QuarterDateRange {
                         q = Q4;
                     break;
                     default:
-                        q = null;
+                        // Defaulting to Q1 in case invalid string is passed
+                        q = Q1;
                     break;
                 }
             } else {
