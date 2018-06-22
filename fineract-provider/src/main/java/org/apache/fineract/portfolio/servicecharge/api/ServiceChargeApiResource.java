@@ -33,9 +33,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
-import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
-import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
@@ -43,7 +40,6 @@ import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetD
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeCalculationPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeInstallmentCalculatorService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
-import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
@@ -71,7 +67,7 @@ public class ServiceChargeApiResource {
             final ServiceChargeCalculationPlatformService serviceChargeCalculator) {
         this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
         this.serviceChargeCalculator = serviceChargeCalculator;
-        this.scCalculator=scCalculator;
+        this.scCalculator = scCalculator;
     }
 
     @GET
@@ -138,5 +134,14 @@ public class ServiceChargeApiResource {
             result = finalSheetData.generateResultAsHTMLTable(false).toString();
         }
         return result;
+    }
+
+    @GET
+    @Path("recalculateServiceCharge")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    public String recalculateServiceCharge(@QueryParam("quarter") final String quarter, @QueryParam("year") final int year) {
+        QuarterDateRange.setQuarterAndYear(quarter, year);
+        scCalculator.recalculateServiceChargeForAllLoans(true);
+        return "Service Recalculation for the given quarter: " + quarter + " year: " + year + " completed";
     }
 }
