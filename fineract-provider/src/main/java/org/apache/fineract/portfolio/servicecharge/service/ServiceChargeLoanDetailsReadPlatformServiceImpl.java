@@ -355,28 +355,29 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		return getTotalOutstandingAmountForGivenQuarter(loanId, QuarterDateRange.getCurrentQuarter());
 	}
 	
-	private boolean findIfLoanDisbursedInGivenQuarter(Long loanId, QuarterDateRange range) {
-		boolean result = false;
-		// Get the dates
-		String startDate = range.getFormattedFromDateString();
-		String endDate = range.getFormattedToDateString();
+    private boolean findIfLoanDisbursedInGivenQuarter(Long loanId, QuarterDateRange range) {
+        boolean result = false;
+        // Get the dates
+        String startDate = range.getFormattedFromDateString();
+        String endDate = range.getFormattedToDateString();
 
-		final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
+        final SearchParameters searchParameters = SearchParameters.forLoans(null, null, 0, -1, null, null, null);
 
-		try {
-			LoanAccountData loanAccountData = retrieveOneLoanForCurrentQuarter(searchParameters, loanId, startDate, endDate);
-			if (loanAccountData == null) {
-				result = false;
-			} else {
-				result = true;
-			}
-		} catch (Exception e) {
-			// TODO: handle exception
-			logger.error(e.getMessage());
-		}
+        try {
+            LoanAccountData loanAccountData = retrieveOneLoanForCurrentQuarter(searchParameters, loanId, startDate, endDate);
+            if (loanAccountData == null) {
+                result = false;
+            } else {
+                result = true;
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+            logger.error(
+                    "Exception in ServiceChargeLoanDetailsReadPlatformServiceImpl:findIfLoanDisbursedInGivenQuarter::" + e.getMessage());
+        }
 
-		return result;
-	}
+        return result;
+    }
 
 	private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, QuarterDateRange range) {
 		BigDecimal totalRepayment = BigDecimal.ZERO;
