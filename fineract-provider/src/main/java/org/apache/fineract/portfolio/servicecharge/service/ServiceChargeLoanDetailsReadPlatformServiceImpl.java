@@ -40,7 +40,6 @@ import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
-import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountEnumerations;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
@@ -55,10 +54,8 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanSummaryData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
-import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSubStatus;
 import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
-import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanaccount.service.LoanChargeReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
@@ -87,7 +84,6 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeLoanDetailsReadPlatformServiceImpl.class);
 
-	private final LoanAssembler loanAssembler;
 	private final LoanReadPlatformService loanReadPlatformService;
 	private final LoanChargeReadPlatformService loanChargeReadPlatformService;
 	private final LoanProductReadPlatformService loanProductReadPlatformService;
@@ -96,17 +92,16 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	private final LoanMapper loaanLoanMapper = new LoanMapper();
 	private final PaginationHelper<LoanAccountData> paginationHelper = new PaginationHelper<>();
 	
-    @Autowired
-    public ServiceChargeLoanDetailsReadPlatformServiceImpl(LoanReadPlatformService loanReadPlatformService,
-            LoanChargeReadPlatformService loanChargeReadPlatformService, final LoanProductReadPlatformService readPlatformService,
-            final RoutingDataSource dataSource, final PlatformSecurityContext context, final LoanAssembler loanAssembler) {
-        this.loanReadPlatformService = loanReadPlatformService;
-        this.loanChargeReadPlatformService = loanChargeReadPlatformService;
-        this.loanProductReadPlatformService = readPlatformService;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.context = context;
-        this.loanAssembler = loanAssembler;
-    }
+	@Autowired
+	public ServiceChargeLoanDetailsReadPlatformServiceImpl(LoanReadPlatformService loanReadPlatformService, LoanChargeReadPlatformService loanChargeReadPlatformService,
+			final LoanProductReadPlatformService readPlatformService,
+			final RoutingDataSource dataSource,final PlatformSecurityContext context) {
+		this.loanReadPlatformService = loanReadPlatformService;
+		this.loanChargeReadPlatformService = loanChargeReadPlatformService;
+		this.loanProductReadPlatformService = readPlatformService;
+		this.jdbcTemplate = new JdbcTemplate(dataSource);
+		this.context=context;
+	}
 
 	public BigDecimal getTotalLoansForCurrentQuarter() {
 		BigDecimal totalLoans = BigDecimal.ZERO;
@@ -384,22 +379,26 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
         return result;
     }
 
-    private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, QuarterDateRange range) {
-        final Loan loan = this.loanAssembler.assembleFrom(loanId);
-        Money amount = Money.zero(loan.getCurrency());
+	private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, QuarterDateRange range) {
+		BigDecimal totalRepayment = BigDecimal.ZERO;
+		// create MathContext object with 2 precision
+		MathContext mc = new MathContext(2);
 
-        // Get the dates
-        String startDate = range.getFormattedFromDateString();
-        String endDate = range.getFormattedToDateString();
+		// Get the dates
+		String startDate = range.getFormattedFromDateString();
+		String endDate = range.getFormattedToDateString();
 
-        final Collection<LoanTransactionData> currentLoanRepayments = retrieveLoanTransactionsMonthlyPayments(loanId, startDate, endDate);
+		final Collection<LoanTransactionData> currentLoanRepayments = retrieveLoanTransactionsMonthlyPayments(loanId, startDate, endDate);
 
-        for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
-            logger.debug("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getAmount());
-            amount.plus(loanTransactionData.getAmount());
-        }
-        return amount.getAmount();
-    }
+		for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
+			logger.debug("Date = " + loanTransactionData.dateOf() + "  Repayment Amount = " + loanTransactionData.getAmount());
+
+			// perform add operation on bg1 with augend bg2 and context mc
+			totalRepayment = totalRepayment.add(loanTransactionData.getAmount(), mc);
+		}
+
+		return totalRepayment;
+	}
 
 	private BigDecimal getTotalOutstandingAmountForGivenQuarter(Long loanId, QuarterDateRange range) {
 
