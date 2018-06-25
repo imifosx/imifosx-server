@@ -30,16 +30,22 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
+import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
+import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException.SERVICE_CHARGE_EXCEPTION_REASON;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeLoanSummaryFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceChargeInstallmentCalculatorService {
+
+    private final static Logger logger = LoggerFactory.getLogger(ServiceChargeInstallmentCalculatorServiceImpl.class);
 
     private final LoanAssembler loanAssembler;
     private final LoanChargeRepository loanChargeRepository;
@@ -68,19 +74,21 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
     public void recalculateServiceChargeForAllLoans() {
         final Page<LoanAccountData> currentQuarterLoans = serviceChargeLoanDetailsReadPlatformService
                 .retrieveLoansToBeConsideredForTheCurrentQuarter();
+        // If no loans to be processed for the current quarter then return
+        if (currentQuarterLoans == null || currentQuarterLoans.getPageItems().isEmpty()) { return; }
         ServiceChargeLoanSummaryFactory loanSummaryFactory = new ServiceChargeLoanSummaryFactory();
-        if (currentQuarterLoans != null) {
-            for (int i = 0; i < currentQuarterLoans.getPageItems().size(); i++) {
-                LoanAccountData loanAccData = currentQuarterLoans.getPageItems().get(i);
-                LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
-                ServiceChargeLoanProductSummary loanSummary = loanSummaryFactory.getLoanSummaryObject(
-                        (ServiceChargeLoanDetailsReadPlatformServiceImpl) serviceChargeLoanDetailsReadPlatformService, loanAccData,
-                        loanProduct);
-                // Only if it is demand loan
-                if (loanSummary.isDemandLaon()) {
-                    // Re-calculate charge based on Service Charge calculation
-                    recalculateServiceChargeForGivenLoan(loanAccData.getId(), 1L);
-                }
+        for (int i = 0; i < currentQuarterLoans.getPageItems().size(); i++) {
+            LoanAccountData loanAccData = currentQuarterLoans.getPageItems().get(i);
+            LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
+            ServiceChargeLoanProductSummary loanSummary = loanSummaryFactory.getLoanSummaryObject(
+                    (ServiceChargeLoanDetailsReadPlatformServiceImpl) serviceChargeLoanDetailsReadPlatformService, loanAccData,
+                    loanProduct);
+            // Only if it is demand loan
+            if (loanSummary.isDemandLaon()) {
+                Long loanId = loanAccData.getId();
+                logger.debug("ServiceChargeInstallmentCalculatorServiceImpl:recalculateServiceChargeForAllLoans::Demand Loan-" + loanId);
+                // Re-calculate charge based on Service Charge calculation
+                recalculateServiceChargeForGivenLoan(loanId, ServiceChargeApiConstants.ASSUMED_SERVICE_CHARGE_ID);
             }
         }
     }
@@ -93,7 +101,6 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
         saveLoanWithDataIntegrityViolationChecks(loan, installments);
     }
 
-    @Override
     public List<LoanRepaymentScheduleInstallment> recalculateServiceChargeForGivenLoan(Loan loan, Long loanChargeId) {
         BigDecimal serviceChargeForLoan = serviceChargeCalculationService.calculateServiceChargeForLoan(loan.getId());
         final LoanCharge loanCharge = retrieveLoanChargeBy(loan.getId(), loanChargeId);
@@ -102,29 +109,35 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
 
         // The generated total service charge needs to be divided over the total
         // number of pending installments
-        int loanInstallmentCount = getPendingLoanInstallmentCount(installments, allNonContraTransactionsPostDisbursement);
+        int loanInstallmentCount = getCountOfLoanTransactionsForChargeUpdation(installments, allNonContraTransactionsPostDisbursement);
         Money amount = Money.zero(loan.getCurrency());
         amount = amount.plus(serviceChargeForLoan).dividedBy(loanInstallmentCount, MoneyHelper.getRoundingMode());
         loanCharge.updateAmountOrPercentage(amount.getAmount());
 
-        generatePendingLoanInstallmentCharges(loanCharge, installments, loanInstallmentCount, loan.getCurrency());
+        reGenerateLoanInstallmentServiceCharge(loanCharge, installments, loanInstallmentCount, loan.getCurrency());
 
         Set<LoanCharge> loanCharges = new HashSet<>();
         loanCharges.add(loanCharge);
         return installments;
     }
 
-    private int getPendingLoanInstallmentCount(List<LoanRepaymentScheduleInstallment> installments,
+    private int getCountOfLoanTransactionsForChargeUpdation(List<LoanRepaymentScheduleInstallment> installments,
             List<LoanTransaction> loanTransactions) {
-        int paidTransactions = 0;
+        int transactionsToBeSkipped = 0;
         for (LoanTransaction transaction : loanTransactions) {
             LoanTransactionType type = transaction.getTypeOf();
-            if (type.isRepayment()) {
-                paidTransactions++;
+            if (type.isRepayment() && !ifTransactionLiesInTheCurrentQuarter(transaction)) {
+                transactionsToBeSkipped++;
             }
         }
         int totalTransactions = installments.size();
-        return totalTransactions - paidTransactions;
+        return totalTransactions - transactionsToBeSkipped;
+    }
+
+    private boolean ifTransactionLiesInTheCurrentQuarter(LoanTransaction transaction) {
+        // If the transaction is within the quarter date range, then return true
+        if (QuarterDateRange.checkIfGivenDateIsInCurrentQuarter(transaction.getDateOf())) { return true; }
+        return false; // else false
     }
 
     /**
@@ -140,7 +153,7 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
      *         service charge calculation else null
      * 
      */
-    private final BigDecimal generatePendingLoanInstallmentCharges(final LoanCharge loanCharge,
+    private final BigDecimal reGenerateLoanInstallmentServiceCharge(final LoanCharge loanCharge,
             final List<LoanRepaymentScheduleInstallment> installments, final int pendingInstallmentsCount,
             final MonetaryCurrency loanCurrency) {
         Set<LoanInstallmentCharge> loanInstallmentCharge = loanCharge.installmentCharges();

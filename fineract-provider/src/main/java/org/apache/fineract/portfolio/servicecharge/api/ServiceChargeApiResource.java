@@ -141,7 +141,7 @@ public class ServiceChargeApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     public String recalculateServiceCharge(@QueryParam("quarter") final String quarter, @QueryParam("year") final int year) {
         QuarterDateRange.setQuarterAndYear(quarter, year);
-        scCalculator.recalculateServiceChargeForAllLoans(true);
+        scCalculator.recalculateServiceChargeForAllLoans();
         return "Service Recalculation for the given quarter: " + quarter + " year: " + year + " completed";
     }
 }
