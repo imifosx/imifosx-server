@@ -40,6 +40,7 @@ import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.account.data.AccountTransferData;
 import org.apache.fineract.portfolio.accountdetails.service.AccountEnumerations;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
@@ -194,7 +195,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	
 	public void populateRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData) {
 		logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData");
-
+		final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
 		BigDecimal dLtotalOutstandingAmount = BigDecimal.ZERO;
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		int noOfDL = 0;
@@ -238,8 +239,8 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			} // End of for-loop
 		} // End of (loanAccountDataForOutstandingAmount != null)
 		sheetData.setNoOfDemandLoans(noOfDL);
-		nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.divide(new BigDecimal(3), 6, RoundingMode.CEILING);
-		dLtotalOutstandingAmount = dLtotalOutstandingAmount.divide(new BigDecimal(3), 6, RoundingMode.CEILING);
+		nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.divide(new BigDecimal(3), roundingMode);
+		dLtotalOutstandingAmount = dLtotalOutstandingAmount.divide(new BigDecimal(3), roundingMode);
 		sheetData.setLoanOutstandingAmount(dLtotalOutstandingAmount, nDLtotalOutstandingAmount);
 		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::totalOutstanding DL Amount:" + dLtotalOutstandingAmount);
 		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::totalOutstanding Non DL Amount:" + nDLtotalOutstandingAmount);
@@ -249,7 +250,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 	
 	public void getRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData) {
 		// logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData");
-
+		final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
 		BigDecimal dLtotalOutstandingAmount = BigDecimal.ZERO;
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		int noOfDL = 0;
@@ -288,8 +289,8 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 			} // End of for-loop
 		} // End of (loanAccountDataForOutstandingAmount != null)
 		sheetData.setNoOfDemandLoans(noOfDL);
-		nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.divide(new BigDecimal(3), 6, RoundingMode.CEILING);
-		dLtotalOutstandingAmount = dLtotalOutstandingAmount.divide(new BigDecimal(3), 6, RoundingMode.CEILING);
+		nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.divide(new BigDecimal(3), roundingMode);
+		dLtotalOutstandingAmount = dLtotalOutstandingAmount.divide(new BigDecimal(3), roundingMode);
 		sheetData.setLoanOutstandingAmount(dLtotalOutstandingAmount, nDLtotalOutstandingAmount);
 		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData::totalOutstanding DL Amount:" + dLtotalOutstandingAmount);
 		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData::totalOutstanding Non DL Amount:" + nDLtotalOutstandingAmount);
