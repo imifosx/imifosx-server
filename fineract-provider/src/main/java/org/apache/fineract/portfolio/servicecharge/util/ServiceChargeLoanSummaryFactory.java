@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.servicecharge.util;
 
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -28,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
@@ -98,6 +98,7 @@ public class ServiceChargeLoanSummaryFactory {
 		return result;
 	}
 
+	@SuppressWarnings("unused")
 	private class LoanSummaryQuarterly implements ServiceChargeLoanProductSummary {
 
 		private List<BigDecimal> periodicOutstanding;
@@ -246,8 +247,8 @@ public class ServiceChargeLoanSummaryFactory {
 					 */
 					final Collection<LoanTransactionData> currentLoanRepayments = scLoanDetailsReadPlatform
 							.retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),
-									new SimpleDateFormat("yyyy-MM-dd").format(firstDayOfMonth),
-									new SimpleDateFormat("yyyy-MM-dd").format(lastDayOfMonth));
+									DateUtils.formatToSqlDate(firstDayOfMonth),
+									DateUtils.formatToSqlDate(lastDayOfMonth));
 					if (!currentLoanRepayments.isEmpty()) {
 						// There are some repayments so add them back to the outstanding amount
 						for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
