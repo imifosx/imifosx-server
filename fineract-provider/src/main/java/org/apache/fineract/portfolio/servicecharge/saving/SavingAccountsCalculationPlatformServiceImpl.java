@@ -98,6 +98,7 @@ public class SavingAccountsCalculationPlatformServiceImpl implements SavingAccou
 		BigDecimal avgDepositInSavings = findAvgDepositAmount();
 
 		// Set limit is the multiplier times the average deposit
+		// TODO: Improve the getRoundingMode() as this will return Enum integer and not the number of decimal places
 		return avgDepositInSavings.multiply(new BigDecimal(multiplier),
 				new MathContext(configurationDomainService.getRoundingMode()));
 	}

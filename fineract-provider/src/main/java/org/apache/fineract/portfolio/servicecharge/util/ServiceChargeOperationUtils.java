@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
@@ -35,24 +36,31 @@ import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeReadPlat
 
 public class ServiceChargeOperationUtils implements ServiceChargeApiConstants {
 
-    public static BigDecimal divideAndMultiplyNonZeroValues(BigDecimal operand, BigDecimal divisor, BigDecimal multiplicand) {
-        if (operand == null) { return BigDecimal.ONE; }
-        if (divisor != null && !divisor.equals(BigDecimal.ZERO)) {
-            operand = operand.divide(divisor, RoundingMode.HALF_UP);
-        }
-        if (multiplicand != null) {
-            operand = operand.multiply(multiplicand);
-        }
-        return operand;
-    }
+	public static BigDecimal divideAndMultiplyNonZeroValues(BigDecimal operand, BigDecimal divisor,
+			BigDecimal multiplicand) {
+		final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
+		if (operand == null) {
+			return BigDecimal.ONE;
+		}
+		if (divisor != null && !divisor.equals(BigDecimal.ZERO)) {
+			operand = operand.divide(divisor, roundingMode);
+		}
+		if (multiplicand != null) {
+			operand = operand.multiply(multiplicand);
+		}
+		return operand;
+	}
 
-    public static BigDecimal divideNonZeroValues(BigDecimal operand, BigDecimal divisor) {
-        if (operand == null) { return BigDecimal.ONE; }
-        if (divisor != null && (divisor.compareTo(BigDecimal.ZERO) != 0)) {
-            operand = operand.divide(divisor, RoundingMode.HALF_UP);
-        }
-        return operand;
-    }
+	public static BigDecimal divideNonZeroValues(BigDecimal operand, BigDecimal divisor) {
+		if (operand == null) {
+			return BigDecimal.ONE;
+		}
+		if (divisor != null && (divisor.compareTo(BigDecimal.ZERO) != 0)) {
+			final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
+			operand = operand.divide(divisor, roundingMode);
+		}
+		return operand;
+	}
 
     public static String convertMapToHTMLTable(Map<String, List<String>> map) {
         StringBuffer sb = new StringBuffer();
