@@ -57,4 +57,85 @@ public class ServiceChargeDateUtils {
 		return cal.getTime();
 	}
 
+	public static class DateIterator implements Iterator<Date>, Iterable<Date> {
+
+		private Calendar end = Calendar.getInstance();
+		private Calendar current = Calendar.getInstance();
+		private boolean reverse;
+
+		public DateIterator(Date start, Date end, boolean reverse) {
+			this.reverse = reverse;
+			setDateValues(start, end);
+		}
+
+		private void setDateValues(Date start, Date end) {
+			if (isReverse()) {
+				this.current.setTime(start);
+				this.current.add(Calendar.DATE, 1);
+				this.end.setTime(end);
+				this.end.add(Calendar.DATE, 1);
+			} else {
+				this.current.setTime(start);
+				this.current.add(Calendar.DATE, -1);
+				this.end.setTime(end);
+				this.end.add(Calendar.DATE, -1);
+			}
+
+		}
+
+		public boolean isReverse() {
+			return reverse;
+		}
+
+		@Override
+		public boolean hasNext() {
+			if (isReverse()) {
+				return !current.before(end);
+			}
+			return !current.after(end);
+		}
+
+		@Override
+		public Date next() {
+			if (isReverse()) {
+				current.add(Calendar.DATE, -1);
+			} else {
+				current.add(Calendar.DATE, 1);
+			}
+			return current.getTime();
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException("Cannot remove");
+		}
+
+		@Override
+		public Iterator<Date> iterator() {
+			return this;
+		}
+
+		public static void main(String[] args) {
+
+			Calendar cal = Calendar.getInstance(Locale.getDefault());
+			cal.set(2018, 2, 31);
+			// cal.set(2018, 2, 1);
+			Date beginDate = cal.getTime();
+
+			cal.set(2018, 2, 1);
+			// cal.set(2018, 2, 31);
+			Date endDate = cal.getTime();
+
+			Iterator<Date> i = new DateIterator(beginDate, endDate, true);
+			int iCounter = 1;
+			while (i.hasNext()) {
+				Date date = i.next();
+				System.out.print(iCounter + "->");
+				System.out.println(date);
+				iCounter++;
+			}
+
+			System.out.println("Diff:" + getDiffBetweenDates(beginDate, beginDate, 1));
+		}
+	}
 }
