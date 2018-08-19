@@ -23,6 +23,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,8 @@ import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformServiceImpl;
+import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeDateUtils.DateIterator;
+import org.joda.time.LocalDate;
 
 /**
  * Factory pattern to get an object of the type of ServiceChargeLoanProductSummary This class holds a list of all the
@@ -62,7 +65,7 @@ public class ServiceChargeLoanSummaryFactory {
 		if (loanSummaryObjectMap.containsKey(loanId)) {
 			return loanSummaryObjectMap.get(loanId);
 		}
-		LoanSummaryQuarterly loanSummary = new LoanSummaryQuarterly();
+		LoanSummaryDaily loanSummary = new LoanSummaryDaily();
 		loanSummary.populateOutstandingAndRepaymentAmounts(loanReadService, loanProduct, loanAccData);
 		loanSummaryObjectMap.put(loanId, loanSummary);
 
@@ -296,4 +299,248 @@ public class ServiceChargeLoanSummaryFactory {
 
 	}
 
+	@SuppressWarnings("unused")
+	private class LoanSummaryDaily implements ServiceChargeLoanProductSummary {
+
+		private List<BigDecimal> periodicOutstanding;
+		private List<BigDecimal> periodicRepayments;
+		private boolean isDemandLaon;
+		private Date disbursmentDate;
+
+		LoanSummaryDaily() {
+			periodicOutstanding = new LinkedList<>();
+			periodicRepayments = new LinkedList<>();
+		}
+
+		public boolean isDemandLaon() {
+			return isDemandLaon;
+		}
+
+		private void setDemandLaon(boolean isDemandLaon) {
+			this.isDemandLaon = isDemandLaon;
+		}
+
+		public Date getDisbursmentDate() {
+			return disbursmentDate;
+		}
+
+		public void setDisbursmentDate(Date disbursmentDate) {
+			this.disbursmentDate = disbursmentDate;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see org.ideoholic.imifosx.portfolio.servicecharge.data.
+		 * ServiceChargeLoanProductSummary#getPeriodicOutstanding()
+		 */
+		@Override
+		public List<BigDecimal> getPeriodicOutstanding() {
+			return periodicOutstanding;
+		}
+
+		private void addPeriodicOutstanding(BigDecimal amount) {
+			getPeriodicOutstanding().add(amount);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see org.ideoholic.imifosx.portfolio.servicecharge.data.
+		 * ServiceChargeLoanProductSummary#getPeriodicRepayments()
+		 */
+		@Override
+		public List<BigDecimal> getPeriodicRepayments() {
+			return periodicRepayments;
+		}
+
+		private void addPeriodicRepayments(BigDecimal amount) {
+			getPeriodicRepayments().add(amount);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see org.ideoholic.imifosx.portfolio.servicecharge.data.
+		 * ServiceChargeLoanProductSummary#getTotalOutstanding()
+		 */
+		@Override
+		public BigDecimal getTotalOutstanding() {
+			// Start with zero
+			BigDecimal sum = BigDecimal.ZERO;
+			// If there are values
+			if (!getPeriodicOutstanding().isEmpty()) {
+				// Iterate over the list of values and add them to sum
+				for (BigDecimal repayment : getPeriodicOutstanding()) {
+					sum = sum.add(repayment);
+				}
+			}
+			// Return the calculated sum (or zero)
+			return sum;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see org.ideoholic.imifosx.portfolio.servicecharge.data.
+		 * ServiceChargeLoanProductSummary#getTotalRepayments()
+		 */
+		@Override
+		public BigDecimal getTotalRepayments() {
+			// Start with zero
+			BigDecimal sum = BigDecimal.ZERO;
+			// If there are values
+			if (!getPeriodicRepayments().isEmpty()) {
+				// Iterate over the list of values and add them to sum
+				for (BigDecimal repayment : getPeriodicRepayments()) {
+					sum = sum.add(repayment);
+				}
+			}
+			// Return the calculated sum (or zero)
+			return sum;
+		}
+
+		/**
+		 * Given the calendar this method returns the date that would be the first day
+		 * of the month
+		 * 
+		 * @param calendar
+		 * @return Date - Date should be 1 of the the month
+		 */
+		private Date getFirstDateOfCurrentMonth(Calendar calendar) {
+			calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
+			return calendar.getTime();
+		}
+
+		private Date getLastDateOfPreviousMonth(Calendar calendar, Date date) {
+			calendar.add(Calendar.MONTH, -1);
+			calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+			return calendar.getTime();
+		}
+
+		BigDecimal populateOutstandingAndRepaymentAmounts(
+				ServiceChargeLoanDetailsReadPlatformServiceImpl scLoanDetailsReadPlatform, LoanProductData loanProduct,
+				LoanAccountData loanAccData) {
+			List<BigDecimal> outstanding = new LinkedList<>();
+			// Set the demand loan type
+			setDemandLaon(ServiceChargeOperationUtils.checkDemandLaon(loanProduct));
+			// Date details to iterate over
+			QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+			Date lastDayOfMonth = quarter.getToDateForCurrentYear(); // Last day of the quarter
+			// Start with the last outstanding amount
+			BigDecimal loanOutstandingAmount = loanAccData.getTotalOutstandingAmount();
+			setDisbursmentDate(loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate());
+
+			Calendar calendar = Calendar.getInstance();
+			calendar.setTime(lastDayOfMonth);
+			for (int i = 1; i <= 3; i++) {
+				// Repayments total - start from zero for every iteration
+				BigDecimal monthlyTotalRepaymentAmount = BigDecimal.ZERO;
+				// Get to the first day of the current calendar
+				Date firstDayOfMonth = getFirstDateOfCurrentMonth(calendar);
+				// Loan will be considered only if the disbursement date is before the date
+				// under consideration
+				if (getDisbursmentDate().compareTo(lastDayOfMonth) < 0) {
+					// Retrieve the transaction between the given dates for the loan
+					final Collection<LoanTransactionData> currentLoanRepayments = scLoanDetailsReadPlatform
+							.retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),
+									DateUtils.formatToSqlDate(firstDayOfMonth),
+									DateUtils.formatToSqlDate(lastDayOfMonth));
+
+					Map<Date, BigDecimal> repaymentDateAmountMap = new HashMap<>();
+					if (!currentLoanRepayments.isEmpty()) {
+						// There are some repayments so add them back to the map of date and amount
+						monthlyTotalRepaymentAmount = populateRepaymentsIntoMap(repaymentDateAmountMap,
+								currentLoanRepayments);
+					}
+					Iterator<Date> dateIterator = new DateIterator(lastDayOfMonth, firstDayOfMonth, true);
+					BigDecimal summationOfDailyOutstanding = BigDecimal.ZERO;
+					Date dateMarker = lastDayOfMonth;
+					Date curDate = lastDayOfMonth;
+					while (dateIterator.hasNext()) {
+						// If there are repayments then update the outstanding
+						curDate = dateIterator.next();
+						if (repaymentDateAmountMap.containsKey(curDate)) {
+							BigDecimal amount = repaymentDateAmountMap.get(curDate);
+							updateLoanOutstandingAndSummationValues(curDate, dateMarker, summationOfDailyOutstanding,
+									loanOutstandingAmount, amount);
+						}
+						// For a less efficient calculation uncomment this and comment the
+						// summationOfDailyOutstanding calculation in method
+						// updateLoanOutstandingAndSummationValues
+						// summationOfDailyOutstanding =
+						// summationOfDailyOutstanding.add(loanOutstandingAmount);
+					}
+					updateLoanOutstandingAndSummationValues(curDate, dateMarker, summationOfDailyOutstanding,
+							loanOutstandingAmount, null);
+					// Add to the list the current outstanding for the current month
+					outstanding.add(summationOfDailyOutstanding);
+				}
+				addPeriodicRepayments(monthlyTotalRepaymentAmount);
+				lastDayOfMonth = getLastDateOfPreviousMonth(calendar, firstDayOfMonth);
+			}
+			addPeriodicOutstandingReversed(outstanding);
+			calendar.clear(); // clearing all sets before returning
+			return loanOutstandingAmount;
+		}
+		
+		private BigDecimal populateRepaymentsIntoMap(Map<Date, BigDecimal> repaymentDateAmountMap,
+				Collection<LoanTransactionData> currentLoanRepayments) {
+			BigDecimal totalRepaymentAmount = BigDecimal.ZERO;
+			for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
+				// Add only those transactions that are for repayment will be considered, reject
+				// others
+				if (isRepaymentTransaction(loanTransactionData)) {
+					BigDecimal repaymentAmount = loanTransactionData.getAmount();
+					LocalDate transactionDate = loanTransactionData.dateOf();
+					Date dateKey = ServiceChargeDateUtils.getDateFromLocaleDate(transactionDate);
+					// If there has already been a repayment on the same day
+					if (repaymentDateAmountMap.containsKey(dateKey)) {
+						// Then add the values of both the repayments
+						repaymentAmount = repaymentAmount.add(repaymentDateAmountMap.get(dateKey));
+						// removing to ensure one key has only one value
+						repaymentDateAmountMap.remove(dateKey);
+					}
+					repaymentDateAmountMap.put(dateKey, repaymentAmount);
+					totalRepaymentAmount = totalRepaymentAmount.add(repaymentAmount);
+				}
+			}
+			return totalRepaymentAmount;
+		}
+
+		private void updateLoanOutstandingAndSummationValues(Date curDate, Date dateMarker,
+				BigDecimal summationOfDailyOutstanding, BigDecimal loanOutstandingAmount, BigDecimal amount) {
+			BigDecimal periodBetweenDates = new BigDecimal(ServiceChargeDateUtils.getDiffBetweenDates(curDate, dateMarker, 1));
+			BigDecimal outstandingForPeriod = loanOutstandingAmount.multiply(periodBetweenDates);
+			summationOfDailyOutstanding = summationOfDailyOutstanding.add(outstandingForPeriod);
+			if (amount != null) {
+				loanOutstandingAmount = loanOutstandingAmount.add(amount);
+			}
+		}
+
+		/**
+		 * Method to validate if the loan transaction entry is a repayments entry
+		 * Current check is for repayment or repayment at disbursement, similar other
+		 * checks can be placed here
+		 * 
+		 * @param LoanTransactionData
+		 * @return true - if transaction is of repayment type false - otherwise
+		 */
+		private boolean isRepaymentTransaction(LoanTransactionData loanTransactionData) {
+			boolean result = loanTransactionData.getType().isRepayment()
+					|| loanTransactionData.getType().isRepaymentAtDisbursement();
+			return result;
+		}
+
+		private void addPeriodicOutstandingReversed(List<BigDecimal> outstanding) {
+			// System.out.println("ServiceChargeLoanSummaryFactory.LoanSummaryQuarterly:addPeriodicOutstandingReversed::");
+			for (int iCount = outstanding.size() - 1; iCount >= 0; iCount--) {
+				BigDecimal amount = outstanding.get(iCount);
+				System.out.print(amount + ", ");
+				addPeriodicOutstanding(amount);
+			}
+			// System.out.println();
+		}
+
+	}
 }
