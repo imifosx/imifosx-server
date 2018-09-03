@@ -32,10 +32,9 @@ import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
-import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException.SERVICE_CHARGE_EXCEPTION_REASON;
-import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeLoanSummaryFactory;
+import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,15 +77,12 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
 		if (currentQuarterLoans == null || currentQuarterLoans.getPageItems().isEmpty()) {
 			return;
 		}
-		ServiceChargeLoanSummaryFactory loanSummaryFactory = new ServiceChargeLoanSummaryFactory();
 		for (int i = 0; i < currentQuarterLoans.getPageItems().size(); i++) {
 			LoanAccountData loanAccData = currentQuarterLoans.getPageItems().get(i);
 			LoanProductData loanProduct = loanProductReadPlatformService
 					.retrieveLoanProduct(loanAccData.loanProductId());
-			ServiceChargeLoanProductSummary loanSummary = loanSummaryFactory
-					.getLoanSummaryObject(serviceChargeLoanDetailsReadPlatformService, loanAccData, loanProduct);
 			// Only if it is demand loan
-			if (loanSummary.isDemandLaon()) {
+			if (ServiceChargeOperationUtils.checkDemandLaon(loanProduct)) {
 				Long loanId = loanAccData.getId();
 				logger.debug(
 						"ServiceChargeInstallmentCalculatorServiceImpl:recalculateServiceChargeForAllLoans::Demand Loan-"
