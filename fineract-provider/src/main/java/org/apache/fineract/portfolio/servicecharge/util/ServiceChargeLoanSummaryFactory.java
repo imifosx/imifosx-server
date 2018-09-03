@@ -34,9 +34,12 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
+import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformServiceImpl;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeDateUtils.DateIterator;
 import org.joda.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Factory pattern to get an object of the type of ServiceChargeLoanProductSummary This class holds a list of all the
@@ -45,6 +48,8 @@ import org.joda.time.LocalDate;
  *
  */
 public class ServiceChargeLoanSummaryFactory {
+
+	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeLoanSummaryFactory.class);
 
 	Map<Long, ServiceChargeLoanProductSummary> loanSummaryObjectMap;
 
@@ -59,7 +64,7 @@ public class ServiceChargeLoanSummaryFactory {
 	}
 
 	public ServiceChargeLoanProductSummary getLoanSummaryObject(
-			ServiceChargeLoanDetailsReadPlatformServiceImpl loanReadService, LoanAccountData loanAccData,
+			ServiceChargeLoanDetailsReadPlatformService loanReadService, LoanAccountData loanAccData,
 			LoanProductData loanProduct) {
 		Long loanId = loanAccData.getId();
 		if (loanSummaryObjectMap.containsKey(loanId)) {
@@ -355,6 +360,7 @@ public class ServiceChargeLoanSummaryFactory {
 		}
 
 		private void addPeriodicRepayments(BigDecimal amount) {
+			logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.addPeriodicRepayments()::Total Monthly repayment:" + amount);
 			getPeriodicRepayments().add(amount);
 		}
 
@@ -419,7 +425,7 @@ public class ServiceChargeLoanSummaryFactory {
 		}
 
 		BigDecimal populateOutstandingAndRepaymentAmounts(
-				ServiceChargeLoanDetailsReadPlatformServiceImpl scLoanDetailsReadPlatform, LoanProductData loanProduct,
+				ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatform, LoanProductData loanProduct,
 				LoanAccountData loanAccData) {
 			List<BigDecimal> outstanding = new LinkedList<>();
 			// Set the demand loan type
@@ -430,7 +436,7 @@ public class ServiceChargeLoanSummaryFactory {
 			// Start with the last outstanding amount
 			BigDecimal loanOutstandingAmount = loanAccData.getTotalOutstandingAmount();
 			setDisbursmentDate(loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate());
-
+			printLoanDetailsInLogger(loanAccData);
 			Calendar calendar = Calendar.getInstance();
 			calendar.setTime(lastDayOfMonth);
 			for (int i = 1; i <= 3; i++) {
@@ -484,6 +490,16 @@ public class ServiceChargeLoanSummaryFactory {
 			return loanOutstandingAmount;
 		}
 		
+		private void printLoanDetailsInLogger(LoanAccountData loanAccData) {
+			logger.debug("###########################################################");
+			logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.printLoanDetailsInLogger()");
+			logger.debug("Client ID:" + loanAccData.clientId());
+			logger.debug("Loan ID:" + loanAccData.getId());
+			logger.debug("Loan current outstanding:" + loanAccData.getTotalOutstandingAmount());
+			logger.debug(
+					"Loan Disbursment Date:" + loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate());
+		}
+
 		private BigDecimal populateRepaymentsIntoMap(Map<Date, BigDecimal> repaymentDateAmountMap,
 				Collection<LoanTransactionData> currentLoanRepayments) {
 			BigDecimal totalRepaymentAmount = BigDecimal.ZERO;
@@ -493,6 +509,9 @@ public class ServiceChargeLoanSummaryFactory {
 				if (isRepaymentTransaction(loanTransactionData)) {
 					BigDecimal repaymentAmount = loanTransactionData.getAmount();
 					LocalDate transactionDate = loanTransactionData.dateOf();
+					logger.debug(
+							"ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap()::Loan repayment-> amount\t"
+									+ repaymentAmount + "\tdate\t" + transactionDate);
 					Date dateKey = ServiceChargeDateUtils.getDateFromLocaleDate(transactionDate);
 					// If there has already been a repayment on the same day
 					if (repaymentDateAmountMap.containsKey(dateKey)) {
@@ -510,12 +529,16 @@ public class ServiceChargeLoanSummaryFactory {
 
 		private void updateLoanOutstandingAndSummationValues(Date curDate, Date dateMarker,
 				BigDecimal summationOfDailyOutstanding, BigDecimal loanOutstandingAmount, BigDecimal amount) {
-			BigDecimal periodBetweenDates = new BigDecimal(ServiceChargeDateUtils.getDiffBetweenDates(curDate, dateMarker, 1));
+			BigDecimal periodBetweenDates = new BigDecimal(
+					ServiceChargeDateUtils.getDiffBetweenDates(curDate, dateMarker, 1));
 			BigDecimal outstandingForPeriod = loanOutstandingAmount.multiply(periodBetweenDates);
 			summationOfDailyOutstanding = summationOfDailyOutstanding.add(outstandingForPeriod);
 			if (amount != null) {
 				loanOutstandingAmount = loanOutstandingAmount.add(amount);
 			}
+			logger.debug(
+					"ServiceChargeLoanSummaryFactory.LoanSummaryDaily.updateLoanOutstandingAndSummationValues()::Daily Outstanding summation:"
+							+ summationOfDailyOutstanding);
 		}
 
 		/**
@@ -533,10 +556,10 @@ public class ServiceChargeLoanSummaryFactory {
 		}
 
 		private void addPeriodicOutstandingReversed(List<BigDecimal> outstanding) {
-			// System.out.println("ServiceChargeLoanSummaryFactory.LoanSummaryQuarterly:addPeriodicOutstandingReversed::");
+			logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryQuarterly:addPeriodicOutstandingReversed::");
 			for (int iCount = outstanding.size() - 1; iCount >= 0; iCount--) {
 				BigDecimal amount = outstanding.get(iCount);
-				System.out.print(amount + ", ");
+				logger.debug(amount.toEngineeringString());
 				addPeriodicOutstanding(amount);
 			}
 			// System.out.println();

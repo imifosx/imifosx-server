@@ -71,27 +71,31 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
     }
 
     @Override
-    public void recalculateServiceChargeForAllLoans() {
-        final Page<LoanAccountData> currentQuarterLoans = serviceChargeLoanDetailsReadPlatformService
-                .retrieveLoansToBeConsideredForTheCurrentQuarter();
-        // If no loans to be processed for the current quarter then return
-        if (currentQuarterLoans == null || currentQuarterLoans.getPageItems().isEmpty()) { return; }
-        ServiceChargeLoanSummaryFactory loanSummaryFactory = new ServiceChargeLoanSummaryFactory();
-        for (int i = 0; i < currentQuarterLoans.getPageItems().size(); i++) {
-            LoanAccountData loanAccData = currentQuarterLoans.getPageItems().get(i);
-            LoanProductData loanProduct = loanProductReadPlatformService.retrieveLoanProduct(loanAccData.loanProductId());
-            ServiceChargeLoanProductSummary loanSummary = loanSummaryFactory.getLoanSummaryObject(
-                    (ServiceChargeLoanDetailsReadPlatformServiceImpl) serviceChargeLoanDetailsReadPlatformService, loanAccData,
-                    loanProduct);
-            // Only if it is demand loan
-            if (loanSummary.isDemandLaon()) {
-                Long loanId = loanAccData.getId();
-                logger.debug("ServiceChargeInstallmentCalculatorServiceImpl:recalculateServiceChargeForAllLoans::Demand Loan-" + loanId);
-                // Re-calculate charge based on Service Charge calculation
-                recalculateServiceChargeForGivenLoan(loanId, ServiceChargeApiConstants.ASSUMED_SERVICE_CHARGE_ID);
-            }
-        }
-    }
+	public void recalculateServiceChargeForAllLoans() {
+		final Page<LoanAccountData> currentQuarterLoans = serviceChargeLoanDetailsReadPlatformService
+				.retrieveLoansToBeConsideredForTheCurrentQuarter();
+		// If no loans to be processed for the current quarter then return
+		if (currentQuarterLoans == null || currentQuarterLoans.getPageItems().isEmpty()) {
+			return;
+		}
+		ServiceChargeLoanSummaryFactory loanSummaryFactory = new ServiceChargeLoanSummaryFactory();
+		for (int i = 0; i < currentQuarterLoans.getPageItems().size(); i++) {
+			LoanAccountData loanAccData = currentQuarterLoans.getPageItems().get(i);
+			LoanProductData loanProduct = loanProductReadPlatformService
+					.retrieveLoanProduct(loanAccData.loanProductId());
+			ServiceChargeLoanProductSummary loanSummary = loanSummaryFactory
+					.getLoanSummaryObject(serviceChargeLoanDetailsReadPlatformService, loanAccData, loanProduct);
+			// Only if it is demand loan
+			if (loanSummary.isDemandLaon()) {
+				Long loanId = loanAccData.getId();
+				logger.debug(
+						"ServiceChargeInstallmentCalculatorServiceImpl:recalculateServiceChargeForAllLoans::Demand Loan-"
+								+ loanId);
+				// Re-calculate charge based on Service Charge calculation
+				recalculateServiceChargeForGivenLoan(loanId, ServiceChargeApiConstants.ASSUMED_SERVICE_CHARGE_ID);
+			}
+		}
+	}
 
     @Override
     public void recalculateServiceChargeForGivenLoan(Long loanId, Long loanChargeId) {
