@@ -29,6 +29,7 @@ import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiCon
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeData;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
+import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeDateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,12 +103,12 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
             QuarterDateRange quarter, int year) {
         Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
         if (retrivedSCList == null || retrivedSCList
-                .isEmpty()) { return calculateServiceChargeForCurrentQuarter(isDisbursed, totalRepaymensts, totalOutstanding); }
-        return calculateServiceChargeFromDBValues(isDisbursed, totalRepaymensts, totalOutstanding, retrivedSCList);
+                .isEmpty()) { return calculateServiceChargeForGivenQuarter(isDisbursed, totalRepaymensts, totalOutstanding, quarter); }
+        return calculateServiceChargeFromDBValues(isDisbursed, totalRepaymensts, totalOutstanding, retrivedSCList, quarter);
     }
 
     private BigDecimal calculateServiceChargeFromDBValues(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding,
-            Collection<ServiceChargeData> retrivedSCList) {
+            Collection<ServiceChargeData> retrivedSCList, QuarterDateRange quarter) {
         BigDecimal repaymentCostPerRupee = BigDecimal.ZERO;
         BigDecimal annualizedCost = BigDecimal.ZERO;
         BigDecimal serviceCostPerLoan = BigDecimal.ZERO;
@@ -133,13 +134,13 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
                 + serviceCostPerLoan.toPlainString());
 
         BigDecimal serviceCharge = serviceCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, repaymentCostPerRupee,
-                annualizedCost, serviceCostPerLoan);
+                annualizedCost, serviceCostPerLoan, quarter);
 
         return serviceCharge;
     }
 
-    private BigDecimal calculateServiceChargeForCurrentQuarter(boolean isDisbursed, BigDecimal totalRepaymensts,
-            BigDecimal totalOutstanding) {
+    private BigDecimal calculateServiceChargeForGivenQuarter(boolean isDisbursed, BigDecimal totalRepaymensts,
+            BigDecimal totalOutstanding, QuarterDateRange quarter) {
         ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
         scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 
@@ -147,41 +148,48 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
         BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
         BigDecimal serviceCostPerLoan = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
 
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForCurrentQuarter:repaymentCostPerRupee="
+        logger.debug("ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: repaymentCostPerRupee="
                 + repaymentCostPerRupee.toPlainString());
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForCurrentQuarter:annualizedCost="
+        logger.debug("ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: annualizedCost="
                 + annualizedCost.toPlainString());
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForCurrentQuarter:serviceCostPerLoan/disbursement="
+        logger.debug("ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: serviceCostPerLoan/disbursement="
                 + serviceCostPerLoan.toPlainString());
 
         BigDecimal serviceCharge = serviceCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, repaymentCostPerRupee,
-                annualizedCost, serviceCostPerLoan);
+                annualizedCost, serviceCostPerLoan, quarter);
         return serviceCharge;
     }
 
     private BigDecimal serviceCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding,
-            BigDecimal repaymentCostPerRupee, BigDecimal annualizedCost, BigDecimal serviceCostPerLoan) {
-        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
+			BigDecimal repaymentCostPerRupee, BigDecimal annualizedCost, BigDecimal serviceCostPerLoan,
+			QuarterDateRange quarter) {
+		final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
 
-        // Adding disbursement charge in case it was disbursed in the current
-        // quarter
-        BigDecimal serviceCharge = isDisbursed ? serviceCostPerLoan : BigDecimal.ZERO;
+		// Adding disbursement charge in case it was disbursed in the current quarter
+		BigDecimal serviceCharge = isDisbursed ? serviceCostPerLoan : BigDecimal.ZERO;
 
-        BigDecimal mobilization = totalOutstanding.multiply(repaymentCostPerRupee);
-        mobilization = mobilization.divide(ServiceChargeApiConstants.ONE_THOUSAND_TWO_HUNDRED, roundingMode);
+		// For a daily calculation the mobilization cost would be:
+		// ((outstanding * repayments cost per rupee) * number of days in quarter)/36500
+		BigDecimal mobilization = totalOutstanding.multiply(repaymentCostPerRupee);
+		int numOfDays = ServiceChargeDateUtils.getDiffBetweenDates(quarter.getFromDateForCurrentYear(),
+				quarter.getToDateForCurrentYear(), 1);
+		mobilization = mobilization.divide(new BigDecimal(numOfDays), roundingMode);
+		mobilization = mobilization.divide(ServiceChargeApiConstants.THREE_SIXTY_FIVE_HUNDRED, roundingMode);
 
-        BigDecimal repayment = totalRepaymensts.multiply(annualizedCost);
-        repayment = repayment.divide(ServiceChargeApiConstants.HUNDRED, roundingMode);
+		BigDecimal repayment = totalRepaymensts.multiply(annualizedCost);
+		repayment = repayment.divide(ServiceChargeApiConstants.HUNDRED, roundingMode);
 
-        serviceCharge = serviceCharge.add(mobilization);
-        serviceCharge = serviceCharge.add(repayment);
+		serviceCharge = serviceCharge.add(mobilization);
+		serviceCharge = serviceCharge.add(repayment);
 
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: mobilization=" + mobilization.toPlainString());
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: repayment=" + repayment.toPlainString());
-        logger.debug(
-                "ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: serviceCharge=" + serviceCharge.toPlainString());
-        return serviceCharge;
-    }
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: mobilization="
+				+ mobilization.toPlainString());
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: repayment="
+				+ repayment.toPlainString());
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::serviceCalculationLogic: serviceCharge="
+				+ serviceCharge.toPlainString());
+		return serviceCharge;
+	}
 
     @Override
     public BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer numberOfRepayments) {

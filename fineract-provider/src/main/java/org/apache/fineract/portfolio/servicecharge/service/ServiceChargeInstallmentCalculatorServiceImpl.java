@@ -94,14 +94,26 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
 	}
 
     @Override
-    public void recalculateServiceChargeForGivenLoan(Long loanId, Long loanChargeId) {
-        final Loan loan = this.loanAssembler.assembleFrom(loanId);
-        List<LoanRepaymentScheduleInstallment> installments = recalculateServiceChargeForGivenLoan(loan, loanChargeId);
-        loan.updateLoanSummaryDerivedFields();
-        saveLoanWithDataIntegrityViolationChecks(loan, installments);
-    }
+	public void recalculateServiceChargeForGivenLoan(Long loanId, Long loanChargeId) {
+		final Loan loan = this.loanAssembler.assembleFrom(loanId);
+		List<LoanRepaymentScheduleInstallment> installments = recalculateServiceChargeForGivenLoan(loan, loanChargeId);
+		// If it is open loan then the transactions can be updated
+		if (checkIfLoanAmountCanBeUpdated(loan)) {
+			loan.updateLoanSummaryDerivedFields();
+			saveLoanWithDataIntegrityViolationChecks(loan, installments);
+		}else {
+			// If the loan is closed
+		}
+	}
 
-    public List<LoanRepaymentScheduleInstallment> recalculateServiceChargeForGivenLoan(Loan loan, Long loanChargeId) {
+	private boolean checkIfLoanAmountCanBeUpdated(Loan loan) {
+		if (loan.isClosed() || loan.isClosedWrittenOff()) {
+			return false;
+		}
+		return true;
+	}
+
+	public List<LoanRepaymentScheduleInstallment> recalculateServiceChargeForGivenLoan(Loan loan, Long loanChargeId) {
         BigDecimal serviceChargeForLoan = serviceChargeCalculationService.calculateServiceChargeForLoan(loan.getId());
         final LoanCharge loanCharge = retrieveLoanChargeBy(loan.getId(), loanChargeId);
         final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement(loan);
