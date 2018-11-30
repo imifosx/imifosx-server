@@ -193,6 +193,8 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 
     @Override
     public BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer numberOfRepayments) {
+        // Configured rounding mode to be used for division
+        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
         // Assuming that it will be disbursed
         boolean isDisbursed = true;
         // The current amount being disbursed is the outstanding loan amount
@@ -204,7 +206,7 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
         BigDecimal totalServiceChargeAmount = serviceChargeCalculationLogic(isDisbursed, BigDecimal.ZERO, totalOutstanding);
         logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: serviceChargeAmount="
                 + totalServiceChargeAmount.toPlainString());
-        BigDecimal serviceChargeAmount = totalServiceChargeAmount.divide(numberOfRepaymentsBigDecimal);
+        BigDecimal serviceChargeAmount = totalServiceChargeAmount.divide(numberOfRepaymentsBigDecimal, roundingMode);
         return serviceChargeAmount;
     }
 
