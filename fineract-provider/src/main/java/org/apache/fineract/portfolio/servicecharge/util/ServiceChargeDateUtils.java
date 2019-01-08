@@ -7,8 +7,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
 
-import javafx.util.Pair;
-
 public class ServiceChargeDateUtils {
 
 	/**
@@ -29,7 +27,7 @@ public class ServiceChargeDateUtils {
 			financiyalYearFrom = (CurrentYear) + "-04-01";
 			financiyalYearTo = (CurrentYear + 1) + "-03-31";
 		}
-		return new Pair<>(financiyalYearFrom, financiyalYearTo);
+		return Pair.of(financiyalYearFrom, financiyalYearTo);
 	}
 
 	public static int getDiffBetweenDates(Date beginDate, Date endDate, int offset) {

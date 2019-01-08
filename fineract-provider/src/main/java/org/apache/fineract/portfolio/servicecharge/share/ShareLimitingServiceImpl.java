@@ -22,13 +22,13 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.Set;
 
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.portfolio.servicecharge.util.Pair;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeDateUtils;
 import org.apache.fineract.portfolio.shareaccounts.data.ShareAccountTransactionData;
 import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccount;
@@ -40,7 +40,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import javafx.util.Pair;
 
 @Service
 public class ShareLimitingServiceImpl implements ShareLimitingService {
@@ -168,8 +167,8 @@ public class ShareLimitingServiceImpl implements ShareLimitingService {
         // accounts status_enum = 300. See {@link ShareAccountStatusType}
         final String sql = "select " + mapper.schema()
                 + " where sapr.id = ? and saps.is_active = 1 and sacc.status_enum = 300 and saps.type_enum = 600"
-                + " and (transaction_date between '" + currentFinancialYearDatePair.getKey() + "' and '"
-                + currentFinancialYearDatePair.getValue() + "')";
+                + " and (transaction_date between '" + currentFinancialYearDatePair.getFirst() + "' and '"
+                + currentFinancialYearDatePair.getSecond() + "')";
         return this.jdbcTemplate.query(sql, mapper, new Object[] { productId });
     }
 
