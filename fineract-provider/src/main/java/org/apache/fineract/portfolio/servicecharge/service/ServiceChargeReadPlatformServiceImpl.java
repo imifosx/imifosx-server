@@ -24,9 +24,9 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
-import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeData;
+import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -44,7 +44,7 @@ public class ServiceChargeReadPlatformServiceImpl implements ServiceChargeReadPl
 	}
 
 	@Override
-	public Collection<ServiceChargeData> retrieveCharge(QuarterDateRange quarterDateRange, int year) {
+	public Collection<ServiceChargeData> retrieveCharge(DateRangeFactory quarterDateRange, int year) {
 		try {
 
 			final ServiceChargeMapper scm = new ServiceChargeMapper();
@@ -85,7 +85,8 @@ public class ServiceChargeReadPlatformServiceImpl implements ServiceChargeReadPl
 			final int header = rs.getInt("sc_header");
 			final BigDecimal amount = rs.getBigDecimal("sc_amount");
 
-			return ServiceChargeData.template(QuarterDateRange.fromInt(quarter), year, ServiceChargeReportTableHeaders.fromInt(header), amount);
+			return ServiceChargeData.template(DateRangeFactory.fromInt(quarter), year,
+					ServiceChargeReportTableHeaders.fromInt(header), amount);
 		}
 
 	}

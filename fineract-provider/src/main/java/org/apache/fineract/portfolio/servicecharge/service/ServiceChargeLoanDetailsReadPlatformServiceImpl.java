@@ -64,12 +64,12 @@ import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
 import org.apache.fineract.portfolio.paymenttype.data.PaymentTypeData;
-import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeLoanSummaryFactory;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
+import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -108,7 +108,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		BigDecimal totalLoans = BigDecimal.ZERO;
 		
 		// Get the dates
-		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+		DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
 		String startDate = quarter.getFormattedFromDateString();
 		String endDate = quarter.getFormattedToDateString();
 		
@@ -130,7 +130,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		BigDecimal totalRepayment = new BigDecimal("0");
 		
 		// Get the dates
-		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+		DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
 		String startDate = quarter.getFormattedFromDateString();
 		String endDate = quarter.getFormattedToDateString();
 
@@ -200,7 +200,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		int noOfDL = 0;
 		// Get the dates
-		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+		DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
 		String strStartDate = quarter.getFormattedFromDateString();
 		String strEndDate = quarter.getFormattedToDateString();
 		Date startDate = quarter.getFromDateForCurrentYear();
@@ -255,7 +255,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		int noOfDL = 0;
 		// Get the dates
-		QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+		DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
 		String strStartDate = quarter.getFormattedFromDateString();
 		String strEndDate = quarter.getFormattedToDateString();
 		Date startDate = quarter.getFromDateForCurrentYear();
@@ -343,20 +343,20 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 	@Override
 	public boolean findIfLoanDisbursedInCurrentQuarter(Long loanId) {
-		return findIfLoanDisbursedInGivenQuarter(loanId, QuarterDateRange.getCurrentQuarter());
+		return findIfLoanDisbursedInGivenQuarter(loanId, DateRangeFactory.getCurrentDateRange());
 	}
 
 	@Override
 	public BigDecimal getTotalRepaymentsForCurrentQuarter(Long loanId) {
-		return getTotalRepaymentsForGivenQuarter(loanId, QuarterDateRange.getCurrentQuarter());
+		return getTotalRepaymentsForGivenQuarter(loanId, DateRangeFactory.getCurrentDateRange());
 	}
 
 	@Override
 	public BigDecimal getTotalOutstandingAmountForCurrentQuarter(Long loanId) {
-		return getTotalOutstandingAmountForGivenQuarter(loanId, QuarterDateRange.getCurrentQuarter());
+		return getTotalOutstandingAmountForGivenQuarter(loanId, DateRangeFactory.getCurrentDateRange());
 	}
 	
-    private boolean findIfLoanDisbursedInGivenQuarter(Long loanId, QuarterDateRange range) {
+    private boolean findIfLoanDisbursedInGivenQuarter(Long loanId, DateRangeFactory range) {
         boolean result = false;
         // Get the dates
         String startDate = range.getFormattedFromDateString();
@@ -380,7 +380,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
         return result;
     }
 
-	private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, QuarterDateRange range) {
+	private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, DateRangeFactory range) {
 		BigDecimal totalRepayment = BigDecimal.ZERO;
 		// create MathContext object with 2 precision
 		MathContext mc = new MathContext(2);
@@ -401,7 +401,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		return totalRepayment;
 	}
 
-	private BigDecimal getTotalOutstandingAmountForGivenQuarter(Long loanId, QuarterDateRange range) {
+	private BigDecimal getTotalOutstandingAmountForGivenQuarter(Long loanId, DateRangeFactory range) {
 
 		BigDecimal totalOutstandingAmount = BigDecimal.ZERO;
 		// create MathContext object with 2 precision
@@ -726,7 +726,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
     @Override
     public Page<LoanAccountData> retrieveLoansToBeConsideredForTheCurrentQuarter() {
         // Get the dates
-        QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+        DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
         String strStartDate = quarter.getFormattedFromDateString();
         String strEndDate = quarter.getFormattedToDateString();
 

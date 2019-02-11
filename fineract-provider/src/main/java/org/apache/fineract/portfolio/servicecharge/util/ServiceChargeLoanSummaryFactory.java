@@ -32,11 +32,11 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
-import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformServiceImpl;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeDateUtils.DateIterator;
+import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,7 +230,7 @@ public class ServiceChargeLoanSummaryFactory {
 			// Set the demand loan type
 			setDemandLaon(ServiceChargeOperationUtils.checkDemandLaon(loanProduct));
 			// Date details to iterate over
-			QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+			DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
 			Date lastDayOfMonth = quarter.getToDateForCurrentYear(); // Last day of the quarter
 			// Start with the last outstanding amount
 			BigDecimal loanOutstandingAmount = loanAccData.getTotalOutstandingAmount();
@@ -431,7 +431,7 @@ public class ServiceChargeLoanSummaryFactory {
 			// Set the demand loan type
 			setDemandLaon(ServiceChargeOperationUtils.checkDemandLaon(loanProduct));
 			// Date details to iterate over
-			QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+			DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
 			Date lastDayOfMonth = quarter.getToDateForCurrentYear(); // Last day of the quarter
 			// Start with the last outstanding amount
 			BigDecimal loanOutstandingAmount = loanAccData.getTotalOutstandingAmount();

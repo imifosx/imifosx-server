@@ -35,12 +35,11 @@ import org.apache.fineract.accounting.journalentry.domain.JournalEntryType;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryReadPlatformService;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
-import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.servicecharge.constants.GLExpenseTagsForServiceCharge;
-import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
+import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -238,8 +237,8 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 				final SearchParameters searchParameters = SearchParameters.forJournalEntries(null, 0, -1, null, null, null, null);
 				final JournalEntryAssociationParametersData associationParametersData = new JournalEntryAssociationParametersData(false, false);
 
-				final Date fromDateParam = QuarterDateRange.getCurrentQuarter().getFromDateForCurrentYear();
-				final Date toDateParam = QuarterDateRange.getCurrentQuarter().getToDateForCurrentYear();
+				final Date fromDateParam = DateRangeFactory.getCurrentDateRange().getFromDateForCurrentYear();
+				final Date toDateParam = DateRangeFactory.getCurrentDateRange().getToDateForCurrentYear();
 
 				Page<JournalEntryData> journalEntryDataPage = journalEntryReadPlatformService.retrieveAll(searchParameters, glAccount.getId(), true, fromDateParam, toDateParam,
 						StringUtils.EMPTY, 0, associationParametersData);

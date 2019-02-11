@@ -21,8 +21,8 @@ package org.apache.fineract.portfolio.servicecharge.data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
+import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
 
 /**
  * Immutable data object for service charge data
@@ -31,36 +31,36 @@ public class ServiceChargeData implements Comparable<ServiceChargeData>, Seriali
 	private static final long serialVersionUID = 3L;
 
 	private final Long id;
-	private final QuarterDateRange scQuarter;
+	private final DateRangeFactory scQuarter;
 	private final int scYear;
 	private final ServiceChargeReportTableHeaders scHeader;
 	private final BigDecimal scAmount;
 
-	public static ServiceChargeData template(final QuarterDateRange quarter, final int year, final ServiceChargeReportTableHeaders header,
+	public static ServiceChargeData template(final DateRangeFactory quarter, final int year, final ServiceChargeReportTableHeaders header,
 			final BigDecimal amount) {
 		return new ServiceChargeData(0L, quarter, year, header, amount);
 	}
 
-	public static ServiceChargeData withTemplate(final Long id, final QuarterDateRange quarter, final int year,
+	public static ServiceChargeData withTemplate(final Long id, final DateRangeFactory quarter, final int year,
 			final ServiceChargeReportTableHeaders header, final BigDecimal amount) {
 		return new ServiceChargeData(id, quarter, year, header, amount);
 	}
 
-	public static ServiceChargeData instance(final Long id, final QuarterDateRange scQuarter, final int scYear,
+	public static ServiceChargeData instance(final Long id, final DateRangeFactory scQuarter, final int scYear,
 			final ServiceChargeReportTableHeaders header, final BigDecimal scAmount) {
 
 		return new ServiceChargeData(id, scQuarter, scYear, header, scAmount);
 	}
 
 	public static ServiceChargeData lookup(final Long id) {
-		final QuarterDateRange scQuarter = QuarterDateRange.Q1;
+		final DateRangeFactory scQuarter = DateRangeFactory.Q1;
 		final int scYear = 0;
 		final ServiceChargeReportTableHeaders scHeader = null;
 		final BigDecimal scAmount = null;
 		return new ServiceChargeData(id, scQuarter, scYear, scHeader, scAmount);
 	}
 
-	protected ServiceChargeData(final Long id, final QuarterDateRange scQuarter, final int scYear, final ServiceChargeReportTableHeaders scHeader,
+	protected ServiceChargeData(final Long id, final DateRangeFactory scQuarter, final int scYear, final ServiceChargeReportTableHeaders scHeader,
 			final BigDecimal scAmount) {
 		this.id = id;
 		this.scQuarter = scQuarter;
@@ -79,7 +79,7 @@ public class ServiceChargeData implements Comparable<ServiceChargeData>, Seriali
 	/**
 	 * @return the Quarter of this Service Charge
 	 */
-	public final QuarterDateRange getQuarter() {
+	public final DateRangeFactory getQuarter() {
 		return scQuarter;
 	}
 

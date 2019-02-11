@@ -23,7 +23,6 @@ import java.util.Calendar;
 
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
-import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeData;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
@@ -32,6 +31,7 @@ import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeJournalD
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeWritePlatformService;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
+import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,9 +67,9 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
     public void generateServiceCharge() {
         logger.info("ServiceChargeScheduledJobRunnerServiceImpl::generateServiceCharge: Inside Generate Service Charge");
 
-        QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+        DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
         int year = Calendar.getInstance().get(Calendar.YEAR);
-        QuarterDateRange.setQuarterAndYear(quarter.name(), year);
+        DateRangeFactory.setQuarterAndYear(quarter.name(), year);
 
         ServiceChargeData serviceCharge = ServiceChargeOperationUtils.getServiceChargeForCurrentQuarter(scChargeReadPlatformService);
         if (serviceCharge != null) {
@@ -93,7 +93,7 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
         serviceChargeInstallmentCalculator.recalculateServiceChargeForAllLoans();
     }
 
-    private void saveServiceCharge(QuarterDateRange quarter, int year, ServiceChargeReportTableHeaders header,
+    private void saveServiceCharge(DateRangeFactory quarter, int year, ServiceChargeReportTableHeaders header,
             ServiceChargeFinalSheetData dataSheet) {
         BigDecimal amount = dataSheet.getColumnValue(header, 0);
 

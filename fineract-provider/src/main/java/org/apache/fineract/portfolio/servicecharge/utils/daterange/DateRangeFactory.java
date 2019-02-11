@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.servicecharge.constants;
+package org.apache.fineract.portfolio.servicecharge.utils.daterange;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -28,7 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.accounting.journalentry.api.DateParam;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 
-public enum QuarterDateRange {
+public enum DateRangeFactory {
     Q1(1, "01 Jan ", "31 Mar "), Q2(2, "01 Apr ", "30 Jun "), Q3(3, "01 Jul ", "30 Sep "), Q4(4, "01 Oct ", "31 Dec ");
 
     private final Integer id;
@@ -39,7 +39,7 @@ public enum QuarterDateRange {
     // private final DateRange dateRange;
     private final String dateFormatString = "dd MMMM yyyy";
 
-    private QuarterDateRange(final Integer id, final String fromDate, final String toDate) {
+    private DateRangeFactory(final Integer id, final String fromDate, final String toDate) {
         this.id = id;
         this.fromDate = fromDate;
         this.toDate = toDate;
@@ -90,13 +90,13 @@ public enum QuarterDateRange {
     }
 
     // Find better way to do this
-    public static QuarterDateRange getCurrentQuarter() {
-        QuarterDateRange q = QuarterYearHolder.getCurrentQuarter();
+    public static DateRangeFactory getCurrentDateRange() {
+        DateRangeFactory q = QuarterYearHolder.getCurrentQuarter();
         return q;
     }
 
-    public static QuarterDateRange getPreviousQuarter() {
-        QuarterDateRange q = getCurrentQuarter();
+    public static DateRangeFactory getPreviousQuarter() {
+        DateRangeFactory q = getCurrentDateRange();
         switch (q) {
             case Q1:
                 return Q4;
@@ -124,15 +124,15 @@ public enum QuarterDateRange {
         return name().toString();
     }
 
-    private static final Map<Integer, QuarterDateRange> intToEnumMap = new HashMap<>();
+    private static final Map<Integer, DateRangeFactory> intToEnumMap = new HashMap<>();
     static {
-        for (final QuarterDateRange type : QuarterDateRange.values()) {
+        for (final DateRangeFactory type : DateRangeFactory.values()) {
             intToEnumMap.put(type.getId(), type);
         }
     }
 
-    public static QuarterDateRange fromInt(final int i) {
-        final QuarterDateRange type = intToEnumMap.get(Integer.valueOf(i));
+    public static DateRangeFactory fromInt(final int i) {
+        final DateRangeFactory type = intToEnumMap.get(Integer.valueOf(i));
         return type;
     }
 
@@ -141,7 +141,7 @@ public enum QuarterDateRange {
     }
 
     public static boolean checkIfGivenDateIsInCurrentQuarter(Date date) {
-        QuarterDateRange range = getCurrentQuarter();
+        DateRangeFactory range = getCurrentDateRange();
         final Date fromDate = range.getFromDateForCurrentYear();
         final Date toDate = range.getToDateForCurrentYear();
         // if date >= fromDate && date <= toDate
@@ -164,8 +164,8 @@ public enum QuarterDateRange {
             return year;
         }
 
-        static QuarterDateRange getCurrentQuarter() {
-            QuarterDateRange q = null;
+        static DateRangeFactory getCurrentQuarter() {
+            DateRangeFactory q = null;
             if (!StringUtils.isEmpty(quarter)) {
                 final String qStr = quarter.toUpperCase();
                 switch (qStr) {

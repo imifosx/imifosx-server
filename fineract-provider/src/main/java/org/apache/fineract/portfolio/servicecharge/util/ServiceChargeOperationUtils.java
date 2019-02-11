@@ -29,10 +29,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
-import org.apache.fineract.portfolio.servicecharge.constants.QuarterDateRange;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeData;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeReadPlatformService;
+import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
 
 public class ServiceChargeOperationUtils implements ServiceChargeApiConstants {
 
@@ -145,7 +145,7 @@ public class ServiceChargeOperationUtils implements ServiceChargeApiConstants {
      *         if exists, null otherwise
      */
     public static ServiceChargeData getServiceChargeForCurrentQuarter(final ServiceChargeReadPlatformService scChargeReadPlatformService) {
-        QuarterDateRange quarter = QuarterDateRange.getCurrentQuarter();
+        DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
         int year = Calendar.getInstance().get(Calendar.YEAR);
 
         Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
