@@ -35,9 +35,9 @@ public interface ServiceChargeApiConstants {
 	Long ASSUMED_SERVICE_CHARGE_ID = 1L;
 
 	String SC_CALCULATION_METHOD = "servicecharge_calculation_method_";
-	String MONTHLY = "monthly";
-	String QUARTERLY = "quarterly";
-	String YEARLY = "yearly";
+	String MONTHLY = "MONTHLY";
+	String QUARTERLY = "QUARTERLY";
+	String YEARLY = "YEARLY";
 
 	// Month reference strings for SC applicable quarter calculation
 	String JANUARY = "JAN";

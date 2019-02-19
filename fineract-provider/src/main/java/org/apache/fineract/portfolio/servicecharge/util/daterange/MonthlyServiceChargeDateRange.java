@@ -21,10 +21,14 @@ import org.slf4j.LoggerFactory;
  * will have all the quarterly
  *
  */
-enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceChargeApiConstants {
-	Q1(1, "01 Jan ", "31 Mar "), Q2(2, "01 Apr ", "30 Jun "), Q3(3, "01 Jul ", "30 Sep "), Q4(4, "01 Oct ", "31 Dec ");
+enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceChargeApiConstants {
+	JAN(1, "01 Jan ", "31 Jan "), FEB28(2, "01 Feb ", "28 Feb "), FEB29(3, "01 Feb ", "29 Feb "),
+	MAR(4, "01 Mar ", "31 Mar "), APR(5, "01 Apr ", "30 Apr "), MAY(6, "01 May ", "31 May "),
+	JUN(7, "01 Jun ", "30 Jun "), JUL(8, "01 Jul ", "31 Jul "), AUG(9, "01 Aug ", "31 Aug "),
+	SEP(10, "01 Sep ", "30 Sep "), OCT(11, "01 Oct ", "31 Oct "), NOV(12, "01 Nov ", "30 Nov "),
+	DEC(13, "01 Dec ", "31 Dec ");
 
-	private final static Logger logger = LoggerFactory.getLogger(QuarterlyServiceChargeDateRange.class);
+	private final static Logger logger = LoggerFactory.getLogger(MonthlyServiceChargeDateRange.class);
 	private final Integer id;
 	private final String fromDate;
 	private final String toDate;
@@ -35,7 +39,7 @@ enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceC
 	/**
 	 * 
 	 */
-	private QuarterlyServiceChargeDateRange(final Integer id, final String fromDate, final String toDate) {
+	private MonthlyServiceChargeDateRange(final Integer id, final String fromDate, final String toDate) {
 		this.id = id;
 		this.fromDate = fromDate;
 		this.toDate = toDate;
@@ -155,30 +159,50 @@ enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceC
 		return new DateParam(fullDateString).getDate("Service Data Entries To Date", getDateFormatString(), locale);
 	}
 
-	public static ServiceChargeDateRange getCurrentQuarter(String monthCode, int year) {
+	public static ServiceChargeDateRange getCurrentMonth(String monthCode, int year) {
 		ServiceChargeDateRange q = null;
 		if (!StringUtils.isEmpty(monthCode)) {
 			final String qStr = monthCode.toUpperCase();
 			switch (qStr) {
-			case JANUARY:
-			case FEBRUARY:
-			case MARCH:
-				q = Q1;
+			case ServiceChargeApiConstants.JANUARY:
+				q = JAN;
 				break;
-			case APRIL:
-			case MAY:
-			case JUNE:
-				q = Q2;
+			case ServiceChargeApiConstants.FEBRUARY:
+				if (isCurrentYearLeapYear(year)) {
+					q = FEB29;
+				} else {
+					q = FEB28;
+				}
 				break;
-			case JULY:
-			case AUGUST:
-			case SEPTEMBER:
-				q = Q3;
+			case ServiceChargeApiConstants.MARCH:
+				q = MAR;
 				break;
-			case OCTOBER:
-			case NOVEMBER:
-			case DECEMBER:
-				q = Q4;
+			case ServiceChargeApiConstants.APRIL:
+				q = APR;
+				break;
+			case ServiceChargeApiConstants.MAY:
+				q = MAY;
+				break;
+			case ServiceChargeApiConstants.JUNE:
+				q = JUN;
+				break;
+			case ServiceChargeApiConstants.JULY:
+				q = JUL;
+				break;
+			case ServiceChargeApiConstants.AUGUST:
+				q = AUG;
+				break;
+			case ServiceChargeApiConstants.SEPTEMBER:
+				q = SEP;
+				break;
+			case ServiceChargeApiConstants.OCTOBER:
+				q = OCT;
+				break;
+			case ServiceChargeApiConstants.NOVEMBER:
+				q = NOV;
+				break;
+			case ServiceChargeApiConstants.DECEMBER:
+				q = DEC;
 				break;
 			default:
 				// Throw exception to say what was expected
@@ -188,14 +212,56 @@ enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceC
 			Calendar c = Calendar.getInstance(Locale.getDefault());
 			int month = c.get(Calendar.MONTH);
 
-			q = (month >= Calendar.JANUARY && month <= Calendar.MARCH) ? Q1
-					: (month >= Calendar.APRIL && month <= Calendar.JUNE) ? Q2
-							: (month >= Calendar.JULY && month <= Calendar.SEPTEMBER) ? Q3 : Q4;
+			switch (month) {
+			case Calendar.JANUARY:
+				q = JAN;
+				break;
+			case Calendar.FEBRUARY:
+				if (isCurrentYearLeapYear(year)) {
+					q = FEB29;
+				} else {
+					q = FEB28;
+				}
+				break;
+			case Calendar.MARCH:
+				q = MAR;
+				break;
+			case Calendar.APRIL:
+				q = APR;
+				break;
+			case Calendar.MAY:
+				q = MAY;
+				break;
+			case Calendar.JUNE:
+				q = JUN;
+				break;
+			case Calendar.JULY:
+				q = JUL;
+				break;
+			case Calendar.AUGUST:
+				q = AUG;
+				break;
+			case Calendar.SEPTEMBER:
+				q = SEP;
+				break;
+			case Calendar.OCTOBER:
+				q = OCT;
+				break;
+			case Calendar.NOVEMBER:
+				q = NOV;
+				break;
+			case Calendar.DECEMBER:
+				q = DEC;
+				break;
+			default:
+				// Throw exception to say what was expected
+				throw new ServiceChargeException(SERVICE_CHARGE_EXCEPTION_REASON.SC_INVALID_MONTH_CODE, null);
+			}
 		}
 		if (year != 0) {
 			q.setYear(year);
 		}
-		logger.debug("QuarterlyServiceChargeDateRange.getCurrentQuarter(): derived quarter::" + q);
+		logger.debug("MonthlyServiceChargeDateRange.getCurrentQuarter(): derived quarter::" + q);
 		return q;
 	}
 
@@ -217,5 +283,23 @@ enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceC
 
 	public int getYear() {
 		return this.year;
+	}
+
+	private static boolean isCurrentYearLeapYear(int year) {
+		boolean leap = false; // Default, no leap year
+
+		if (year % 4 == 0) {
+			// If a %4 year is divisible by 100 then it also has to be divisible by 400 to
+			// qualify as leap year
+			if (year % 100 == 0) {
+				// year is divisible by 400, hence the year is a leap year
+				if (year % 400 == 0) {
+					leap = true;
+				}
+			} else {
+				leap = true;
+			}
+		}
+		return leap;
 	}
 }

@@ -7,12 +7,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.accounting.journalentry.api.DateParam;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
-import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException;
-import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException.SERVICE_CHARGE_EXCEPTION_REASON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +18,10 @@ import org.slf4j.LoggerFactory;
  * will have all the quarterly
  *
  */
-enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceChargeApiConstants {
-	Q1(1, "01 Jan ", "31 Mar "), Q2(2, "01 Apr ", "30 Jun "), Q3(3, "01 Jul ", "30 Sep "), Q4(4, "01 Oct ", "31 Dec ");
+enum YearlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceChargeApiConstants {
+	YEARLY(1, "01 Jan ", "31 Dec ");
 
-	private final static Logger logger = LoggerFactory.getLogger(QuarterlyServiceChargeDateRange.class);
+	private final static Logger logger = LoggerFactory.getLogger(YearlyServiceChargeDateRange.class);
 	private final Integer id;
 	private final String fromDate;
 	private final String toDate;
@@ -35,7 +32,7 @@ enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceC
 	/**
 	 * 
 	 */
-	private QuarterlyServiceChargeDateRange(final Integer id, final String fromDate, final String toDate) {
+	private YearlyServiceChargeDateRange(final Integer id, final String fromDate, final String toDate) {
 		this.id = id;
 		this.fromDate = fromDate;
 		this.toDate = toDate;
@@ -155,47 +152,12 @@ enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceC
 		return new DateParam(fullDateString).getDate("Service Data Entries To Date", getDateFormatString(), locale);
 	}
 
-	public static ServiceChargeDateRange getCurrentQuarter(String monthCode, int year) {
-		ServiceChargeDateRange q = null;
-		if (!StringUtils.isEmpty(monthCode)) {
-			final String qStr = monthCode.toUpperCase();
-			switch (qStr) {
-			case JANUARY:
-			case FEBRUARY:
-			case MARCH:
-				q = Q1;
-				break;
-			case APRIL:
-			case MAY:
-			case JUNE:
-				q = Q2;
-				break;
-			case JULY:
-			case AUGUST:
-			case SEPTEMBER:
-				q = Q3;
-				break;
-			case OCTOBER:
-			case NOVEMBER:
-			case DECEMBER:
-				q = Q4;
-				break;
-			default:
-				// Throw exception to say what was expected
-				throw new ServiceChargeException(SERVICE_CHARGE_EXCEPTION_REASON.SC_INVALID_MONTH_CODE, null);
-			}
-		} else {
-			Calendar c = Calendar.getInstance(Locale.getDefault());
-			int month = c.get(Calendar.MONTH);
-
-			q = (month >= Calendar.JANUARY && month <= Calendar.MARCH) ? Q1
-					: (month >= Calendar.APRIL && month <= Calendar.JUNE) ? Q2
-							: (month >= Calendar.JULY && month <= Calendar.SEPTEMBER) ? Q3 : Q4;
-		}
+	public static ServiceChargeDateRange getCurrentYear(String monthCode, int year) {
+		ServiceChargeDateRange q = YEARLY;
 		if (year != 0) {
 			q.setYear(year);
 		}
-		logger.debug("QuarterlyServiceChargeDateRange.getCurrentQuarter(): derived quarter::" + q);
+		logger.debug("YearlyServiceChargeDateRange.getCurrentQuarter(): derived quarter::" + q);
 		return q;
 	}
 
