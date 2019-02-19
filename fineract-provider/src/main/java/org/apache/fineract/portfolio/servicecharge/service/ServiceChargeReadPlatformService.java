@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.servicecharge.service;
 import java.util.Collection;
 
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeData;
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRange;
 
 /**
  * @author Musaib_2
@@ -29,7 +29,7 @@ import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFact
  */
 public interface ServiceChargeReadPlatformService {
 
-	Collection<ServiceChargeData> retrieveCharge(DateRangeFactory quarterDateRange, int year);
+	Collection<ServiceChargeData> retrieveCharge(ServiceChargeDateRange dateRange, int year);
 
 	Collection<ServiceChargeData> retrieveAllCharges();
 

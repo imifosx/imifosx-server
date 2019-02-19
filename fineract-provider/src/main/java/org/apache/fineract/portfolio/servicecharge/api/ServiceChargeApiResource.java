@@ -39,7 +39,7 @@ import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetD
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeCalculationPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeInstallmentCalculatorService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeJournalDetailsReadPlatformService;
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRangeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
@@ -126,7 +126,7 @@ public class ServiceChargeApiResource {
             @QueryParam("year") final int year, @QueryParam("table") final boolean displayTable) {
         String result = null;
         ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
-        DateRangeFactory.setQuarterAndYear(quarter, year);
+        ServiceChargeDateRangeFactory.setQuarterAndYear(quarter, year);
         scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
         if (!displayTable) {
             result = finalSheetData.getResultsDataMap().toString();
@@ -140,7 +140,7 @@ public class ServiceChargeApiResource {
     @Path("recalculateServiceCharge")
     @Consumes({ MediaType.APPLICATION_JSON })
     public String recalculateServiceCharge(@QueryParam("quarter") final String quarter, @QueryParam("year") final int year) {
-        DateRangeFactory.setQuarterAndYear(quarter, year);
+    	ServiceChargeDateRangeFactory.setQuarterAndYear(quarter, year);
         scCalculator.recalculateServiceChargeForAllLoans();
         return "Service Recalculation for the given quarter: " + quarter + " year: " + year + " completed";
     }

@@ -29,7 +29,8 @@ import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReport
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeData;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeDateUtils;
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRange;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRangeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,130 +40,150 @@ import org.springframework.stereotype.Service;
 @Service
 public class ServiceChargeCalculationPlatformServiceImpl implements ServiceChargeCalculationPlatformService {
 
-    private final static Logger logger = LoggerFactory.getLogger(ServiceChargeCalculationPlatformServiceImpl.class);
+	private final static Logger logger = LoggerFactory.getLogger(ServiceChargeCalculationPlatformServiceImpl.class);
 
-    private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
-    private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
-    private final ServiceChargeReadPlatformService scChargeReadPlatformService;
-    @Autowired
-    private ApplicationContext appContext;
+	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
+	private final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService;
+	private final ServiceChargeReadPlatformService scChargeReadPlatformService;
+	@Autowired
+	private ApplicationContext appContext;
 
-    @Autowired
-    public ServiceChargeCalculationPlatformServiceImpl(
-            final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
-            final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService,
-            ServiceChargeReadPlatformService scChargeReadPlatformService) {
-        this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
-        this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
-        this.scChargeReadPlatformService = scChargeReadPlatformService;
-    }
+	@Autowired
+	public ServiceChargeCalculationPlatformServiceImpl(
+			final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
+			final ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatformService,
+			ServiceChargeReadPlatformService scChargeReadPlatformService) {
+		this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
+		this.scLoanDetailsReadPlatformService = scLoanDetailsReadPlatformService;
+		this.scChargeReadPlatformService = scChargeReadPlatformService;
+	}
 
-    @Override
-    public BigDecimal calculateServiceChargeForLoan(Long loanId) {
-        DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
-        int year = Calendar.getInstance().get(Calendar.YEAR);
+	@Override
+	public BigDecimal calculateServiceChargeForLoan(Long loanId) {
+		ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
+		int year = Calendar.getInstance().get(Calendar.YEAR);
 
-        return calculateServiceChargeForLoan(loanId, quarter, year);
-    }
+		return calculateServiceChargeForLoan(loanId, quarter, year);
+	}
 
-    @Override
-    public BigDecimal calculateServiceChargeForLoan(Long loanId, DateRangeFactory quarter, int year) {
-        boolean isDisbursed = scLoanDetailsReadPlatformService.findIfLoanDisbursedInCurrentQuarter(loanId);
-        BigDecimal totalRepaymensts = scLoanDetailsReadPlatformService.getTotalRepaymentsForCurrentQuarter(loanId);
-        BigDecimal totalOutstanding = scLoanDetailsReadPlatformService.getTotalOutstandingAmountForCurrentQuarter(loanId);
+	@Override
+	public BigDecimal calculateServiceChargeForLoan(Long loanId, ServiceChargeDateRange quarter, int year) {
+		boolean isDisbursed = scLoanDetailsReadPlatformService.findIfLoanDisbursedInCurrentQuarter(loanId);
+		BigDecimal totalRepaymensts = scLoanDetailsReadPlatformService.getTotalRepaymentsForCurrentQuarter(loanId);
+		BigDecimal totalOutstanding = scLoanDetailsReadPlatformService
+				.getTotalOutstandingAmountForCurrentQuarter(loanId);
 
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:isDisbursed=" + isDisbursed);
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:totalRepaymensts=" + totalRepaymensts);
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:totalOutstanding=" + totalOutstanding);
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:isDisbursed="
+				+ isDisbursed);
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:totalRepaymensts="
+				+ totalRepaymensts);
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForLoan:totalOutstanding="
+				+ totalOutstanding);
 
-        return serviceChargeCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, quarter, year);
-    }
+		return serviceChargeCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, quarter, year);
+	}
 
-    private BigDecimal serviceChargeCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding) {
-        DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
-        int year = Calendar.getInstance().get(Calendar.YEAR);
+	private BigDecimal serviceChargeCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts,
+			BigDecimal totalOutstanding) {
+		ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
+		int year = Calendar.getInstance().get(Calendar.YEAR);
 
-        return serviceChargeCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, quarter, year);
-    }
+		return serviceChargeCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, quarter, year);
+	}
 
-    /**
-     * All the service charge calculation logic should be put here. The same
-     * method should be used for service charge calculation from other methods.
-     * This method is private so that the internal logic is kept insulated for
-     * any future changes. For accessing this method, need to write appropriate
-     * wrappers that will talk to the external world
-     * 
-     * @param isDisbursed
-     * @param totalRepaymensts
-     * @param totalOutstanding
-     * @param quarter
-     * @param year
-     * @return
-     */
-    private BigDecimal serviceChargeCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding,
-            DateRangeFactory quarter, int year) {
-        Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
-        if (retrivedSCList == null || retrivedSCList
-                .isEmpty()) { return calculateServiceChargeForGivenQuarter(isDisbursed, totalRepaymensts, totalOutstanding, quarter); }
-        return calculateServiceChargeFromDBValues(isDisbursed, totalRepaymensts, totalOutstanding, retrivedSCList, quarter);
-    }
+	/**
+	 * All the service charge calculation logic should be put here. The same method
+	 * should be used for service charge calculation from other methods. This method
+	 * is private so that the internal logic is kept insulated for any future
+	 * changes. For accessing this method, need to write appropriate wrappers that
+	 * will talk to the external world
+	 * 
+	 * @param isDisbursed
+	 * @param totalRepaymensts
+	 * @param totalOutstanding
+	 * @param quarter
+	 * @param year
+	 * @return
+	 */
+	private BigDecimal serviceChargeCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts,
+			BigDecimal totalOutstanding, ServiceChargeDateRange quarter, int year) {
+		Collection<ServiceChargeData> retrivedSCList = scChargeReadPlatformService.retrieveCharge(quarter, year);
+		if (retrivedSCList == null || retrivedSCList.isEmpty()) {
+			return calculateServiceChargeForGivenQuarter(isDisbursed, totalRepaymensts, totalOutstanding, quarter);
+		}
+		return calculateServiceChargeFromDBValues(isDisbursed, totalRepaymensts, totalOutstanding, retrivedSCList,
+				quarter);
+	}
 
-    private BigDecimal calculateServiceChargeFromDBValues(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding,
-            Collection<ServiceChargeData> retrivedSCList, DateRangeFactory quarter) {
-        BigDecimal repaymentCostPerRupee = BigDecimal.ZERO;
-        BigDecimal annualizedCost = BigDecimal.ZERO;
-        BigDecimal serviceCostPerLoan = BigDecimal.ZERO;
-        for (ServiceChargeData data : retrivedSCList) {
-            switch (data.getHeader()) {
-                case REPAYMENT_PER_100:
-                    repaymentCostPerRupee = data.getAmount();
-                break;
-                case ANNUALIZED_COST_I:
-                    annualizedCost = data.getAmount();
-                break;
-                case LOAN_SERVICING_PER_LOAN:
-                    serviceCostPerLoan = data.getAmount();
-                break;
-            }
-        }
+	private BigDecimal calculateServiceChargeFromDBValues(boolean isDisbursed, BigDecimal totalRepaymensts,
+			BigDecimal totalOutstanding, Collection<ServiceChargeData> retrivedSCList, ServiceChargeDateRange quarter) {
+		BigDecimal repaymentCostPerRupee = BigDecimal.ZERO;
+		BigDecimal annualizedCost = BigDecimal.ZERO;
+		BigDecimal serviceCostPerLoan = BigDecimal.ZERO;
+		for (ServiceChargeData data : retrivedSCList) {
+			switch (data.getHeader()) {
+			case REPAYMENT_PER_100:
+				repaymentCostPerRupee = data.getAmount();
+				break;
+			case ANNUALIZED_COST_I:
+				annualizedCost = data.getAmount();
+				break;
+			case LOAN_SERVICING_PER_LOAN:
+				serviceCostPerLoan = data.getAmount();
+				break;
+			default:
+				logger.debug(
+						"ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: header being skipped="
+								+ data.getHeader());
+				break;
+			}
+		}
 
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: repaymentCostPerRupee="
-                + repaymentCostPerRupee.toPlainString());
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: annualizedCost="
-                + annualizedCost.toPlainString());
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: serviceCostPerLoan/disbursement="
-                + serviceCostPerLoan.toPlainString());
+		logger.debug(
+				"ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: repaymentCostPerRupee="
+						+ repaymentCostPerRupee.toPlainString());
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: annualizedCost="
+				+ annualizedCost.toPlainString());
+		logger.debug(
+				"ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeFromDBValues: serviceCostPerLoan/disbursement="
+						+ serviceCostPerLoan.toPlainString());
 
-        BigDecimal serviceCharge = serviceCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, repaymentCostPerRupee,
-                annualizedCost, serviceCostPerLoan, quarter);
+		BigDecimal serviceCharge = serviceCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding,
+				repaymentCostPerRupee, annualizedCost, serviceCostPerLoan, quarter);
 
-        return serviceCharge;
-    }
+		return serviceCharge;
+	}
 
-    private BigDecimal calculateServiceChargeForGivenQuarter(boolean isDisbursed, BigDecimal totalRepaymensts,
-            BigDecimal totalOutstanding, DateRangeFactory quarter) {
-        ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
-        scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
+	private BigDecimal calculateServiceChargeForGivenQuarter(boolean isDisbursed, BigDecimal totalRepaymensts,
+			BigDecimal totalOutstanding, ServiceChargeDateRange quarter) {
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext
+				.getBean("serviceChargeFinalSheetData");
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
 
-        BigDecimal repaymentCostPerRupee = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
-        BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
-        BigDecimal serviceCostPerLoan = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
+		BigDecimal repaymentCostPerRupee = finalSheetData
+				.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
+		BigDecimal annualizedCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
+		BigDecimal serviceCostPerLoan = finalSheetData
+				.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
 
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: repaymentCostPerRupee="
-                + repaymentCostPerRupee.toPlainString());
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: annualizedCost="
-                + annualizedCost.toPlainString());
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: serviceCostPerLoan/disbursement="
-                + serviceCostPerLoan.toPlainString());
+		logger.debug(
+				"ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: repaymentCostPerRupee="
+						+ repaymentCostPerRupee.toPlainString());
+		logger.debug(
+				"ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: annualizedCost="
+						+ annualizedCost.toPlainString());
+		logger.debug(
+				"ServiceChargeCalculationPlatformServiceImpl:: calculateServiceChargeForCurrentQuarter: serviceCostPerLoan/disbursement="
+						+ serviceCostPerLoan.toPlainString());
 
-        BigDecimal serviceCharge = serviceCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding, repaymentCostPerRupee,
-                annualizedCost, serviceCostPerLoan, quarter);
-        return serviceCharge;
-    }
+		BigDecimal serviceCharge = serviceCalculationLogic(isDisbursed, totalRepaymensts, totalOutstanding,
+				repaymentCostPerRupee, annualizedCost, serviceCostPerLoan, quarter);
+		return serviceCharge;
+	}
 
-    private BigDecimal serviceCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts, BigDecimal totalOutstanding,
-			BigDecimal repaymentCostPerRupee, BigDecimal annualizedCost, BigDecimal serviceCostPerLoan,
-			DateRangeFactory quarter) {
+	private BigDecimal serviceCalculationLogic(boolean isDisbursed, BigDecimal totalRepaymensts,
+			BigDecimal totalOutstanding, BigDecimal repaymentCostPerRupee, BigDecimal annualizedCost,
+			BigDecimal serviceCostPerLoan, ServiceChargeDateRange quarter) {
 		final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
 
 		// Adding disbursement charge in case it was disbursed in the current quarter
@@ -191,23 +212,25 @@ public class ServiceChargeCalculationPlatformServiceImpl implements ServiceCharg
 		return serviceCharge;
 	}
 
-    @Override
-    public BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer numberOfRepayments) {
-        // Configured rounding mode to be used for division
-        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
-        // Assuming that it will be disbursed
-        boolean isDisbursed = true;
-        // The current amount being disbursed is the outstanding loan amount
-        BigDecimal totalOutstanding = principal;
-        logger.debug(
-                "ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: principal=" + principal.toPlainString());
-        // QuarterDateRange.setQuarterAndYear("Q1", 2018);
-        BigDecimal numberOfRepaymentsBigDecimal = new BigDecimal(numberOfRepayments);
-        BigDecimal totalServiceChargeAmount = serviceChargeCalculationLogic(isDisbursed, BigDecimal.ZERO, totalOutstanding);
-        logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: serviceChargeAmount="
-                + totalServiceChargeAmount.toPlainString());
-        BigDecimal serviceChargeAmount = totalServiceChargeAmount.divide(numberOfRepaymentsBigDecimal, roundingMode);
-        return serviceChargeAmount;
-    }
+	@Override
+	public BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer numberOfRepayments) {
+		// Configured rounding mode to be used for division
+		final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
+		// Assuming that it will be disbursed
+		boolean isDisbursed = true;
+		// The current amount being disbursed is the outstanding loan amount
+		BigDecimal totalOutstanding = principal;
+		logger.debug("ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: principal="
+				+ principal.toPlainString());
+		// QuarterDateRange.setQuarterAndYear("Q1", 2018);
+		BigDecimal numberOfRepaymentsBigDecimal = new BigDecimal(numberOfRepayments);
+		BigDecimal totalServiceChargeAmount = serviceChargeCalculationLogic(isDisbursed, BigDecimal.ZERO,
+				totalOutstanding);
+		logger.debug(
+				"ServiceChargeCalculationPlatformServiceImpl::calculateServiceChargeForPrincipal: serviceChargeAmount="
+						+ totalServiceChargeAmount.toPlainString());
+		BigDecimal serviceChargeAmount = totalServiceChargeAmount.divide(numberOfRepaymentsBigDecimal, roundingMode);
+		return serviceChargeAmount;
+	}
 
 }

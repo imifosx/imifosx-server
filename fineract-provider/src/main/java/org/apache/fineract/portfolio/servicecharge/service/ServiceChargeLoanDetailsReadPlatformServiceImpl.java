@@ -69,7 +69,8 @@ import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetD
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeLoanSummaryFactory;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRange;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRangeFactory;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -108,7 +109,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		BigDecimal totalLoans = BigDecimal.ZERO;
 		
 		// Get the dates
-		DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
+		ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
 		String startDate = quarter.getFormattedFromDateString();
 		String endDate = quarter.getFormattedToDateString();
 		
@@ -130,7 +131,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		BigDecimal totalRepayment = new BigDecimal("0");
 		
 		// Get the dates
-		DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
+		ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
 		String startDate = quarter.getFormattedFromDateString();
 		String endDate = quarter.getFormattedToDateString();
 
@@ -200,7 +201,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		int noOfDL = 0;
 		// Get the dates
-		DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
+		ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
 		String strStartDate = quarter.getFormattedFromDateString();
 		String strEndDate = quarter.getFormattedToDateString();
 		Date startDate = quarter.getFromDateForCurrentYear();
@@ -255,7 +256,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		int noOfDL = 0;
 		// Get the dates
-		DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
+		ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
 		String strStartDate = quarter.getFormattedFromDateString();
 		String strEndDate = quarter.getFormattedToDateString();
 		Date startDate = quarter.getFromDateForCurrentYear();
@@ -343,20 +344,20 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 
 	@Override
 	public boolean findIfLoanDisbursedInCurrentQuarter(Long loanId) {
-		return findIfLoanDisbursedInGivenQuarter(loanId, DateRangeFactory.getCurrentDateRange());
+		return findIfLoanDisbursedInGivenQuarter(loanId, ServiceChargeDateRangeFactory.getCurrentDateRange());
 	}
 
 	@Override
 	public BigDecimal getTotalRepaymentsForCurrentQuarter(Long loanId) {
-		return getTotalRepaymentsForGivenQuarter(loanId, DateRangeFactory.getCurrentDateRange());
+		return getTotalRepaymentsForGivenQuarter(loanId, ServiceChargeDateRangeFactory.getCurrentDateRange());
 	}
 
 	@Override
 	public BigDecimal getTotalOutstandingAmountForCurrentQuarter(Long loanId) {
-		return getTotalOutstandingAmountForGivenQuarter(loanId, DateRangeFactory.getCurrentDateRange());
+		return getTotalOutstandingAmountForGivenQuarter(loanId, ServiceChargeDateRangeFactory.getCurrentDateRange());
 	}
 	
-    private boolean findIfLoanDisbursedInGivenQuarter(Long loanId, DateRangeFactory range) {
+    private boolean findIfLoanDisbursedInGivenQuarter(Long loanId, ServiceChargeDateRange range) {
         boolean result = false;
         // Get the dates
         String startDate = range.getFormattedFromDateString();
@@ -380,7 +381,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
         return result;
     }
 
-	private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, DateRangeFactory range) {
+	private BigDecimal getTotalRepaymentsForGivenQuarter(Long loanId, ServiceChargeDateRange range) {
 		BigDecimal totalRepayment = BigDecimal.ZERO;
 		// create MathContext object with 2 precision
 		MathContext mc = new MathContext(2);
@@ -401,7 +402,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		return totalRepayment;
 	}
 
-	private BigDecimal getTotalOutstandingAmountForGivenQuarter(Long loanId, DateRangeFactory range) {
+	private BigDecimal getTotalOutstandingAmountForGivenQuarter(Long loanId, ServiceChargeDateRange range) {
 
 		BigDecimal totalOutstandingAmount = BigDecimal.ZERO;
 		// create MathContext object with 2 precision
@@ -726,7 +727,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
     @Override
     public Page<LoanAccountData> retrieveLoansToBeConsideredForTheCurrentQuarter() {
         // Get the dates
-        DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
+    	ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
         String strStartDate = quarter.getFormattedFromDateString();
         String strEndDate = quarter.getFormattedToDateString();
 
@@ -753,8 +754,10 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
         // but that at present is an edge case
 		sqlBuilder.append(" join m_office o on o.id = c.office_id");
 		sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
-		sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and l.loan_status_id='300' or l.closedon_date between '" + startDate + "' and '"
-				+ endDate + "' ");
+		sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and ");
+		// Condition to avoid any loans that are disbursed after the end date
+		// This is to get all the loans that are either active or if inactive then they have to be closed between the dates under question
+		sqlBuilder.append(" (l.loan_status_id='300' or l.closedon_date between '" + startDate + "' and '" + endDate + "')");
 
         int arrayPos = 2;
         List<Object> extraCriterias = new ArrayList<>();
@@ -793,6 +796,10 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
                 sqlBuilder.append(" offset ").append(searchParameters.getOffset());
             }
         }
+        
+		logger.debug(
+				"ServiceChargeLoanDetailsReadPlatformServiceImpl.retrieveLoansToBeConsideredForTheQuarter()::SQL being run is: "
+						+ sqlBuilder.toString());
 
         final Object[] objectArray = extraCriterias.toArray();
         final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);

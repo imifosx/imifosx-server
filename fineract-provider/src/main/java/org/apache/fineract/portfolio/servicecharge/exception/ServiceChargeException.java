@@ -22,33 +22,46 @@ import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainR
 
 public class ServiceChargeException extends AbstractPlatformDomainRuleException {
 
-    public static enum SERVICE_CHARGE_EXCEPTION_REASON {
-        SC_CALCULATION_EXCEPTION, SC_INSTALLMENT_ADJUSTMENT_EXCEPTION;
+	/**
+	 * Auto-generated serialVersionUID for this class
+	 */
+	private static final long serialVersionUID = -4127334063513633243L;
 
-        public String errorMessage() {
-            if (name().toString().equalsIgnoreCase("SC_CALCULATION_EXCEPTION")) {
-                return "Service Charge Exception occurred when calculating Service Charge Final Sheet values";
-            } else if (name().toString().equalsIgnoreCase("SC_INSTALLMENT_ADJUSTMENT_EXCEPTION")) {
-                return "This loan charge has already been waived";
-            }
-            return name().toString();
-        }
+	public static enum SERVICE_CHARGE_EXCEPTION_REASON {
+		SC_CALCULATION_EXCEPTION, SC_INSTALLMENT_ADJUSTMENT_EXCEPTION, SC_INVALID_CALCULATION_PARAM,
+		SC_INVALID_MONTH_CODE;
 
-        public String errorCode() {
-            if (name().toString().equalsIgnoreCase("SC_CALCULATION_EXCEPTION")) {
-                return "error.msg.charge.id.invalid";
-            } else if (name().toString().equalsIgnoreCase("SC_INSTALLMENT_ADJUSTMENT_EXCEPTION")) {
-                return "error.msg.loan.charge.already.waived";
-            }
-            return name().toString();
-        }
-    }
+		public String errorMessage() {
+			if (name().toString().equalsIgnoreCase("SC_CALCULATION_EXCEPTION")) {
+				return "Service Charge Exception occurred when calculating Service Charge Final Sheet values";
+			} else if (name().toString().equalsIgnoreCase("SC_INSTALLMENT_ADJUSTMENT_EXCEPTION")) {
+				return "This loan charge has already been waived";
+			} else if (name().toString().equalsIgnoreCase("SC_INVALID_CALCULATION_PARAM")) {
+				return "Invalid Service Charge calculation method set for current tenant.\n"
+						+ "Check the system parameter value for servicecharge.calculation.method.<tenant-identifier>";
+			} else if (name().toString().equalsIgnoreCase("SC_INVALID_MONTH_CODE")) {
+				return "Invalid Service Charge month code passed. Month should be one of:\n"
+						+ "Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec";
+			}
+			return name().toString();
+		}
 
-    public ServiceChargeException(final Long id) {
-        super("error.msg.servicecharge.id.generic.exception", "Generic Exception used when calculating Service Charge values", id);
-    }
-    
-    public ServiceChargeException(final SERVICE_CHARGE_EXCEPTION_REASON reason, final Long loanChargeId) {
-        super(reason.errorCode(), reason.errorMessage(), loanChargeId);
-    }
+		public String errorCode() {
+			if (name().toString().equalsIgnoreCase("SC_CALCULATION_EXCEPTION")) {
+				return "error.msg.charge.id.invalid";
+			} else if (name().toString().equalsIgnoreCase("SC_INSTALLMENT_ADJUSTMENT_EXCEPTION")) {
+				return "error.msg.loan.charge.already.waived";
+			}
+			return name().toString();
+		}
+	}
+
+	public ServiceChargeException(final Long id) {
+		super("error.msg.servicecharge.id.generic.exception",
+				"Generic Exception used when calculating Service Charge values", id);
+	}
+
+	public ServiceChargeException(final SERVICE_CHARGE_EXCEPTION_REASON reason, final Long loanChargeId) {
+		super(reason.errorCode(), reason.errorMessage(), loanChargeId);
+	}
 }

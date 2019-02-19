@@ -39,7 +39,7 @@ import org.apache.fineract.portfolio.servicecharge.constants.GLExpenseTagsForSer
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeReportTableHeaders;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeFinalSheetData;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRangeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -237,8 +237,8 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 				final SearchParameters searchParameters = SearchParameters.forJournalEntries(null, 0, -1, null, null, null, null);
 				final JournalEntryAssociationParametersData associationParametersData = new JournalEntryAssociationParametersData(false, false);
 
-				final Date fromDateParam = DateRangeFactory.getCurrentDateRange().getFromDateForCurrentYear();
-				final Date toDateParam = DateRangeFactory.getCurrentDateRange().getToDateForCurrentYear();
+				final Date fromDateParam = ServiceChargeDateRangeFactory.getCurrentDateRange().getFromDateForCurrentYear();
+				final Date toDateParam = ServiceChargeDateRangeFactory.getCurrentDateRange().getToDateForCurrentYear();
 
 				Page<JournalEntryData> journalEntryDataPage = journalEntryReadPlatformService.retrieveAll(searchParameters, glAccount.getId(), true, fromDateParam, toDateParam,
 						StringUtils.EMPTY, 0, associationParametersData);

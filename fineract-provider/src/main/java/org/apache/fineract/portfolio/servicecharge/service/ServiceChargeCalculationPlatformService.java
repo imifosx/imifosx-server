@@ -20,7 +20,7 @@ package org.apache.fineract.portfolio.servicecharge.service;
 
 import java.math.BigDecimal;
 
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRange;
 
 public interface ServiceChargeCalculationPlatformService {
 
@@ -47,7 +47,7 @@ public interface ServiceChargeCalculationPlatformService {
      *            - Year to be considered for the calculation
      * @return Service Charge
      */
-    BigDecimal calculateServiceChargeForLoan(Long loanId, DateRangeFactory quarter, int year);
+    BigDecimal calculateServiceChargeForLoan(Long loanId, ServiceChargeDateRange quarter, int year);
 
     /**
      * Service charge calculation method for a given loan, when the loan is yet

@@ -33,4 +33,23 @@ public interface ServiceChargeApiConstants {
 	String dividendDistribution = "dividendDistribution";
 	// TODO: think of a way to statically load this ID value instead assuming
 	Long ASSUMED_SERVICE_CHARGE_ID = 1L;
+
+	String SC_CALCULATION_METHOD = "servicecharge_calculation_method_";
+	String MONTHLY = "monthly";
+	String QUARTERLY = "quarterly";
+	String YEARLY = "yearly";
+
+	// Month reference strings for SC applicable quarter calculation
+	String JANUARY = "JAN";
+	String FEBRUARY = "FEB";
+	String MARCH = "MAR";
+	String APRIL = "APR";
+	String MAY = "MAY";
+	String JUNE = "JUN";
+	String JULY = "JUL";
+	String AUGUST = "AUG";
+	String SEPTEMBER = "SEP";
+	String OCTOBER = "OCT";
+	String NOVEMBER = "NOV";
+	String DECEMBER = "DEC";
 }

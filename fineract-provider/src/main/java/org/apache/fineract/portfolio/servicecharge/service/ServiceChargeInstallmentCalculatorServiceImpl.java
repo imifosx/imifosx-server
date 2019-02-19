@@ -31,10 +31,10 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException.SERVICE_CHARGE_EXCEPTION_REASON;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRangeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -148,7 +148,7 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
 
     private boolean ifTransactionLiesInTheCurrentQuarter(LoanTransaction transaction) {
         // If the transaction is within the quarter date range, then return true
-        if (DateRangeFactory.checkIfGivenDateIsInCurrentQuarter(transaction.getDateOf())) { return true; }
+        if (ServiceChargeDateRangeFactory.checkIfGivenDateIsInCurrentQuarter(transaction.getDateOf())) { return true; }
         return false; // else false
     }
 

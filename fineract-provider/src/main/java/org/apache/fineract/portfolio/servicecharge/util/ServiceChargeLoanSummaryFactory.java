@@ -36,15 +36,18 @@ import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProduct
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformServiceImpl;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeDateUtils.DateIterator;
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRange;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRangeFactory;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Factory pattern to get an object of the type of ServiceChargeLoanProductSummary This class holds a list of all the
- * objects created. If there is a request for a duplicate object then the existing object from the current map is
- * returned else a new object is created and added to the list
+ * Factory pattern to get an object of the type of
+ * ServiceChargeLoanProductSummary This class holds a list of all the objects
+ * created. If there is a request for a duplicate object then the existing
+ * object from the current map is returned else a new object is created and
+ * added to the list
  *
  */
 public class ServiceChargeLoanSummaryFactory {
@@ -54,7 +57,8 @@ public class ServiceChargeLoanSummaryFactory {
 	Map<Long, ServiceChargeLoanProductSummary> loanSummaryObjectMap;
 
 	/**
-	 * Type param is used to decide on the implementing type of the class that needs to be returned
+	 * Type param is used to decide on the implementing type of the class that needs
+	 * to be returned
 	 * 
 	 * @see org.ideoholic.imifosx.portfolio.servicecharge.data.ServiceChargeLoanProductSummary
 	 * @param type
@@ -189,7 +193,8 @@ public class ServiceChargeLoanSummaryFactory {
 		/*
 		 * (non-Javadoc)
 		 * 
-		 * @see org.ideoholic.imifosx.portfolio.servicecharge.data. ServiceChargeLoanProductSummary#getTotalRepayments()
+		 * @see org.ideoholic.imifosx.portfolio.servicecharge.data.
+		 * ServiceChargeLoanProductSummary#getTotalRepayments()
 		 */
 		@Override
 		public BigDecimal getTotalRepayments() {
@@ -207,7 +212,8 @@ public class ServiceChargeLoanSummaryFactory {
 		}
 
 		/**
-		 * Given the calendar this method returns the date that would be the first day of the month
+		 * Given the calendar this method returns the date that would be the first day
+		 * of the month
 		 * 
 		 * @param calendar
 		 * @return Date - Date should be 1 of the the month
@@ -230,11 +236,12 @@ public class ServiceChargeLoanSummaryFactory {
 			// Set the demand loan type
 			setDemandLaon(ServiceChargeOperationUtils.checkDemandLaon(loanProduct));
 			// Date details to iterate over
-			DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
+			ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
 			Date lastDayOfMonth = quarter.getToDateForCurrentYear(); // Last day of the quarter
 			// Start with the last outstanding amount
 			BigDecimal loanOutstandingAmount = loanAccData.getTotalOutstandingAmount();
-			// int doesLoanHaveOutstandingAmount = loanAccData.getTotalOutstandingAmount().compareTo(BigDecimal.ZERO);
+			// int doesLoanHaveOutstandingAmount =
+			// loanAccData.getTotalOutstandingAmount().compareTo(BigDecimal.ZERO);
 			setDisbursmentDate(loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate());
 
 			Calendar calendar = Calendar.getInstance();
@@ -244,14 +251,16 @@ public class ServiceChargeLoanSummaryFactory {
 				BigDecimal repaymentAmount = BigDecimal.ZERO;
 				// Get to the first day of the current calendar
 				Date firstDayOfMonth = getFirstDateOfCurrentMonth(calendar);
-				// Loan will be considered only if the disbursement date is before the date under consideration
+				// Loan will be considered only if the disbursement date is before the date
+				// under consideration
 				if (getDisbursmentDate().compareTo(lastDayOfMonth) < 0) {
 					// Whatever is the current outstanding is the outstanding for the current month
 					outstanding.add(loanOutstandingAmount);
 
 					/*
-					 * Retrieve the transaction between the given dates for the loan. If there are repayments then
-					 * update the outstanding Updated outstanding will be added to the list in the next iteration
+					 * Retrieve the transaction between the given dates for the loan. If there are
+					 * repayments then update the outstanding Updated outstanding will be added to
+					 * the list in the next iteration
 					 */
 					final Collection<LoanTransactionData> currentLoanRepayments = scLoanDetailsReadPlatform
 							.retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(),
@@ -280,15 +289,15 @@ public class ServiceChargeLoanSummaryFactory {
 
 		/**
 		 * Method to validate if the loan transaction entry is a repayments entry
-		 * Current check is for repayment or repayment at disbursement, similar other checks can be placed here
+		 * Current check is for repayment or repayment at disbursement, similar other
+		 * checks can be placed here
 		 * 
 		 * @param LoanTransactionData
-		 * @return true - if transaction is of repayment type
-		 *         false - otherwise
+		 * @return true - if transaction is of repayment type false - otherwise
 		 */
 		private boolean isRepaymentTransaction(LoanTransactionData loanTransactionData) {
-			boolean result = loanTransactionData.getType().isRepayment() || 
-					loanTransactionData.getType().isRepaymentAtDisbursement();
+			boolean result = loanTransactionData.getType().isRepayment()
+					|| loanTransactionData.getType().isRepaymentAtDisbursement();
 			return result;
 		}
 
@@ -360,7 +369,9 @@ public class ServiceChargeLoanSummaryFactory {
 		}
 
 		private void addPeriodicRepayments(BigDecimal amount) {
-			logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.addPeriodicRepayments()::Total Monthly repayment:" + amount);
+			logger.debug(
+					"ServiceChargeLoanSummaryFactory.LoanSummaryDaily.addPeriodicRepayments()::Total Monthly repayment:"
+							+ amount);
 			getPeriodicRepayments().add(amount);
 		}
 
@@ -431,7 +442,7 @@ public class ServiceChargeLoanSummaryFactory {
 			// Set the demand loan type
 			setDemandLaon(ServiceChargeOperationUtils.checkDemandLaon(loanProduct));
 			// Date details to iterate over
-			DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
+			ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
 			Date lastDayOfMonth = quarter.getToDateForCurrentYear(); // Last day of the quarter
 			// Start with the last outstanding amount
 			BigDecimal loanOutstandingAmount = loanAccData.getTotalOutstandingAmount();
@@ -489,7 +500,7 @@ public class ServiceChargeLoanSummaryFactory {
 			calendar.clear(); // clearing all sets before returning
 			return loanOutstandingAmount;
 		}
-		
+
 		private void printLoanDetailsInLogger(LoanAccountData loanAccData) {
 			logger.debug("###########################################################");
 			logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.printLoanDetailsInLogger()");

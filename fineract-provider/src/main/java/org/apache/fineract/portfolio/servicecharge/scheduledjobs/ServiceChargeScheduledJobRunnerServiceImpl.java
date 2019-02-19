@@ -31,7 +31,8 @@ import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeJournalD
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeWritePlatformService;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
-import org.apache.fineract.portfolio.servicecharge.utils.daterange.DateRangeFactory;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRange;
+import org.apache.fineract.portfolio.servicecharge.util.daterange.ServiceChargeDateRangeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,9 +68,9 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
     public void generateServiceCharge() {
         logger.info("ServiceChargeScheduledJobRunnerServiceImpl::generateServiceCharge: Inside Generate Service Charge");
 
-        DateRangeFactory quarter = DateRangeFactory.getCurrentDateRange();
+        ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
         int year = Calendar.getInstance().get(Calendar.YEAR);
-        DateRangeFactory.setQuarterAndYear(quarter.name(), year);
+        ServiceChargeDateRangeFactory.setQuarterAndYear(quarter.getName(), year);
 
         ServiceChargeData serviceCharge = ServiceChargeOperationUtils.getServiceChargeForCurrentQuarter(scChargeReadPlatformService);
         if (serviceCharge != null) {
@@ -93,7 +94,7 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
         serviceChargeInstallmentCalculator.recalculateServiceChargeForAllLoans();
     }
 
-    private void saveServiceCharge(DateRangeFactory quarter, int year, ServiceChargeReportTableHeaders header,
+    private void saveServiceCharge(ServiceChargeDateRange quarter, int year, ServiceChargeReportTableHeaders header,
             ServiceChargeFinalSheetData dataSheet) {
         BigDecimal amount = dataSheet.getColumnValue(header, 0);
 
