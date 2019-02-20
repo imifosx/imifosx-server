@@ -755,9 +755,10 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl implements ServiceC
 		sqlBuilder.append(" join m_office o on o.id = c.office_id");
 		sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
 		sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?) and ");
-		// Condition to avoid any loans that are disbursed after the end date
 		// This is to get all the loans that are either active or if inactive then they have to be closed between the dates under question
 		sqlBuilder.append(" (l.loan_status_id='300' or l.closedon_date between '" + startDate + "' and '" + endDate + "')");
+		// Condition to avoid any loans that are disbursed after the end date
+		sqlBuilder.append(" and NOT l.disbursedon_date > '" + endDate + "'");
 
         int arrayPos = 2;
         List<Object> extraCriterias = new ArrayList<>();
