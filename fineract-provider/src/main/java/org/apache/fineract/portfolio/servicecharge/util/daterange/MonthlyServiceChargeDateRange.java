@@ -261,7 +261,7 @@ enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceCha
 		if (year != 0) {
 			q.setYear(year);
 		}
-		logger.debug("MonthlyServiceChargeDateRange.getCurrentQuarter(): derived quarter::" + q);
+		logger.info("MonthlyServiceChargeDateRange.getCurrentQuarter(): derived quarter::" + q);
 		return q;
 	}
 
