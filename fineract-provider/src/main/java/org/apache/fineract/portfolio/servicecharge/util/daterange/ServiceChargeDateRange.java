@@ -92,4 +92,8 @@ public interface ServiceChargeDateRange {
 	 */
 	void setYear(int year);
 
+	/**
+	 * 
+	 */
+	ServiceChargeCalculatoinMethod getChargeCalculationMethodEnum();
 }

@@ -19,165 +19,169 @@ import org.slf4j.LoggerFactory;
  *
  */
 enum YearlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceChargeApiConstants {
-	YEARLY(1, "01 Jan ", "31 Dec ");
+    YEARLY(1, "01 Jan ", "31 Dec ");
 
-	private final static Logger logger = LoggerFactory.getLogger(YearlyServiceChargeDateRange.class);
-	private final Integer id;
-	private final String fromDate;
-	private final String toDate;
-	private int year;
+    private final static Logger logger = LoggerFactory.getLogger(YearlyServiceChargeDateRange.class);
+    private final Integer id;
+    private final String fromDate;
+    private final String toDate;
+    private int year;
 
-	private final String dateFormatString = "dd MMMM yyyy";
+    private final String dateFormatString = "dd MMMM yyyy";
 
-	/**
-	 * 
-	 */
-	private YearlyServiceChargeDateRange(final Integer id, final String fromDate, final String toDate) {
-		this.id = id;
-		this.fromDate = fromDate;
-		this.toDate = toDate;
-		Calendar c = Calendar.getInstance(Locale.getDefault());
-		this.year = c.get(Calendar.YEAR);
-	}
+    /**
+     * 
+     */
+    private YearlyServiceChargeDateRange(final Integer id, final String fromDate, final String toDate) {
+        this.id = id;
+        this.fromDate = fromDate;
+        this.toDate = toDate;
+        Calendar c = Calendar.getInstance(Locale.getDefault());
+        this.year = c.get(Calendar.YEAR);
+    }
 
-	public String getFromDateString(int year) {
-		return fromDate + year;
-	}
+    public String getFromDateString(int year) {
+        return fromDate + year;
+    }
 
-	public String getToDateString(int year) {
-		return toDate + year;
-	}
+    public String getToDateString(int year) {
+        return toDate + year;
+    }
 
-	public String getDateFormatString() {
-		return dateFormatString;
-	}
+    public String getDateFormatString() {
+        return dateFormatString;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#getId()
-	 */
-	@Override
-	public Integer getId() {
-		return id;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#getId()
+     */
+    @Override
+    public Integer getId() {
+        return id;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#getName()
-	 */
-	@Override
-	public String getName() {
-		return name();
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#getName()
+     */
+    @Override
+    public String getName() {
+        return name();
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#getFromDateStringForCurrentYear()
-	 */
-	@Override
-	public String getFromDateStringForCurrentYear() {
-		return getFromDateString(Calendar.getInstance().get(Calendar.YEAR));
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#getFromDateStringForCurrentYear()
+     */
+    @Override
+    public String getFromDateStringForCurrentYear() {
+        return getFromDateString(Calendar.getInstance().get(Calendar.YEAR));
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#getToDateStringForCurrentYear()
-	 */
-	@Override
-	public String getToDateStringForCurrentYear() {
-		return getToDateString(Calendar.getInstance().get(Calendar.YEAR));
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#getToDateStringForCurrentYear()
+     */
+    @Override
+    public String getToDateStringForCurrentYear() {
+        return getToDateString(Calendar.getInstance().get(Calendar.YEAR));
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#getFormattedFromDateString()
-	 */
-	@Override
-	public String getFormattedFromDateString() {
-		return DateUtils.formatToSqlDate(getFromDateForCurrentYear());
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#getFormattedFromDateString()
+     */
+    @Override
+    public String getFormattedFromDateString() {
+        return DateUtils.formatToSqlDate(getFromDateForCurrentYear());
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#getFormattedToDateString()
-	 */
-	@Override
-	public String getFormattedToDateString() {
-		return DateUtils.formatToSqlDate(getToDateForCurrentYear());
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#getFormattedToDateString()
+     */
+    @Override
+    public String getFormattedToDateString() {
+        return DateUtils.formatToSqlDate(getToDateForCurrentYear());
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#getFromDateForCurrentYear()
-	 */
-	@Override
-	public Date getFromDateForCurrentYear() {
-		return getFromDate(getYear());
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#getFromDateForCurrentYear()
+     */
+    @Override
+    public Date getFromDateForCurrentYear() {
+        return getFromDate(getYear());
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#getToDateForCurrentYear()
-	 */
-	@Override
-	public Date getToDateForCurrentYear() {
-		return getToDate(getYear());
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#getToDateForCurrentYear()
+     */
+    @Override
+    public Date getToDateForCurrentYear() {
+        return getToDate(getYear());
+    }
 
-	public Date getFromDate(int year) {
-		String locale = Locale.getDefault().toString();
-		String fullDateString = getFromDateString(year);
-		return new DateParam(fullDateString).getDate("Service Data Entries From Date", getDateFormatString(), locale);
-	}
+    public Date getFromDate(int year) {
+        String locale = Locale.getDefault().toString();
+        String fullDateString = getFromDateString(year);
+        return new DateParam(fullDateString).getDate("Service Data Entries From Date", getDateFormatString(), locale);
+    }
 
-	public Date getToDate(int year) {
-		String locale = Locale.getDefault().toString();
-		String fullDateString = getToDateString(year);
-		return new DateParam(fullDateString).getDate("Service Data Entries To Date", getDateFormatString(), locale);
-	}
+    public Date getToDate(int year) {
+        String locale = Locale.getDefault().toString();
+        String fullDateString = getToDateString(year);
+        return new DateParam(fullDateString).getDate("Service Data Entries To Date", getDateFormatString(), locale);
+    }
 
-	public static ServiceChargeDateRange getCurrentYear(String monthCode, int year) {
-		ServiceChargeDateRange q = YEARLY;
-		if (year != 0) {
-			q.setYear(year);
-		}
-		logger.debug("YearlyServiceChargeDateRange.getCurrentQuarter(): derived quarter::" + q);
-		return q;
-	}
+    public static ServiceChargeDateRange getCurrentYear(String monthCode, int year) {
+        ServiceChargeDateRange q = YEARLY;
+        if (year != 0) {
+            q.setYear(year);
+        }
+        logger.debug("YearlyServiceChargeDateRange.getCurrentQuarter(): derived quarter::" + q);
+        return q;
+    }
 
-	@Override
-	public String toString() {
-		return name().toString();
-	}
+    @Override
+    public String toString() {
+        return name().toString();
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
-	 * ServiceChargeDateRange#setYear()
-	 */
-	@Override
-	public void setYear(int year) {
-		this.year = year;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.fineract.portfolio.servicecharge.util.daterange.
+     * ServiceChargeDateRange#setYear()
+     */
+    @Override
+    public void setYear(int year) {
+        this.year = year;
+    }
 
-	public int getYear() {
-		return this.year;
-	}
+    public int getYear() {
+        return this.year;
+    }
+
+    public ServiceChargeCalculatoinMethod getChargeCalculationMethodEnum() {
+        return ServiceChargeCalculatoinMethod.YEARLY;
+    }
 }
