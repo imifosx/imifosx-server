@@ -183,7 +183,8 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
                 + ServiceChargeReportTableHeaders.ANNUALIZED_COST_II + ": " + eac2.toEngineeringString());
         setColumnValueWithRounding(sheetData, eac2, ServiceChargeReportTableHeaders.ANNUALIZED_COST_II);
 
-        BigDecimal eac3 = ServiceChargeOperationUtils.divideNonZeroValues(lsCostOnACBf, avgDLRePm).multiply(HUNDRED);
+        BigDecimal eac3 = ServiceChargeOperationUtils.divideNonZeroValues(lsCostOnACBf, avgDLRePm);
+        eac3 = eac3.multiply(HUNDRED).multiply(scaleMultiplier);
         logger.debug("ServiceChargeJournalDetailsReadPlatformServiceImpl.computeFinalCalculations::"
                 + ServiceChargeReportTableHeaders.ANNUALIZED_COST_III + ": " + eac3.toEngineeringString());
         setColumnValueWithRounding(sheetData, eac3, ServiceChargeReportTableHeaders.ANNUALIZED_COST_III);
