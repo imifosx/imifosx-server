@@ -208,7 +208,6 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 
     public void populateRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData) {
         logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData");
-        final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
         BigDecimal dLtotalOutstandingAmount = BigDecimal.ZERO;
         BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
         int noOfDL = 0;

@@ -234,7 +234,7 @@ public class ServiceChargeFinalSheetData {
 				for (BigDecimal element : dataList) {
 					result.append("<td>");
 					if (element != null) {
-						result.append(element.toPlainString());
+						result.append(element.toEngineeringString());
 					} else {
 						result.append(StringUtils.EMPTY);
 					}
