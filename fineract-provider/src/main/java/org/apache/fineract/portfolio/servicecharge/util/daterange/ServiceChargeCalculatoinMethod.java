@@ -42,4 +42,20 @@ public enum ServiceChargeCalculatoinMethod {
         return this.scale;
     }
 
+    public int getScaleForDailyCalculation() {
+        int multiplier = 0, addendum = 5;
+        switch (this.rangeCode) {
+            case 1:
+                multiplier = 30;
+            break;
+            case 2:
+                multiplier = 90;
+            break;
+            case 3:
+                multiplier = 360;
+            break;
+        }
+        return (this.scale * multiplier) + addendum;
+    }
+
 }

@@ -142,7 +142,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
         setColumnValueWithRounding(sheetData, mobilizationCostPercent, ServiceChargeReportTableHeaders.TOTAL_MOBILIZATION);
 
         avgDLRePm = sheetData.getDlOutstandingAmount();
-        setColumnValueWithRounding(sheetData, avgDLRePm, ServiceChargeReportTableHeaders.AVG_REPAYMENT);
+        setColumnValueWithRounding(sheetData, avgDLRePm, ServiceChargeReportTableHeaders.DAILY_OS_SUM);
 
         mobilizationCostPercent = ServiceChargeOperationUtils.divideNonZeroValues(mobilizationCostPercent, avgDLRePm);
         mobilizationCostPercent = mobilizationCostPercent.multiply(HUNDRED);
@@ -168,7 +168,7 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
 
         // Scaling starts from the below, get date-range needed for scaling
         ServiceChargeDateRange currentDateRange = ServiceChargeDateRangeFactory.getCurrentDateRange();
-        BigDecimal scaleMultiplier = new BigDecimal(currentDateRange.getChargeCalculationMethodEnum().getScale());
+        BigDecimal scaleMultiplier = new BigDecimal(currentDateRange.getChargeCalculationMethodEnum().getScaleForDailyCalculation());
         logger.debug("ServiceChargeJournalDetailsReadPlatformServiceImpl.computeFinalCalculations::Scale Multipler: "
                 + scaleMultiplier.toEngineeringString());
 
