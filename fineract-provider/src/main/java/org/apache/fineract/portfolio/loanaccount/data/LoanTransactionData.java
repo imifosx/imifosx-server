@@ -205,7 +205,7 @@ public class LoanTransactionData {
 
 	
 
-	public LocalDate dateOf() {
+    public LocalDate dateOf() {
         return this.date;
     }
 
@@ -239,4 +239,9 @@ public class LoanTransactionData {
     public LoanTransactionEnumData getType() {
         return type;
     }
+
+    public BigDecimal getPrincipalPortion() {
+        return this.principalPortion;
+    }
+
 }
