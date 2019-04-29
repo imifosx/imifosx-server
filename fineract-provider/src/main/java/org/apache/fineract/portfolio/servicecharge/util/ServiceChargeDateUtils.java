@@ -6,12 +6,17 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
+import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ServiceChargeDateUtils {
+public class ServiceChargeDateUtils implements ServiceChargeApiConstants {
+
     private final static Logger logger = LoggerFactory.getLogger(ServiceChargeDateUtils.class);
+
     /**
      *
      * @return Pair of values containing start and end of financial year
@@ -48,12 +53,88 @@ public class ServiceChargeDateUtils {
         return daysBetweenStartAndEndDate;
     }
 
+    /**
+     * Method to check if given two dates are the same. Date check is done for
+     * same date, month and year. This skips the check on the time and only date
+     * part of the given two dates are checked.
+     * 
+     * @param first
+     * @param second
+     * @return
+     */
+    public static boolean checkIfGivenDatesAreSame(Date first, Date second) {
+        Calendar calFirst = Calendar.getInstance(Locale.getDefault());
+        Calendar calSecond = Calendar.getInstance(Locale.getDefault());
+        calFirst.setTime(first);
+        calSecond.setTime(second);
+        if (calFirst.get(Calendar.DATE) != calSecond.get(Calendar.DATE)) { return false; }
+        if (calFirst.get(Calendar.MONTH) != calSecond.get(Calendar.MONTH)) { return false; }
+        if (calFirst.get(Calendar.YEAR) != calSecond.get(Calendar.YEAR)) { return false; }
+        return true;
+    }
+
     public static Date getDateFromLocaleDate(org.joda.time.LocalDate transactionDate) {
         Calendar cal = Calendar.getInstance(Locale.getDefault());
         cal.set(Calendar.DATE, transactionDate.getDayOfMonth());
         cal.set(Calendar.MONTH, transactionDate.getMonthOfYear());
         cal.set(Calendar.YEAR, transactionDate.getYear());
         return cal.getTime();
+    }
+
+    /**
+     * Method to generate string format of given date<br>
+     * String will be of DD-MM-YYYY format where each character is a number
+     * 
+     * @param localDate
+     *            - org.joda.time.LocalDate
+     * @return String
+     */
+    public static String getDateStringFromDate(org.joda.time.LocalDate localDate) {
+        StringBuffer sb = new StringBuffer();
+        sb.append(localDate.getDayOfMonth());
+        sb.append(HYPHEN);
+        sb.append(localDate.getMonthOfYear());
+        sb.append(HYPHEN);
+        sb.append(localDate.getYear());
+        return sb.toString();
+    }
+
+    /**
+     * Method to generate string format of given date<br>
+     * String will be of DD-MM-YYYY format where each character is a number
+     * 
+     * @param localDate
+     *            - java.util.Date
+     * @return String
+     */
+    public static String getDateStringFromDate(Date date) {
+        StringBuffer sb = new StringBuffer();
+        Calendar cal = Calendar.getInstance(Locale.getDefault());
+        cal.setTime(date);
+        sb.append(cal.get(Calendar.DATE));
+        sb.append(HYPHEN);
+        sb.append(cal.get(Calendar.YEAR));
+        sb.append(HYPHEN);
+        sb.append(cal.get(Calendar.MONTH));
+        return sb.toString();
+    }
+
+    /**
+     * Method to check if the given map contains a key with the date that is
+     * send as a key. Make sure that the key of the map is of type Date else
+     * there will be runtime cast exception
+     * 
+     * @param dateMap
+     * @param key
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    public static boolean checkIfDateMapContainsGivenDateKey(Map dateMap, Date key) {
+        Set<Date> mapKeySet = dateMap.keySet();
+        for (Date setKey : mapKeySet) {
+            if (checkIfGivenDatesAreSame(key, setKey)) { return true; }
+        }
+        return false;
     }
 
     public static class DateIterator implements Iterator<Date>, Iterable<Date> {
