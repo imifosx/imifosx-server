@@ -1,5 +1,5 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
+: * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership. The ASF licenses this file
@@ -132,7 +132,9 @@ public class ServiceChargeApiResource {
             result = finalSheetData.getResultsDataMap().toString();
         } else {
             result = finalSheetData.generateResultAsHTMLTable(false).toString();
+            result = result.replace("\"", "'");
         }
+        result = "{\"html\":\"" + result + "\"}";
         return result;
     }
 
@@ -140,7 +142,7 @@ public class ServiceChargeApiResource {
     @Path("recalculateServiceCharge")
     @Consumes({ MediaType.APPLICATION_JSON })
     public String recalculateServiceCharge(@QueryParam("quarter") final String quarter, @QueryParam("year") final int year) {
-    	ServiceChargeDateRangeFactory.setQuarterAndYear(quarter, year);
+        ServiceChargeDateRangeFactory.setQuarterAndYear(quarter, year);
         scCalculator.recalculateServiceChargeForAllLoans();
         return "Service Recalculation for the given quarter: " + quarter + " year: " + year + " completed";
     }
