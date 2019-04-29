@@ -458,13 +458,12 @@ public class ServiceChargeLoanSummaryFactory {
                 // Loan will be considered only if the disbursement date is
                 // before the date under consideration
                 if (getDisbursmentDate().compareTo(lastDayOfRange) < 0) {
-                    // Retrieve the transaction between the given dates for the
-                    // loan
+                    // Retrieve transactions between the given dates for loan
                     final Collection<LoanTransactionData> currentLoanRepayments = scLoanDetailsReadPlatform
                             .retrieveLoanTransactionsMonthlyPayments(loanAccData.getId(), DateUtils.formatToSqlDate(firstDayOfMonth),
                                     DateUtils.formatToSqlDate(lastDayOfRange));
 
-                    Map<Date, BigDecimal> repaymentDateAmountMap = new HashMap<>();
+                    Map<String, BigDecimal> repaymentDateAmountMap = new HashMap<>();
                     if (!currentLoanRepayments.isEmpty()) {
                         // There are some repayments so add them back to the map
                         // of date and amount
@@ -477,22 +476,28 @@ public class ServiceChargeLoanSummaryFactory {
                     while (dateIterator.hasNext()) {
                         // If there are repayments then update the outstanding
                         curDate = dateIterator.next();
-                        if (repaymentDateAmountMap.containsKey(curDate)) {
-                            BigDecimal amount = repaymentDateAmountMap.get(curDate);
+                        String dateKey = ServiceChargeDateUtils.getDateStringFromDate(curDate);
+                        if (repaymentDateAmountMap.containsKey(dateKey)) {
+                            BigDecimal amount = repaymentDateAmountMap.get(dateKey);
+                            logger.debug(
+                                    "ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateOutstandingAndRepaymentAmounts:: Repayment found for the date:"
+                                            + curDate);
+                            logger.debug(
+                                    "ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateOutstandingAndRepaymentAmounts:: Repayment amount:"
+                                            + amount);
                             summationOfDailyOutstanding = updateLoanOutstandingAndSummationValues(curDate, dateMarker,
                                     summationOfDailyOutstanding, loanOutstandingAmount, amount);
                         }
-                        // For a less efficient calculation uncomment this and
-                        // comment the summationOfDailyOutstanding calculation
-                        // in method
+                        // For a less efficient calculation uncomment this
+                        // and comment the summationOfDailyOutstanding
+                        // calculation in method inside if-loop
                         // updateLoanOutstandingAndSummationValues
                         // summationOfDailyOutstanding =
                         // summationOfDailyOutstanding.add(loanOutstandingAmount);
                     }
                     summationOfDailyOutstanding = updateLoanOutstandingAndSummationValues(curDate, dateMarker, summationOfDailyOutstanding,
                             loanOutstandingAmount, null);
-                    // Add to the list the current outstanding for the current
-                    // month
+                    // Add to list of current outstanding for current month
                     outstanding.add(summationOfDailyOutstanding);
                 }
                 addPeriodicRepayments(monthlyTotalRepaymentAmount);
@@ -512,19 +517,20 @@ public class ServiceChargeLoanSummaryFactory {
             logger.debug("Loan Disbursment Date:" + loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate());
         }
 
-        private BigDecimal populateRepaymentsIntoMap(Map<Date, BigDecimal> repaymentDateAmountMap,
+        private BigDecimal populateRepaymentsIntoMap(Map<String, BigDecimal> repaymentDateAmountMap,
                 Collection<LoanTransactionData> currentLoanRepayments) {
             BigDecimal totalRepaymentAmount = BigDecimal.ZERO;
             for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
-                // Add only those transactions that are for repayment will be
-                // considered, reject
-                // others
+                // Add only those transactions that are repayments need to be
+                // considered, reject others
                 if (isRepaymentTransaction(loanTransactionData)) {
-                    BigDecimal repaymentAmount = loanTransactionData.getAmount();
+                    BigDecimal repaymentAmount = loanTransactionData.getPrincipalPortion();
                     LocalDate transactionDate = loanTransactionData.dateOf();
-                    logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap()::Loan repayment-> amount\t"
-                            + repaymentAmount + "\tdate\t" + transactionDate);
-                    Date dateKey = ServiceChargeDateUtils.getDateFromLocaleDate(transactionDate);
+                    logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap()::Loan repayment-> amount:"
+                            + repaymentAmount);
+                    logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap()::Loan repayment-> date:"
+                            + transactionDate);
+                    String dateKey = ServiceChargeDateUtils.getDateStringFromDate(transactionDate);
                     // If there has already been a repayment on the same day
                     if (repaymentDateAmountMap.containsKey(dateKey)) {
                         // Then add the values of both the repayments
@@ -532,6 +538,9 @@ public class ServiceChargeLoanSummaryFactory {
                         // removing to ensure one key has only one value
                         repaymentDateAmountMap.remove(dateKey);
                     }
+                    logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap::Map Key:" + dateKey);
+                    logger.debug(
+                            "ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap::Map value:" + repaymentAmount);
                     repaymentDateAmountMap.put(dateKey, repaymentAmount);
                     totalRepaymentAmount = totalRepaymentAmount.add(repaymentAmount);
                 }
