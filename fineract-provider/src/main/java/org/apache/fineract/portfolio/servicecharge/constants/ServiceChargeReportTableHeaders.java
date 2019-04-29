@@ -31,6 +31,7 @@ public enum ServiceChargeReportTableHeaders {
     LSCOST_ON_ACCOUNT_BF(6, "LS Cost on A/c BF"),
     TOTAL_MOBILIZATION(7, "Total Mobilisation Cost p.a."),
     AVG_REPAYMENT(8, "Average OS DL Re.Months"),
+    DAILY_OS_SUM(8, "Daily Summation OutStanding DL"),
     MOBILIZATION_PERCENT(9, "Mobilisation Cost (%)"),
     LOAN_SERVICING_PA(10, "Loan Servicing Cost p.a."),
     TOTAL_LOANS(11, "Total No.of DL Loans for the Period"),
