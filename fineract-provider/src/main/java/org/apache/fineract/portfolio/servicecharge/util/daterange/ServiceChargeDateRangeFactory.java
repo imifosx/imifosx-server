@@ -55,7 +55,12 @@ public class ServiceChargeDateRangeFactory implements ServiceChargeApiConstants 
         final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getTenantIdentifier();
         // Read the system param: servicecharge_calculation_method, trim any
         // spaces and move text to uppercase
-        final String scCalcMethodSystemParam = System.getenv(SC_CALCULATION_METHOD + tenantIdentifier).trim().toUpperCase();
+        String scCalcMethodSystemParam = System.getenv(SC_CALCULATION_METHOD + tenantIdentifier);
+        if (null != scCalcMethodSystemParam) {
+            scCalcMethodSystemParam = scCalcMethodSystemParam.trim().toUpperCase();
+        }else {
+            scCalcMethodSystemParam = "MONTHLY";
+        }
 
         switch (scCalcMethodSystemParam) {
             case MONTHLY:

@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.servicecharge.data;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -162,7 +163,7 @@ public class ServiceChargeFinalSheetData implements ServiceChargeApiConstants {
         // before:" + totalLoanRepaymentAmount);
         // logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.addTotalLoanRepaymentAmount
         // addTotalLoanRepaymentAmount::amount to add:" + amount);
-        logger.debug("ServiceChargeFinalSheetData:addTotalLoanRepaymentAmount::" + amount.toEngineeringString());
+        logger.debug("ServiceChargeFinalSheetData.addTotalLoanRepaymentAmount::" + amount.toEngineeringString());
         totalLoanRepaymentAmount = totalLoanRepaymentAmount.add(amount);
         // logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.addTotalLoanRepaymentAmount::totalLoanRepaymentAmount
         // after:" + totalLoanRepaymentAmount);
@@ -173,15 +174,19 @@ public class ServiceChargeFinalSheetData implements ServiceChargeApiConstants {
     }
 
     public void setColumnValue(ServiceChargeReportTableHeaders header, List<BigDecimal> dataList) {
-        List<BigDecimal> roundedDataList = roundOffBigDecimalValues(dataList);
+        List<BigDecimal> roundedDataList = roundOffBigDecimalValues(dataList, header);
         getResultsDataMap().put(header, roundedDataList);
     }
 
-    private List<BigDecimal> roundOffBigDecimalValues(List<BigDecimal> dataList) {
+    private List<BigDecimal> roundOffBigDecimalValues(List<BigDecimal> dataList, ServiceChargeReportTableHeaders header) {
         List<BigDecimal> roundedDataList = new ArrayList<BigDecimal>();
+        RoundingMode roundingMode = MoneyHelper.getRoundingMode();
+        int roundOffDigits = header.getRoundOff();
+        logger.debug("ServiceChargeFinalSheetData.roundOffBigDecimalValues:: rounding off digits" + roundOffDigits + " for header:"
+                + header.name());
         for (BigDecimal data : dataList) {
             if (data != null) {
-                BigDecimal value = data.setScale(ROUNDOFF_DIGITS_LIMIT, MoneyHelper.getRoundingMode());
+                BigDecimal value = data.setScale(roundOffDigits, roundingMode);
                 roundedDataList.add(value);
             } else {
                 roundedDataList.add(null);
@@ -237,7 +242,7 @@ public class ServiceChargeFinalSheetData implements ServiceChargeApiConstants {
                 for (BigDecimal element : dataList) {
                     result.append("<td>");
                     if (element != null) {
-                        String elementNumberAsString = String.format("%.20f", element);
+                        String elementNumberAsString = String.format("%." + header.getRoundOff() + "f", element);
                         logger.debug("ServiceChargeFinalSheetData.addTotalLoanRepaymentAmount:: element value:" + elementNumberAsString);
                         result.append(elementNumberAsString);
                     } else {

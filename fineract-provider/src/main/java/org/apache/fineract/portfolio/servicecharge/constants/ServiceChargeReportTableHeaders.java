@@ -21,35 +21,37 @@ package org.apache.fineract.portfolio.servicecharge.constants;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum ServiceChargeReportTableHeaders {
+public enum ServiceChargeReportTableHeaders  implements ServiceChargeApiConstants {
 	
-    SUBTOTAL(1, "Sub Total"),
-    ALLOCATION_I_OVERHEADS(2, "Allocation-I (Overheads)"),
-    SUBTOTAL_ALLOCATION(3, "Sub Total after Overheads Allocation"),
-    ALLOCATION_II_MOBILIZATION(4, "Allocation-II (Mobilization Cost)"),
-    TOTAL_SEGREGATION_COST(5, "Total Activity-wise Segregated Cost"),
-    LSCOST_ON_ACCOUNT_BF(6, "LS Cost on A/c BF"),
-    TOTAL_MOBILIZATION(7, "Total Mobilisation Cost p.a."),
-    AVG_REPAYMENT(8, "Average OS DL Re.Months"),
-    DAILY_OS_SUM(8, "Daily Summation OutStanding DL"),
-    MOBILIZATION_PERCENT(9, "Mobilisation Cost (%)"),
-    LOAN_SERVICING_PA(10, "Loan Servicing Cost p.a."),
-    TOTAL_LOANS(11, "Total No.of DL Loans for the Period"),
-    LOAN_SERVICING_PER_LOAN(12, "Loan Servicing Cost per Loan"),
-    TOTAL_REPAYMENT(13, "Total Repayment for the Period"),
-    REPAYMENT_PER_100(14, "Repayment Cost per 100 Rupee of Repayment"),
-    ANNUALIZED_COST_I(15, "Equivalent Annualized Cost (%) - I"),
-    ANNUALIZED_COST_II(16, "Equivalent Annualized Cost (%) - II"),
-    ANNUALIZED_COST_III(17, "Equivalent Annualized Cost (%) - III"),
-    ANNUALIZED_COST_TOTAL(18, "Equivalent Annualized Cost (%) - Total"),
-    INVALID(100, "INVALID HEADER");
+    SUBTOTAL(1, "Sub Total", 2),
+    ALLOCATION_I_OVERHEADS(2, "Allocation-I (Overheads)", 2),
+    SUBTOTAL_ALLOCATION(3, "Sub Total after Overheads Allocation", 2),
+    ALLOCATION_II_MOBILIZATION(4, "Allocation-II (Mobilization Cost)", 2),
+    TOTAL_SEGREGATION_COST(5, "Total Activity-wise Segregated Cost", 2),
+    LSCOST_ON_ACCOUNT_BF(6, "LS Cost on A/c BF", 2),
+    TOTAL_MOBILIZATION(7, "Total Mobilisation Cost p.a.", ROUNDOFF_DIGITS_LIMIT),
+    AVG_REPAYMENT(8, "Average OS DL Re.Months", ROUNDOFF_DIGITS_LIMIT),
+    DAILY_OS_SUM(8, "Daily Summation OutStanding DL", 1),
+    MOBILIZATION_PERCENT(9, "Mobilisation Cost (%)", ROUNDOFF_DIGITS_LIMIT),
+    LOAN_SERVICING_PA(10, "Loan Servicing Cost p.a.", 1),
+    TOTAL_LOANS(11, "Total No.of DL Loans for the Period", 1),
+    LOAN_SERVICING_PER_LOAN(12, "Loan Servicing Cost per Loan", ROUNDOFF_DIGITS_LIMIT),
+    TOTAL_REPAYMENT(13, "Total Repayment for the Period", 1),
+    REPAYMENT_PER_100(14, "Repayment Cost per 100 Rupee of Repayment", ROUNDOFF_DIGITS_LIMIT),
+    ANNUALIZED_COST_I(15, "Equivalent Annualized Cost (%) - I", ROUNDOFF_DIGITS_LIMIT),
+    ANNUALIZED_COST_II(16, "Equivalent Annualized Cost (%) - II", ROUNDOFF_DIGITS_LIMIT),
+    ANNUALIZED_COST_III(17, "Equivalent Annualized Cost (%) - III", ROUNDOFF_DIGITS_LIMIT),
+    ANNUALIZED_COST_TOTAL(18, "Equivalent Annualized Cost (%) - Total", ROUNDOFF_DIGITS_LIMIT),
+    INVALID(100, "INVALID HEADER", 0);
     
     private final Integer value;
     private final String code;
+    private final int roundOff;
 
-    private ServiceChargeReportTableHeaders(final Integer value, final String code) {
+    private ServiceChargeReportTableHeaders(final Integer value, final String code, final int roundOff) {
         this.value = value;
         this.code = code;
+        this.roundOff = roundOff;
     }
 
     public Integer getValue() {
@@ -58,6 +60,10 @@ public enum ServiceChargeReportTableHeaders {
 
     public String getCode() {
         return this.code;
+    }
+
+    public int getRoundOff() {
+        return this.roundOff;
     }
 
     private static final Map<Integer, ServiceChargeReportTableHeaders> intToEnumMap = new HashMap<>();

@@ -199,8 +199,8 @@ public class ServiceChargeJournalDetailsReadPlatformServiceImpl implements Servi
             ServiceChargeReportTableHeaders header) {
         List<BigDecimal> columnEntry = new ArrayList<>(1);
         columnEntry.add(value);
-        sheetData.setColumnValue(header, columnEntry);
         logger.debug("Header:" + header, " Value:" + value.toEngineeringString());
+        sheetData.setColumnValue(header, columnEntry);
     }
 
     private ServiceChargeFinalSheetData generateFinalTableOfJournalEntries(ServiceChargeFinalSheetData finalSheetData,
