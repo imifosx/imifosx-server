@@ -262,36 +262,36 @@ public class ServiceChargeFinalSheetData implements ServiceChargeApiConstants {
         StringBuffer sb = getResultDataAsHTMLTableString();
         if (tableNumber == 1) {
             sb.append("<table table style=\"width:100%\" border=5pt>");
+            sb.append("<tr>");
             sb.append("<th>");
-            sb.append("<td>");
             sb.append("Expenses Allocation Categaories");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("Mobilisation");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("Loan Servicing");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("Investment");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("Overheads");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("Total");
-            sb.append("</td>");
             sb.append("</th>");
+            sb.append("<th>");
+            sb.append("Mobilisation");
+            sb.append("</th>");
+            sb.append("<th>");
+            sb.append("Loan Servicing");
+            sb.append("</th>");
+            sb.append("<th>");
+            sb.append("Investment");
+            sb.append("</th>");
+            sb.append("<th>");
+            sb.append("Overheads");
+            sb.append("</th>");
+            sb.append("<th>");
+            sb.append("Total");
+            sb.append("</th>");
+            sb.append("</tr>");
         } else if (tableNumber == 2) {
             sb.append("<table table style=\"width:100%\" border=5pt>");
+            sb.append("<tr>");
             sb.append("<th>");
-            sb.append("<td>");
             sb.append("Particulars");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("Value");
-            sb.append("</td>");
             sb.append("</th>");
+            sb.append("<th>");
+            sb.append("Value");
+            sb.append("</th>");
+            sb.append("</tr>");
         }
         return sb;
     }
