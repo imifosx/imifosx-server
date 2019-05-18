@@ -29,50 +29,47 @@ import java.util.List;
  *
  */
 public interface ServiceChargeLoanProductSummary {
-	short DAILY = 1;
-	short MONTHLY = 2;
-	short QUARTERLY = 3;
-	short YEARLY = 4;
 
-	/**
-	 * Calculate the outstanding for the period and return the outstanding over the
-	 * period defined in the implementing class
-	 * 
-	 * @return List of BigDecimal
-	 */
-	List<BigDecimal> getPeriodicOutstanding();
+    /**
+     * Calculate the outstanding for the period and return the outstanding over
+     * the period defined in the implementing class
+     * 
+     * @return List of BigDecimal
+     */
+    List<BigDecimal> getPeriodicOutstanding();
 
-	/**
-	 * Calculate the repayments for the period and return the repayments over the
-	 * period defined in the implementing class
-	 * 
-	 * @return total amount as BigDecimal
-	 */
-	List<BigDecimal> getPeriodicRepayments();
+    /**
+     * Calculate the repayments for the period and return the repayments over
+     * the period defined in the implementing class
+     * 
+     * @return total amount as BigDecimal
+     */
+    List<BigDecimal> getPeriodicRepayments();
 
-	BigDecimal getTotalOutstanding();
+    BigDecimal getTotalOutstanding();
 
-	/**
-	 * Calculate the total repayments for the period <br/>
-	 * Eg: if the set period is QUARTERLY then it will return the sum of repayments
-	 * over each of the 3 months of the quarter
-	 * 
-	 * @return total amount as BigDecimal
-	 */
-	BigDecimal getTotalRepayments();
+    /**
+     * Calculate the total repayments for the period <br/>
+     * Eg: if the set period is QUARTERLY then it will return the sum of
+     * repayments over each of the 3 months of the quarter
+     * 
+     * @return total amount as BigDecimal
+     */
+    BigDecimal getTotalRepayments();
 
-	/**
-	 * This value informs if the summary object is actually of the type of DL 
-	 * 
-	 * @return true for DL <br/> false for non-DL
-	 */
-	boolean isDemandLaon();
-	
-	/**
-	 * The date of disbursement of the loan of which this is the summary object
-	 * 
-	 * @return loan disbursement date
-	 */
-	Date getDisbursmentDate();
+    /**
+     * This value informs if the summary object is actually of the type of DL
+     * 
+     * @return true for DL <br/>
+     *         false for non-DL
+     */
+    boolean isDemandLaon();
+
+    /**
+     * The date of disbursement of the loan of which this is the summary object
+     * 
+     * @return loan disbursement date
+     */
+    Date getDisbursmentDate();
 
 }
