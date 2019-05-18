@@ -160,24 +160,24 @@ enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceC
         if (!StringUtils.isEmpty(monthCode)) {
             final String qStr = monthCode.toUpperCase();
             switch (qStr) {
-                case JANUARY:
-                case FEBRUARY:
-                case MARCH:
+                case _JANUARY:
+                case _FEBRUARY:
+                case _MARCH:
                     q = Q1;
                 break;
-                case APRIL:
-                case MAY:
-                case JUNE:
+                case _APRIL:
+                case _MAY:
+                case _JUNE:
                     q = Q2;
                 break;
-                case JULY:
-                case AUGUST:
-                case SEPTEMBER:
+                case _JULY:
+                case _AUGUST:
+                case _SEPTEMBER:
                     q = Q3;
                 break;
-                case OCTOBER:
-                case NOVEMBER:
-                case DECEMBER:
+                case _OCTOBER:
+                case _NOVEMBER:
+                case _DECEMBER:
                     q = Q4;
                 break;
                 default:

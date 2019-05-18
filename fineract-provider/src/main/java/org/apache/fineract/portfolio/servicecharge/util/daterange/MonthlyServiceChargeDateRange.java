@@ -21,17 +21,20 @@ import org.slf4j.LoggerFactory;
  * will have all the quarterly
  *
  */
+
 enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceChargeApiConstants {
-    JAN(1, "01 Jan ", "31 Jan "), FEB28(2, "01 Feb ", "28 Feb "), FEB29(3, "01 Feb ", "29 Feb "),
-    MAR(4, "01 Mar ", "31 Mar "), APR(5, "01 Apr ", "30 Apr "), MAY(6, "01 May ", "31 May "),
-    JUN(7, "01 Jun ", "30 Jun "), JUL(8, "01 Jul ", "31 Jul "), AUG(9, "01 Aug ", "31 Aug "),
-    SEP(10, "01 Sep ", "30 Sep "), OCT(11, "01 Oct ", "31 Oct "), NOV(12, "01 Nov ", "30 Nov "),
-    DEC(13, "01 Dec ", "31 Dec ");
+    JAN(1, "01 Jan ", "31 Jan ", _JANUARY), FEB28(2, "01 Feb ", "28 Feb ", _FEBRUARY), FEB29(3, "01 Feb ", "29 Feb ", _FEBRUARY),
+    MAR(4, "01 Mar ", "31 Mar ", _MARCH), APR(5, "01 Apr ", "30 Apr ", _APRIL),
+    MAY(6, "01 May ", "31 May ", _MAY), JUN(7, "01 Jun ", "30 Jun ", _JUNE),
+    JUL(8, "01 Jul ", "31 Jul ", _JULY), AUG(9, "01 Aug ", "31 Aug ", _AUGUST),
+    SEP(10, "01 Sep ", "30 Sep ", _SEPTEMBER), OCT(11, "01 Oct ", "31 Oct ", _OCTOBER),
+    NOV(12, "01 Nov ", "30 Nov ", _NOVEMBER), DEC(13, "01 Dec ", "31 Dec ", _DECEMBER);
 
     private final static Logger logger = LoggerFactory.getLogger(MonthlyServiceChargeDateRange.class);
     private final Integer id;
     private final String fromDate;
     private final String toDate;
+    private final String monthCode;
     private int year;
 
     private final String dateFormatString = "dd MMMM yyyy";
@@ -39,12 +42,13 @@ enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceCha
     /**
      * 
      */
-    private MonthlyServiceChargeDateRange(final Integer id, final String fromDate, final String toDate) {
+    private MonthlyServiceChargeDateRange(final Integer id, final String fromDate, final String toDate, final String monthCode) {
         this.id = id;
         this.fromDate = fromDate;
         this.toDate = toDate;
         Calendar c = Calendar.getInstance(Locale.getDefault());
         this.year = c.get(Calendar.YEAR);
+        this.monthCode = monthCode;
     }
 
     public String getFromDateString(int year) {
@@ -57,6 +61,10 @@ enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceCha
 
     public String getDateFormatString() {
         return dateFormatString;
+    }
+    
+    public String getMonthCode() {
+        return monthCode;
     }
 
     /*
@@ -158,55 +166,21 @@ enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceCha
         String fullDateString = getToDateString(year);
         return new DateParam(fullDateString).getDate("Service Data Entries To Date", getDateFormatString(), locale);
     }
+    
+    private static MonthlyServiceChargeDateRange fromMonthCode(String monthCode) {
+        for (MonthlyServiceChargeDateRange daterange : MonthlyServiceChargeDateRange.values()) {
+            if (daterange.getMonthCode().equalsIgnoreCase(monthCode)) { return daterange; }
+        }
+        return null;
+    }
 
     public static ServiceChargeDateRange getCurrentMonth(String monthCode, int year) {
         ServiceChargeDateRange q = null;
         if (!StringUtils.isEmpty(monthCode)) {
-            final String qStr = monthCode.toUpperCase();
-            switch (qStr) {
-                case ServiceChargeApiConstants.JANUARY:
-                    q = JAN;
-                break;
-                case ServiceChargeApiConstants.FEBRUARY:
-                    if (isCurrentYearLeapYear(year)) {
-                        q = FEB29;
-                    } else {
-                        q = FEB28;
-                    }
-                break;
-                case ServiceChargeApiConstants.MARCH:
-                    q = MAR;
-                break;
-                case ServiceChargeApiConstants.APRIL:
-                    q = APR;
-                break;
-                case ServiceChargeApiConstants.MAY:
-                    q = MAY;
-                break;
-                case ServiceChargeApiConstants.JUNE:
-                    q = JUN;
-                break;
-                case ServiceChargeApiConstants.JULY:
-                    q = JUL;
-                break;
-                case ServiceChargeApiConstants.AUGUST:
-                    q = AUG;
-                break;
-                case ServiceChargeApiConstants.SEPTEMBER:
-                    q = SEP;
-                break;
-                case ServiceChargeApiConstants.OCTOBER:
-                    q = OCT;
-                break;
-                case ServiceChargeApiConstants.NOVEMBER:
-                    q = NOV;
-                break;
-                case ServiceChargeApiConstants.DECEMBER:
-                    q = DEC;
-                break;
-                default:
-                    // Throw exception to say what was expected
-                    throw new ServiceChargeException(SERVICE_CHARGE_EXCEPTION_REASON.SC_INVALID_MONTH_CODE, null);
+            q = fromMonthCode(monthCode.toUpperCase());
+            if (q == null) {
+                // Throw exception to say what was expected
+                throw new ServiceChargeException(SERVICE_CHARGE_EXCEPTION_REASON.SC_INVALID_MONTH_CODE, null);
             }
         } else {
             Calendar c = Calendar.getInstance(Locale.getDefault());

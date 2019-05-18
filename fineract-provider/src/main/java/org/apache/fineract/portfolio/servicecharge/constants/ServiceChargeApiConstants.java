@@ -40,18 +40,4 @@ public interface ServiceChargeApiConstants {
     String MONTHLY = "MONTHLY";
     String QUARTERLY = "QUARTERLY";
     String YEARLY = "YEARLY";
-
-    // Month reference strings for SC applicable quarter calculation
-    String JANUARY = "JAN";
-    String FEBRUARY = "FEB";
-    String MARCH = "MAR";
-    String APRIL = "APR";
-    String MAY = "MAY";
-    String JUNE = "JUN";
-    String JULY = "JUL";
-    String AUGUST = "AUG";
-    String SEPTEMBER = "SEP";
-    String OCTOBER = "OCT";
-    String NOVEMBER = "NOV";
-    String DECEMBER = "DEC";
 }
