@@ -90,7 +90,11 @@ public class ServiceChargeDateRangeFactory implements ServiceChargeApiConstants 
         if ((date.equals(fromDate) || date.after(fromDate)) && (date.before(toDate) || date.equals(toDate))) { return true; }
         return false;
     }
-
+    
+    private static void clearSCDateRangeInstance() {
+        scDateRangeInstance = null;
+    }
+    
     private static class MonthYearHolder {
 
         private static String month = StringUtils.EMPTY;
@@ -99,6 +103,7 @@ public class ServiceChargeDateRangeFactory implements ServiceChargeApiConstants 
         static void setMonthAndYear(String monthParam, int yearParam) {
             month = monthParam;
             year = yearParam;
+            clearSCDateRangeInstance();
         }
 
         static ServiceChargeDateRange getCurrentMonth() {
