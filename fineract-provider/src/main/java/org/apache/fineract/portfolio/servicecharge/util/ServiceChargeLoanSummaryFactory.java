@@ -246,7 +246,7 @@ public class ServiceChargeLoanSummaryFactory {
 
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(lastDayOfMonth);
-            for (int i = 1; i <= 3; i++) {
+            for (int i = 1; i <= quarter.getDateRangeDurationMonths(); i++) {
                 // Repayments total - start from zero for every iteration
                 BigDecimal repaymentAmount = BigDecimal.ZERO;
                 // Get to the first day of the current calendar
@@ -450,7 +450,7 @@ public class ServiceChargeLoanSummaryFactory {
             printLoanDetailsInLogger(loanAccData);
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(lastDayOfRange);
-            for (int i = 1; i <= 3; i++) {
+            for (int i = 1; i <= dateRange.getDateRangeDurationMonths(); i++) {
                 // Repayments total - start from zero for every iteration
                 BigDecimal monthlyTotalRepaymentAmount = BigDecimal.ZERO;
                 // Get to the first day of the current calendar

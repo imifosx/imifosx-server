@@ -112,4 +112,6 @@ public interface ServiceChargeDateRange {
      * the implementing class. Returned value has to be defined in the enum
      */
     ServiceChargeCalculatoinMethod getChargeCalculationMethodEnum();
+    
+    int getDateRangeDurationMonths();
 }

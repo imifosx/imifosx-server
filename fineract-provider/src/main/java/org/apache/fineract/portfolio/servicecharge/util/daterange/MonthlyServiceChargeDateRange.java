@@ -23,12 +23,11 @@ import org.slf4j.LoggerFactory;
  */
 
 enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceChargeApiConstants {
-    JAN(1, "01 Jan ", "31 Jan ", _JANUARY), FEB28(2, "01 Feb ", "28 Feb ", _FEBRUARY), FEB29(3, "01 Feb ", "29 Feb ", _FEBRUARY),
-    MAR(4, "01 Mar ", "31 Mar ", _MARCH), APR(5, "01 Apr ", "30 Apr ", _APRIL),
-    MAY(6, "01 May ", "31 May ", _MAY), JUN(7, "01 Jun ", "30 Jun ", _JUNE),
-    JUL(8, "01 Jul ", "31 Jul ", _JULY), AUG(9, "01 Aug ", "31 Aug ", _AUGUST),
-    SEP(10, "01 Sep ", "30 Sep ", _SEPTEMBER), OCT(11, "01 Oct ", "31 Oct ", _OCTOBER),
-    NOV(12, "01 Nov ", "30 Nov ", _NOVEMBER), DEC(13, "01 Dec ", "31 Dec ", _DECEMBER);
+    JAN(1, "01 Jan ", "31 Jan ", _JANUARY), FEB28(2, "01 Feb ", "28 Feb ", _FEBRUARY), FEB29(3, "01 Feb ", "29 Feb ", _FEBRUARY), MAR(4,
+            "01 Mar ", "31 Mar ", _MARCH), APR(5, "01 Apr ", "30 Apr ", _APRIL), MAY(6, "01 May ", "31 May ", _MAY), JUN(7, "01 Jun ",
+                    "30 Jun ", _JUNE), JUL(8, "01 Jul ", "31 Jul ", _JULY), AUG(9, "01 Aug ", "31 Aug ", _AUGUST), SEP(10, "01 Sep ",
+                            "30 Sep ", _SEPTEMBER), OCT(11, "01 Oct ", "31 Oct ",
+                                    _OCTOBER), NOV(12, "01 Nov ", "30 Nov ", _NOVEMBER), DEC(13, "01 Dec ", "31 Dec ", _DECEMBER);
 
     private final static Logger logger = LoggerFactory.getLogger(MonthlyServiceChargeDateRange.class);
     private final Integer id;
@@ -62,7 +61,7 @@ enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceCha
     public String getDateFormatString() {
         return dateFormatString;
     }
-    
+
     public String getMonthCode() {
         return monthCode;
     }
@@ -166,7 +165,7 @@ enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceCha
         String fullDateString = getToDateString(year);
         return new DateParam(fullDateString).getDate("Service Data Entries To Date", getDateFormatString(), locale);
     }
-    
+
     private static MonthlyServiceChargeDateRange fromMonthCode(String monthCode) {
         for (MonthlyServiceChargeDateRange daterange : MonthlyServiceChargeDateRange.values()) {
             if (daterange.getMonthCode().equalsIgnoreCase(monthCode)) { return daterange; }
@@ -280,5 +279,11 @@ enum MonthlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceCha
 
     public ServiceChargeCalculatoinMethod getChargeCalculationMethodEnum() {
         return ServiceChargeCalculatoinMethod.MONTHLY;
+    }
+
+    @Override
+    public int getDateRangeDurationMonths() {
+        // TODO Auto-generated method stub
+        return 1;
     }
 }

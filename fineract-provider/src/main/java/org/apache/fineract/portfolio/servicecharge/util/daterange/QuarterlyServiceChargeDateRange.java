@@ -222,4 +222,10 @@ enum QuarterlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceC
     public ServiceChargeCalculatoinMethod getChargeCalculationMethodEnum() {
         return ServiceChargeCalculatoinMethod.QUARTERLY;
     }
+
+    @Override
+    public int getDateRangeDurationMonths() {
+        // TODO Auto-generated method stub
+        return 3;
+    }
 }

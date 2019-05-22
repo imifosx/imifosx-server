@@ -184,4 +184,10 @@ enum YearlyServiceChargeDateRange implements ServiceChargeDateRange, ServiceChar
     public ServiceChargeCalculatoinMethod getChargeCalculationMethodEnum() {
         return ServiceChargeCalculatoinMethod.YEARLY;
     }
+
+    @Override
+    public int getDateRangeDurationMonths() {
+        // TODO Auto-generated method stub
+        return 12;
+    }
 }
