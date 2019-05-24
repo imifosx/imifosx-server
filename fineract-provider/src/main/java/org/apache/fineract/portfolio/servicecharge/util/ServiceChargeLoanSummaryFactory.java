@@ -82,8 +82,6 @@ public class ServiceChargeLoanSummaryFactory {
         // TODO: Code too much dependent on size and position - change to
         // streams
         List<BigDecimal> result = new LinkedList<>();
-        BigDecimal monthOne, monthTwo, monthThree;
-        monthOne = monthTwo = monthThree = BigDecimal.ZERO;
         for (Long identifier : loanSummaryObjectMap.keySet()) {
             ServiceChargeLoanProductSummary summaryObj = loanSummaryObjectMap.get(identifier);
             // The condition in the if is the xnor condition by which
@@ -92,20 +90,24 @@ public class ServiceChargeLoanSummaryFactory {
             if (!(summaryObj.isDemandLaon() ^ isDemandLoan)) {
                 List<BigDecimal> outstanding = summaryObj.getPeriodicOutstanding();
                 int size = outstanding.size();
-                if (size > 0) {
-                    monthOne = monthOne.add(outstanding.get(0));
-                    if (size > 1) {
-                        monthTwo = monthTwo.add(outstanding.get(1));
-                        if (size > 2) {
-                            monthThree = monthThree.add(outstanding.get(2));
-                        }
+                int i =0;
+                BigDecimal sumOfResultAndOutstanding = BigDecimal.ZERO;
+                if (result.isEmpty()) {
+                    for (i = 0; i <= size; i++) {
+                        result.add(BigDecimal.ZERO);
                     }
+                }
+
+                for (i = 0; i < size; i++) {
+                    sumOfResultAndOutstanding = result.get(i).add(outstanding.get(i));
+                    logger.debug("sumOfResultAndOutstanding -- " + sumOfResultAndOutstanding);
+                    result.add(i, sumOfResultAndOutstanding);
+                    logger.debug("result == " + result.get(i));
+                    // result[0] = result[0] + outstanding[0];
+                    sumOfResultAndOutstanding = BigDecimal.ZERO;
                 }
             }
         }
-        result.add(monthOne);
-        result.add(monthTwo);
-        result.add(monthThree);
         return result;
     }
 
