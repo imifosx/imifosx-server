@@ -32,6 +32,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
+import org.apache.fineract.portfolio.servicecharge.data.SCLoanAccountData;
 import org.apache.fineract.portfolio.servicecharge.data.ServiceChargeLoanProductSummary;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeLoanDetailsReadPlatformServiceImpl;
@@ -68,7 +69,7 @@ public class ServiceChargeLoanSummaryFactory {
     }
 
     public ServiceChargeLoanProductSummary getLoanSummaryObject(ServiceChargeLoanDetailsReadPlatformService loanReadService,
-            LoanAccountData loanAccData, LoanProductData loanProduct) {
+            SCLoanAccountData loanAccData, LoanProductData loanProduct) {
         Long loanId = loanAccData.getId();
         if (loanSummaryObjectMap.containsKey(loanId)) { return loanSummaryObjectMap.get(loanId); }
         LoanSummaryDaily loanSummary = new LoanSummaryDaily();
@@ -79,8 +80,6 @@ public class ServiceChargeLoanSummaryFactory {
     }
 
     public List<BigDecimal> getMonthWiseOutstandingAmount(boolean isDemandLoan) {
-        // TODO: Code too much dependent on size and position - change to
-        // streams
         List<BigDecimal> result = new LinkedList<>();
         for (Long identifier : loanSummaryObjectMap.keySet()) {
             ServiceChargeLoanProductSummary summaryObj = loanSummaryObjectMap.get(identifier);
@@ -100,14 +99,12 @@ public class ServiceChargeLoanSummaryFactory {
 
                 for (i = 0; i < size; i++) {
                     sumOfResultAndOutstanding = result.get(i).add(outstanding.get(i));
-                    logger.debug("sumOfResultAndOutstanding -- " + sumOfResultAndOutstanding);
                     result.add(i, sumOfResultAndOutstanding);
-                    logger.debug("result == " + result.get(i));
-                    // result[0] = result[0] + outstanding[0];
                     sumOfResultAndOutstanding = BigDecimal.ZERO;
                 }
             }
-        }
+        } 
+        logger.debug("ServiceChargeLoanSummaryFactory.getMonthWiseOutstandingAmount()::Result :" + result);
         return result;
     }
 
@@ -438,7 +435,7 @@ public class ServiceChargeLoanSummaryFactory {
         }
 
         BigDecimal populateOutstandingAndRepaymentAmounts(ServiceChargeLoanDetailsReadPlatformService scLoanDetailsReadPlatform,
-                LoanProductData loanProduct, LoanAccountData loanAccData) {
+                LoanProductData loanProduct, SCLoanAccountData loanAccData) {
             List<BigDecimal> outstanding = new LinkedList<>();
             // Set the demand loan type
             setDemandLaon(ServiceChargeOperationUtils.checkDemandLaon(loanProduct));
@@ -447,8 +444,8 @@ public class ServiceChargeLoanSummaryFactory {
             // Last day of the date range
             Date lastDayOfRange = dateRange.getToDateForCurrentYear();
             // Start with the last outstanding amount
-            BigDecimal loanOutstandingAmount = loanAccData.getTotalOutstandingAmount();
-            setDisbursmentDate(loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate());
+            BigDecimal loanOutstandingAmount = loanAccData.getPrincipalOutstanding();
+            setDisbursmentDate(loanAccData.getDisbursementDate().toDate());
             printLoanDetailsInLogger(loanAccData);
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(lastDayOfRange);
@@ -510,13 +507,13 @@ public class ServiceChargeLoanSummaryFactory {
             return loanOutstandingAmount;
         }
 
-        private void printLoanDetailsInLogger(LoanAccountData loanAccData) {
+        private void printLoanDetailsInLogger(SCLoanAccountData loanAccData) {
             logger.debug("###########################################################");
             logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.printLoanDetailsInLogger()");
-            logger.debug("Client ID:" + loanAccData.clientId());
+            logger.debug("Client ID:" + loanAccData.getClientId());
             logger.debug("Loan ID:" + loanAccData.getId());
-            logger.debug("Loan current outstanding:" + loanAccData.getTotalOutstandingAmount());
-            logger.debug("Loan Disbursment Date:" + loanAccData.repaymentScheduleRelatedData().disbursementDate().toDate());
+            logger.debug("Loan current outstanding:" + loanAccData.getPrincipalOutstanding());
+            logger.debug("Loan Disbursment Date:" + loanAccData.getDisbursementDate().toDate());
         }
 
         private BigDecimal populateRepaymentsIntoMap(Map<String, BigDecimal> repaymentDateAmountMap,
