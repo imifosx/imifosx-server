@@ -31,6 +31,7 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanAssembler;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
+import org.apache.fineract.portfolio.servicecharge.data.SCLoanAccountData;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException;
 import org.apache.fineract.portfolio.servicecharge.exception.ServiceChargeException.SERVICE_CHARGE_EXCEPTION_REASON;
 import org.apache.fineract.portfolio.servicecharge.util.ServiceChargeOperationUtils;
@@ -71,16 +72,16 @@ public class ServiceChargeInstallmentCalculatorServiceImpl implements ServiceCha
 
     @Override
 	public void recalculateServiceChargeForAllLoans() {
-		final Page<LoanAccountData> currentQuarterLoans = serviceChargeLoanDetailsReadPlatformService
+		final Page<SCLoanAccountData> currentQuarterLoans = serviceChargeLoanDetailsReadPlatformService
 				.retrieveLoansToBeConsideredForTheCurrentQuarter();
 		// If no loans to be processed for the current quarter then return
 		if (currentQuarterLoans == null || currentQuarterLoans.getPageItems().isEmpty()) {
 			return;
 		}
 		for (int i = 0; i < currentQuarterLoans.getPageItems().size(); i++) {
-			LoanAccountData loanAccData = currentQuarterLoans.getPageItems().get(i);
+			SCLoanAccountData loanAccData = currentQuarterLoans.getPageItems().get(i);
 			LoanProductData loanProduct = loanProductReadPlatformService
-					.retrieveLoanProduct(loanAccData.loanProductId());
+					.retrieveLoanProduct(loanAccData.getLoanProductId());
 			// Only if it is demand loan
 			if (ServiceChargeOperationUtils.checkDemandLaon(loanProduct)) {
 				Long loanId = loanAccData.getId();
