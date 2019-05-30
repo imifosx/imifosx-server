@@ -113,9 +113,9 @@ public class ServiceChargeDateUtils implements ServiceChargeApiConstants {
         cal.setTime(date);
         sb.append(cal.get(Calendar.DATE));
         sb.append(HYPHEN);
-        sb.append(cal.get(Calendar.YEAR));
+        sb.append(cal.get(Calendar.MONTH)+1);
         sb.append(HYPHEN);
-        sb.append(cal.get(Calendar.MONTH));
+        sb.append(cal.get(Calendar.YEAR));
         return sb.toString();
     }
 
