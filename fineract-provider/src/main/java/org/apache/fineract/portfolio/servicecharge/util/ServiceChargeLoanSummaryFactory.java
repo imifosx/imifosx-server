@@ -89,7 +89,7 @@ public class ServiceChargeLoanSummaryFactory {
             if (!(summaryObj.isDemandLaon() ^ isDemandLoan)) {
                 List<BigDecimal> outstanding = summaryObj.getPeriodicOutstanding();
                 int size = outstanding.size();
-                int i =0;
+                int i = 0;
                 BigDecimal sumOfResultAndOutstanding = BigDecimal.ZERO;
                 if (result.isEmpty()) {
                     for (i = 0; i <= size; i++) {
@@ -103,7 +103,7 @@ public class ServiceChargeLoanSummaryFactory {
                     sumOfResultAndOutstanding = BigDecimal.ZERO;
                 }
             }
-        } 
+        }
         logger.debug("ServiceChargeLoanSummaryFactory.getMonthWiseOutstandingAmount()::Result :" + result);
         return result;
     }
