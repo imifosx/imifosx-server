@@ -304,13 +304,11 @@ public class ServiceChargeLoanSummaryFactory {
         }
 
         private void addPeriodicOutstandingReversed(List<BigDecimal> outstanding) {
-            // System.out.println("ServiceChargeLoanSummaryFactory.LoanSummaryQuarterly:addPeriodicOutstandingReversed::");
             for (int iCount = outstanding.size() - 1; iCount >= 0; iCount--) {
                 BigDecimal amount = outstanding.get(iCount);
                 System.out.print(amount + ", ");
                 addPeriodicOutstanding(amount);
             }
-            // System.out.println();
         }
 
     }
@@ -370,7 +368,6 @@ public class ServiceChargeLoanSummaryFactory {
         }
 
         private void addPeriodicRepayments(BigDecimal amount) {
-            logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.addPeriodicRepayments()::Total Monthly repayment:" + amount);
             getPeriodicRepayments().add(amount);
         }
 
@@ -468,6 +465,9 @@ public class ServiceChargeLoanSummaryFactory {
                         // of date and amount
                         monthlyTotalRepaymentAmount = populateRepaymentsIntoMap(repaymentDateAmountMap, currentLoanRepayments);
                     }
+                    // Before starting the iterator determine the number of
+                    // times the loop has to run
+                    firstDayOfMonth = DateUtils.determineSCLoopEndDate(firstDayOfMonth, lastDayOfRange, getDisbursmentDate());
                     Iterator<Date> dateIterator = new DateIterator(lastDayOfRange, firstDayOfMonth, true);
                     BigDecimal summationOfDailyOutstanding = BigDecimal.ZERO;
                     Date dateMarker = lastDayOfRange;
@@ -478,14 +478,11 @@ public class ServiceChargeLoanSummaryFactory {
                         String dateKey = ServiceChargeDateUtils.getDateStringFromDate(curDate);
                         if (repaymentDateAmountMap.containsKey(dateKey)) {
                             BigDecimal amount = repaymentDateAmountMap.get(dateKey);
-                            logger.debug(
-                                    "ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateOutstandingAndRepaymentAmounts:: Repayment found for the date:"
-                                            + curDate);
-                            logger.debug(
-                                    "ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateOutstandingAndRepaymentAmounts:: Repayment amount:"
-                                            + amount);
                             summationOfDailyOutstanding = updateLoanOutstandingAndSummationValues(curDate, dateMarker,
                                     summationOfDailyOutstanding, loanOutstandingAmount, amount);
+                            loanOutstandingAmount = loanOutstandingAmount.add(amount);
+                            // Moving date marker ahead as part calculation
+                            dateMarker = curDate;
                         }
                         // For a less efficient calculation uncomment this
                         // and comment the summationOfDailyOutstanding
@@ -525,10 +522,6 @@ public class ServiceChargeLoanSummaryFactory {
                 if (isRepaymentTransaction(loanTransactionData)) {
                     BigDecimal repaymentAmount = loanTransactionData.getPrincipalPortion();
                     LocalDate transactionDate = loanTransactionData.dateOf();
-                    logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap()::Loan repayment-> amount:"
-                            + repaymentAmount);
-                    logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap()::Loan repayment-> date:"
-                            + transactionDate);
                     String dateKey = ServiceChargeDateUtils.getDateStringFromDate(transactionDate);
                     // If there has already been a repayment on the same day
                     if (repaymentDateAmountMap.containsKey(dateKey)) {
@@ -537,9 +530,8 @@ public class ServiceChargeLoanSummaryFactory {
                         // removing to ensure one key has only one value
                         repaymentDateAmountMap.remove(dateKey);
                     }
-                    logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap::Map Key:" + dateKey);
-                    logger.debug(
-                            "ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap::Map value:" + repaymentAmount);
+                    logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.populateRepaymentsIntoMap::Map value:" + repaymentAmount
+                            + "Map Key:" + dateKey);
                     repaymentDateAmountMap.put(dateKey, repaymentAmount);
                     totalRepaymentAmount = totalRepaymentAmount.add(repaymentAmount);
                 }
@@ -549,15 +541,16 @@ public class ServiceChargeLoanSummaryFactory {
 
         private BigDecimal updateLoanOutstandingAndSummationValues(Date curDate, Date dateMarker, BigDecimal summationOfDailyOutstanding,
                 BigDecimal loanOutstandingAmount, BigDecimal amount) {
-            BigDecimal periodBetweenDates = new BigDecimal(ServiceChargeDateUtils.getDiffBetweenDates(curDate, dateMarker, 1));
+            BigDecimal periodBetweenDates = new BigDecimal(ServiceChargeDateUtils.getDiffBetweenDates(curDate, dateMarker, 0));
             BigDecimal outstandingForPeriod = loanOutstandingAmount.multiply(periodBetweenDates);
             summationOfDailyOutstanding = summationOfDailyOutstanding.add(outstandingForPeriod);
+
             if (amount != null) {
                 loanOutstandingAmount = loanOutstandingAmount.add(amount);
             }
-            logger.debug(
-                    "ServiceChargeLoanSummaryFactory.LoanSummaryDaily.updateLoanOutstandingAndSummationValues()::Daily Outstanding summation:"
-                            + summationOfDailyOutstanding);
+            logger.debug("ServiceChargeLoanSummaryFactory.LoanSummaryDaily.updateLoanOutstandingAndSummationValues()::curDate:" + curDate
+                    + " dateMarker:" + dateMarker + " periodBetweenDates:" + periodBetweenDates + " loanOutstandingAmount:"
+                    + loanOutstandingAmount + " outstandingForPeriod:" + outstandingForPeriod);
             return summationOfDailyOutstanding;
         }
 
