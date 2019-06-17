@@ -46,6 +46,13 @@ public interface ServiceChargeLoanProductSummary {
      */
     List<BigDecimal> getPeriodicRepayments();
 
+    /**
+     * Return the total total loan outstanding. Any intermediate values will be
+     * summed up and only the final total summation amount of the outstanding
+     * will be returned.
+     *
+     * @return total amount as BigDecimal
+     */
     BigDecimal getTotalOutstanding();
 
     /**
