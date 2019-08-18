@@ -1,3 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.fineract.portfolio.servicecharge.util;
 
 import java.time.LocalDate;
@@ -8,7 +26,10 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +37,8 @@ import org.slf4j.LoggerFactory;
 public class ServiceChargeDateUtils implements ServiceChargeApiConstants {
 
     private final static Logger logger = LoggerFactory.getLogger(ServiceChargeDateUtils.class);
+
+    public static final String SQL_DATE_FORMAT = "yyyy-MM-dd";
 
     /**
      *
@@ -113,7 +136,7 @@ public class ServiceChargeDateUtils implements ServiceChargeApiConstants {
         cal.setTime(date);
         sb.append(cal.get(Calendar.DATE));
         sb.append(HYPHEN);
-        sb.append(cal.get(Calendar.MONTH)+1);
+        sb.append(cal.get(Calendar.MONTH) + 1);
         sb.append(HYPHEN);
         sb.append(cal.get(Calendar.YEAR));
         return sb.toString();
@@ -135,6 +158,31 @@ public class ServiceChargeDateUtils implements ServiceChargeApiConstants {
             if (checkIfGivenDatesAreSame(key, setKey)) { return true; }
         }
         return false;
+    }
+
+    public static Date formatSqlStringToDate(final String dateString) {
+        Date date = null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(SQL_DATE_FORMAT);
+            date = sdf.parse(dateString);
+        } catch (ParseException ex) {
+            ex.printStackTrace();
+        }
+        return date;
+    }
+
+    public static Date determineSCLoopEndDate(Date firstDayOfRange, Date lastDayOfRange, Date disbursmentDate) {
+        // Remove time-stamp from the date object
+        Date firstDayOfMonthShort = formatSqlStringToDate(DateUtils.formatToSqlDate(firstDayOfRange));
+        Date disbursmentDateShort = formatSqlStringToDate(DateUtils.formatToSqlDate(disbursmentDate));
+        logger.debug("DateUtils.determineSCLoopEndDate::firstDayOfMonth:" + firstDayOfRange + "disbursmentDate:" + disbursmentDate);
+        // In case the loan is disbursed after first day of the range
+        if (disbursmentDateShort.after(firstDayOfMonthShort)) { return disbursmentDate; }
+        // Subtract one day from the first day to allow first day inclusion
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(firstDayOfRange);
+        calendar.add(Calendar.DAY_OF_MONTH, -1);
+        return calendar.getTime();
     }
 
     public static class DateIterator implements Iterator<Date>, Iterable<Date> {

@@ -115,6 +115,7 @@ import org.apache.fineract.portfolio.loanaccount.exception.LoanOfficerUnassignme
 import org.apache.fineract.portfolio.loanaccount.exception.MultiDisbursementDataRequiredException;
 import org.apache.fineract.portfolio.loanaccount.exception.UndoLastTrancheDisbursementException;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleDTO;
+import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleParams;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanApplicationTerms;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
@@ -2616,10 +2617,24 @@ public class Loan extends AbstractPersistableCustom<Long> {
         final RoundingMode roundingMode = MoneyHelper.getRoundingMode();
         final MathContext mc = new MathContext(8, roundingMode);
 
-        final InterestMethod interestMethod = this.loanRepaymentScheduleDetail.getInterestMethod();
         final LoanApplicationTerms loanApplicationTerms = constructLoanApplicationTerms(scheduleGeneratorDTO);
-
-        final LoanScheduleGenerator loanScheduleGenerator = scheduleGeneratorDTO.getLoanScheduleFactory().create(interestMethod);
+        LoanScheduleGenerator loanScheduleGenerator = null;
+        if (loanApplicationTerms.isEqualAmortization()) {
+            if (loanApplicationTerms.getInterestMethod().isDecliningBalnce()) {
+                final LoanScheduleGenerator decliningLoanScheduleGenerator = scheduleGeneratorDTO.getLoanScheduleFactory().create(
+                        InterestMethod.DECLINING_BALANCE);
+                Set<LoanCharge> loanCharges = charges();
+                LoanScheduleModel loanSchedule = decliningLoanScheduleGenerator.generate(mc, loanApplicationTerms, loanCharges, scheduleGeneratorDTO.getHolidayDetailDTO());
+                
+                loanApplicationTerms.updateTotalInterestDue(Money.of(loanApplicationTerms.getCurrency(), loanSchedule.getTotalInterestCharged()));
+                
+                
+            }
+            loanScheduleGenerator = scheduleGeneratorDTO.getLoanScheduleFactory().create(InterestMethod.FLAT);
+        } else {
+            loanScheduleGenerator = scheduleGeneratorDTO.getLoanScheduleFactory().create(loanApplicationTerms.getInterestMethod());
+        }
+        
         final LoanScheduleModel loanSchedule = loanScheduleGenerator.generate(mc, loanApplicationTerms, charges(),
                 scheduleGeneratorDTO.getHolidayDetailDTO());
         return loanSchedule;
@@ -2723,7 +2738,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
 
         validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_DISBURSED, disbursedOn);
 
-        if (disbursedOn.isAfter(new LocalDate())) {
+        if (disbursedOn.isAfter(DateUtils.getLocalDateOfTenant())) {
             final String errorMessage = "The date on which a loan with identifier : " + this.accountNumber
                     + " is disbursed cannot be in the future.";
             throw new InvalidLoanStateTransitionException("disbursal", "cannot.be.a.future.date", errorMessage, disbursedOn);
@@ -2914,7 +2929,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         validateRepaymentDateIsOnNonWorkingDay(paymentTransaction.getTransactionDate(), holidayDetailDTO.getWorkingDays(),
                 holidayDetailDTO.isAllowTransactionsOnNonWorkingDay());
 
-        if (paymentTransaction.getTransactionDate().isAfter(new LocalDate())) {
+        if (paymentTransaction.getTransactionDate().isAfter(DateUtils.getLocalDateOfTenant())) {
             final String errorMessage = "The date on which a loan charge paid cannot be in the future.";
             throw new InvalidLoanStateTransitionException("charge.payment", "cannot.be.a.future.date", errorMessage,
                     paymentTransaction.getTransactionDate());
@@ -3752,7 +3767,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     rescheduledOnLocalDate, getDisbursementDate());
         }
 
-        if (rescheduledOnLocalDate.isAfter(new LocalDate())) {
+        if (rescheduledOnLocalDate.isAfter(DateUtils.getLocalDateOfTenant())) {
             final String errorMessage = "The date on which a loan is rescheduled cannot be in the future.";
             throw new InvalidLoanStateTransitionException("close.reschedule", "cannot.be.a.future.date", errorMessage,
                     rescheduledOnLocalDate);
@@ -6482,16 +6497,21 @@ public class Loan extends AbstractPersistableCustom<Long> {
         return this.charges;
     }
     public void initializeLazyCollections() {
-        this.charges.size() ;
-        this.trancheCharges.size() ;
-        this.repaymentScheduleInstallments.size() ;
-        this.loanTransactions.size() ;
-        this.disbursementDetails.size() ;
-        this.loanTermVariations.size() ;
-        this.collateral.size() ;
-        this.loanOfficerHistory.size() ;
+        checkAndFetchLazyCollection(this.charges);
+        checkAndFetchLazyCollection(this.trancheCharges);
+        checkAndFetchLazyCollection(this.repaymentScheduleInstallments);
+        checkAndFetchLazyCollection(this.loanTransactions);
+        checkAndFetchLazyCollection(this.disbursementDetails);
+        checkAndFetchLazyCollection(this.loanTermVariations);
+        checkAndFetchLazyCollection(this.collateral);
+        checkAndFetchLazyCollection(this.loanOfficerHistory);
     }
-    
+
+    private void checkAndFetchLazyCollection(Collection lazyCollection){
+        if (lazyCollection != null) {
+            lazyCollection.size();
+        }
+    }
     public void initializeLoanOfficerHistory() {
         this.loanOfficerHistory.size() ;
     }

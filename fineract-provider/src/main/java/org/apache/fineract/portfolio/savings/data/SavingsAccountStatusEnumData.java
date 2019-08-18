@@ -70,8 +70,4 @@ public class SavingsAccountStatusEnumData {
     public Long id() {
         return this.id;
     }
-
-	public boolean isClosed() {
-		return closed;
-	}
 }

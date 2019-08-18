@@ -409,7 +409,7 @@ public class LoanChargeData {
         return this.amountUnrecognized;
     }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 }

@@ -65,27 +65,35 @@ public interface ConfigurationDomainService {
     int getRoundingMode();
 
     boolean isBackdatePenaltiesEnabled();
-    
+
     boolean isOrganisationstartDateEnabled();
-    
+
     Date retrieveOrganisationStartDate();
-    
+
     boolean isPaymnetypeApplicableforDisbursementCharge();
 
     boolean isInterestChargedFromDateSameAsDisbursementDate();
 
     boolean isSkippingMeetingOnFirstDayOfMonthEnabled();
-    
+
     Long retreivePeroidInNumberOfDaysForSkipMeetingDate();
-    
+
     boolean isChangeEmiIfRepaymentDateSameAsDisbursementDateEnabled();
-    
+
     boolean isDailyTPTLimitEnabled();
-    
+
     Long getDailyTPTLimit();
 
     void removeGlobalConfigurationPropertyDataFromCache(String propertyName);
-    
+
+    boolean isSMSOTPDeliveryEnabled();
+
+    boolean isEmailOTPDeliveryEnabled();
+
+    Integer retrieveOTPCharacterLength();
+
+    Integer retrieveOTPLiveTime();
+
     boolean isShareWithdrawalLimitEnabled();
 
     Integer retrieveShareWithdrawalLimitPercent();

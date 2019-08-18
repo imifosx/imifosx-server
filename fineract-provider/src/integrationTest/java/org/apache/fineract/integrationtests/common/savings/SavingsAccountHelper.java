@@ -18,6 +18,11 @@
  */
 package org.apache.fineract.integrationtests.common.savings;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,11 +32,16 @@ import java.util.Locale;
 
 import org.apache.fineract.integrationtests.common.CommonConstants;
 import org.apache.fineract.integrationtests.common.Utils;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Assert;
 
 import com.google.gson.Gson;
 import com.jayway.restassured.specification.RequestSpecification;
 import com.jayway.restassured.specification.ResponseSpecification;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 
 @SuppressWarnings({ "rawtypes" })
 public class SavingsAccountHelper {
@@ -93,9 +103,21 @@ public class SavingsAccountHelper {
     }
 
     public Integer applyForSavingsApplicationOnDate(final Integer ID, final Integer savingsProductID, final String accountType,
-            final String submittedOnDate) {
+                                                    final String submittedOnDate) {
+        return applyForSavingsApplicationOnDate(ID, savingsProductID, accountType, null, false, submittedOnDate);
+    }
+
+    public Integer applyForSavingsApplicationWithExternalId(final Integer ID, final Integer savingsProductID, final String accountType,
+                                                            String externalId, boolean withdrawalFeeForTransfers) {
+        return applyForSavingsApplicationOnDate(ID, savingsProductID, accountType, externalId, withdrawalFeeForTransfers, CREATED_DATE);
+    }
+
+    public Integer applyForSavingsApplicationOnDate(final Integer ID, final Integer savingsProductID, final String accountType,
+                                                    String externalId, boolean withdrawalFeeForTransfers, final String submittedOnDate) {
         System.out.println("--------------------------------APPLYING FOR SAVINGS APPLICATION--------------------------------");
         final String savingsApplicationJSON = new SavingsApplicationTestBuilder() //
+                .withExternalId(externalId) //
+                .withWithdrawalFeeForTransfers(withdrawalFeeForTransfers) //
                 .withSubmittedOnDate(submittedOnDate) //
                 .build(ID.toString(), savingsProductID.toString(), accountType);
         return Utils.performServerPost(this.requestSpec, this.responseSpec, SAVINGS_ACCOUNT_URL + "?" + Utils.TENANT_IDENTIFIER,
@@ -238,9 +260,13 @@ public class SavingsAccountHelper {
     }
 
     public Integer addChargesForSavings(final Integer savingsId, final Integer chargeId, boolean addDueDate) {
+        return addChargesForSavings(savingsId, chargeId, addDueDate, BigDecimal.valueOf(100));
+    }
+
+    public Integer addChargesForSavings(final Integer savingsId, final Integer chargeId, boolean addDueDate, BigDecimal amount) {
         System.out.println("--------------------------------- ADD CHARGES FOR SAVINGS --------------------------------");
         return (Integer) performSavingActions(SAVINGS_ACCOUNT_URL + "/" + savingsId + "/charges?" + Utils.TENANT_IDENTIFIER,
-                getPeriodChargeRequestJSON(chargeId, addDueDate), CommonConstants.RESPONSE_RESOURCE_ID);
+                getPeriodChargeRequestJSON(chargeId, addDueDate, amount), CommonConstants.RESPONSE_RESOURCE_ID);
     }
 
     public Integer payCharge(final Integer chargeId, final Integer savingsId, String amount, String dueDate) {
@@ -552,10 +578,10 @@ public class SavingsAccountHelper {
                 getCloseAccountPostInterestJSON(withdrawBalance, closedOnDate), jsonAttributeToGetBack);
     }
 
-    private String getPeriodChargeRequestJSON(Integer chargeId, boolean addDueDate) {
+    private String getPeriodChargeRequestJSON(Integer chargeId, boolean addDueDate, BigDecimal amount) {
         final HashMap<String, Object> map = new HashMap<>();
         map.put("chargeId", chargeId);
-        map.put("amount", 100);
+        map.put("amount", amount);
         map.put("feeOnMonthDay", "15 January");
         map.put("locale", CommonConstants.locale);
         map.put("monthDayFormat", "dd MMMM");
@@ -641,5 +667,29 @@ public class SavingsAccountHelper {
         datatableMap.put("data", dataMap);
         datatablesListMap.add(datatableMap);
         return datatablesListMap;
+    }
+
+    public Workbook getSavingsWorkbook(String dateFormat) throws IOException {
+        requestSpec.header(HttpHeaders.CONTENT_TYPE,"application/vnd.ms-excel");
+        byte[] byteArray=Utils.performGetBinaryResponse(requestSpec,responseSpec,SAVINGS_ACCOUNT_URL+"/downloadtemplate"+"?"+
+                Utils.TENANT_IDENTIFIER+"&dateFormat="+dateFormat);
+        InputStream inputStream= new ByteArrayInputStream(byteArray);
+        Workbook workbook=new HSSFWorkbook(inputStream);
+        return workbook;
+    }
+
+    public String importSavingsTemplate(File file) {
+        String locale="en";
+        String dateFormat="dd MMMM yyyy";
+        String legalFormType= null;
+        requestSpec.header(HttpHeaders.CONTENT_TYPE, MediaType.MULTIPART_FORM_DATA);
+        return Utils.performServerTemplatePost(requestSpec,responseSpec,SAVINGS_ACCOUNT_URL+"/uploadtemplate"+"?"+Utils.TENANT_IDENTIFIER,
+                legalFormType,file,locale,dateFormat);
+    }
+
+    public String getOutputTemplateLocation(final String importDocumentId){
+        requestSpec.header(HttpHeaders.CONTENT_TYPE,MediaType.TEXT_PLAIN);
+        return Utils.performServerOutputTemplateLocationGet(requestSpec,responseSpec,"/fineract-provider/api/v1/imports/getOutputTemplateLocation"+"?"
+                +Utils.TENANT_IDENTIFIER,importDocumentId);
     }
 }

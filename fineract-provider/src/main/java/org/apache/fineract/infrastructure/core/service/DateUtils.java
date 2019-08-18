@@ -19,10 +19,8 @@
 package org.apache.fineract.infrastructure.core.service;
 
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -36,14 +34,8 @@ import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DateUtils {
-
-    private final static Logger logger = LoggerFactory.getLogger(DateUtils.class);
-
-    public static final String SQL_DATE_FORMAT = "yyyy-MM-dd";
 
     public static DateTimeZone getDateTimeZoneOfTenant() {
         final FineractPlatformTenant tenant = ThreadLocalContextUtil.getTenant();
@@ -101,8 +93,8 @@ public class DateUtils {
             return dateTime.toLocalDate();
         } catch (final IllegalArgumentException e) {
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
-            final ApiParameterError error = ApiParameterError.parameterError("validation.msg.invalid.date.pattern",
-                    "The parameter date (" + stringDate + ") is invalid w.r.t. pattern " + pattern, "date", stringDate, pattern);
+            final ApiParameterError error = ApiParameterError.parameterError("validation.msg.invalid.date.pattern", "The parameter date ("
+                    + stringDate + ") is invalid w.r.t. pattern " + pattern, "date", stringDate, pattern);
             dataValidationErrors.add(error);
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
                     dataValidationErrors);
@@ -110,38 +102,13 @@ public class DateUtils {
     }
 
     public static String formatToSqlDate(final Date date) {
-        final DateFormat df = new SimpleDateFormat(SQL_DATE_FORMAT);
+        final DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         df.setTimeZone(getTimeZoneOfTenant());
         final String formattedSqlDate = df.format(date);
         return formattedSqlDate;
     }
 
-    public static Date formatSqlStringToDate(final String dateString) {
-        Date date = null;
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat(SQL_DATE_FORMAT);
-            date = sdf.parse(dateString);
-        } catch (ParseException ex) {
-            ex.printStackTrace();
-        }
-        return date;
-    }
-
     public static boolean isDateInTheFuture(final LocalDate localDate) {
         return localDate.isAfter(getLocalDateOfTenant());
-    }
-
-    public static Date determineSCLoopEndDate(Date firstDayOfRange, Date lastDayOfRange, Date disbursmentDate) {
-        // Remove time-stamp from the date object
-        Date firstDayOfMonthShort = formatSqlStringToDate(formatToSqlDate(firstDayOfRange));
-        Date disbursmentDateShort = formatSqlStringToDate(formatToSqlDate(disbursmentDate));
-        logger.debug("DateUtils.determineSCLoopEndDate::firstDayOfMonth:" + firstDayOfRange + "disbursmentDate:" + disbursmentDate);
-        // In case the loan is disbursed after first day of the range
-        if (disbursmentDateShort.after(firstDayOfMonthShort)) { return disbursmentDate; }
-        // Subtract one day from the first day to allow first day inclusion
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(firstDayOfRange);
-        calendar.add(Calendar.DAY_OF_MONTH, -1);
-        return calendar.getTime();
     }
 }

@@ -182,6 +182,9 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
 
     @Column(name = "can_use_for_topup", nullable = false)
     private boolean canUseForTopup = false;
+    
+    @Column(name = "is_equal_amortization", nullable = false)
+    private boolean isEqualAmortization = false;
 
     public static LoanProduct assembleFromJson(final Fund fund, final LoanTransactionProcessingStrategy loanTransactionProcessingStrategy,
             final List<Charge> productCharges, final JsonCommand command, final AprCalculator aprCalculator, FloatingRate floatingRate) {
@@ -220,6 +223,9 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
         Integer minimumGapBetweenInstallments = null;
         Integer maximumGapBetweenInstallments = null;
 
+
+        final Integer repaymentEvery = command.integerValueOfParameterNamed("repaymentEvery");
+        final Integer numberOfRepayments = command.integerValueOfParameterNamed("numberOfRepayments");
         final Boolean isLinkedToFloatingInterestRates = command.booleanObjectValueOfParameterNamed("isLinkedToFloatingInterestRates");
         if (isLinkedToFloatingInterestRates != null && isLinkedToFloatingInterestRates) {
             interestRateDifferential = command.bigDecimalValueOfParameterNamed("interestRateDifferential");
@@ -233,7 +239,8 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
             interestRatePerPeriod = command.bigDecimalValueOfParameterNamed("interestRatePerPeriod");
             minInterestRatePerPeriod = command.bigDecimalValueOfParameterNamed("minInterestRatePerPeriod");
             maxInterestRatePerPeriod = command.bigDecimalValueOfParameterNamed("maxInterestRatePerPeriod");
-            annualInterestRate = aprCalculator.calculateFrom(interestFrequencyType, interestRatePerPeriod);
+            annualInterestRate = aprCalculator.calculateFrom(interestFrequencyType, interestRatePerPeriod, numberOfRepayments, repaymentEvery, repaymentFrequencyType);
+
         }
 
         final Boolean isVariableInstallmentsAllowed = command
@@ -243,8 +250,6 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
             maximumGapBetweenInstallments = command.integerValueOfParameterNamed(LoanProductConstants.maximumGapBetweenInstallments);
         }
 
-        final Integer repaymentEvery = command.integerValueOfParameterNamed("repaymentEvery");
-        final Integer numberOfRepayments = command.integerValueOfParameterNamed("numberOfRepayments");
         final Integer minNumberOfRepayments = command.integerValueOfParameterNamed("minNumberOfRepayments");
         final Integer maxNumberOfRepayments = command.integerValueOfParameterNamed("maxNumberOfRepayments");
         final BigDecimal inArrearsTolerance = command.bigDecimalValueOfParameterNamed("inArrearsTolerance");
@@ -331,6 +336,9 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
 		final boolean canUseForTopup = command.parameterExists(LoanProductConstants.canUseForTopup)
 				? command.booleanPrimitiveValueOfParameterNamed(LoanProductConstants.canUseForTopup)
 				: false;
+				
+        final boolean isEqualAmortization = command.parameterExists(LoanProductConstants.isEqualAmortizationParam) ? command
+                .booleanPrimitiveValueOfParameterNamed(LoanProductConstants.isEqualAmortizationParam) : false;
 
         return new LoanProduct(fund, loanTransactionProcessingStrategy, name, shortName, description, currency, principal, minPrincipal,
                 maxPrincipal, interestRatePerPeriod, minInterestRatePerPeriod, maxInterestRatePerPeriod, interestFrequencyType,
@@ -345,7 +353,7 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
                 installmentAmountInMultiplesOf, loanConfigurableAttributes, isLinkedToFloatingInterestRates, floatingRate,
                 interestRateDifferential, minDifferentialLendingRate, maxDifferentialLendingRate, defaultDifferentialLendingRate,
                 isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGapBetweenInstallments,
-                maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup);
+                maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization);
 
     }
 
@@ -575,7 +583,7 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
             BigDecimal minDifferentialLendingRate, BigDecimal maxDifferentialLendingRate, BigDecimal defaultDifferentialLendingRate,
             Boolean isFloatingInterestRateCalculationAllowed, final Boolean isVariableInstallmentsAllowed,
             final Integer minimumGapBetweenInstallments, final Integer maximumGapBetweenInstallments,
-            final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup) {
+            final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization) {
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();
@@ -607,7 +615,7 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
                 interestPeriodFrequencyType, defaultAnnualNominalInterestRate, interestMethod, interestCalculationPeriodMethod,
                 considerPartialPeriodInterest, repayEvery, repaymentFrequencyType, defaultNumberOfInstallments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods,
                 graceOnInterestPayment, graceOnInterestCharged, amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing,
-                daysInMonthType.getValue(), daysInYearType.getValue(), isInterestRecalculationEnabled);
+                daysInMonthType.getValue(), daysInYearType.getValue(), isInterestRecalculationEnabled, isEqualAmortization);
 
         this.loanProductRelatedDetail.validateRepaymentPeriodWithGraceSettings();
 
@@ -652,6 +660,7 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
         this.syncExpectedWithDisbursementDate = 
         		syncExpectedWithDisbursementDate;
         this.canUseForTopup = canUseForTopup;
+        this.isEqualAmortization = isEqualAmortization;
     }
 
     public MonetaryCurrency getCurrency() {
@@ -1363,6 +1372,14 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
 
     public boolean canUseForTopup(){
         return this.canUseForTopup;
+    }
+
+    public boolean isEqualAmortization() {
+        return isEqualAmortization;
+    }
+
+    public void setEqualAmortization(boolean isEqualAmortization) {
+        this.isEqualAmortization = isEqualAmortization;
     }
 
 }

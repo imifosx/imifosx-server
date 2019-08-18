@@ -20,6 +20,7 @@ package org.apache.fineract.integrationtests.common.savings;
 
 import static org.junit.Assert.assertEquals;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,7 +61,7 @@ public class SavingsProductHelper {
     private String nameOfSavingsProduct = Utils.randomNameGenerator("SAVINGS_PRODUCT_", 6);
     private String shortName = Utils.randomNameGenerator("", 4);
     private String description = Utils.randomNameGenerator("", 20);
-    private String interestCompoundingPeriodType = "2";
+    private String interestCompoundingPeriodType = "4";
     private String interestPostingPeriodType = "4";
     private String interestCalculationType = INTEREST_CALCULATION_USING_DAILY_BALANCE;
     private String nominalAnnualInterestRate = "10.0";
@@ -78,7 +79,7 @@ public class SavingsProductHelper {
     private String lockinPeriodFrequency = "0";
     private String withdrawalFeeForTransfers = "true";
     private String lockingPeriodFrequencyType = DAYS;
-    private final String currencyCode = USD;
+    private String currencyCode = USD;
     private final String interestCalculationDaysInYearType = DAYS_365;
     private Account[] accountList = null;
     private String minBalanceForInterestCalculation = null;
@@ -228,6 +229,16 @@ public class SavingsProductHelper {
             this.withHoldTax = true;
             this.taxGroupId = taxGroupId;
         }
+        return this;
+    }
+
+    public SavingsProductHelper withCurrencyCode(String currency) {
+        this.currencyCode = currency;
+        return this;
+    }
+
+    public SavingsProductHelper withNominalAnnualInterestRate(BigDecimal interestRate) {
+        this.nominalAnnualInterestRate = interestRate.toString();
         return this;
     }
 

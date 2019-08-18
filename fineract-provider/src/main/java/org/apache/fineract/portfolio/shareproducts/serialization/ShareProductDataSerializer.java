@@ -45,7 +45,6 @@ import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.loanproduct.exception.InvalidCurrencyException;
-import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
 import org.apache.fineract.portfolio.shareproducts.constants.ShareProductApiConstants;
 import org.apache.fineract.portfolio.shareproducts.data.ShareProductMarketPriceData;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProduct;
@@ -93,7 +92,7 @@ public class ShareProductDataSerializer {
 	private static final Set<String> supportedParametersForDivident = new HashSet<>(Arrays.asList(
 			ShareProductApiConstants.locale_paramname, ShareProductApiConstants.dateFormatParamName,
 			ShareProductApiConstants.dividendPeriodStartDateParamName,
-			ShareProductApiConstants.dividendPeriodEndDateParamName, ShareProductApiConstants.dividendAmountParamName, ServiceChargeApiConstants.dividendDistribution));
+			ShareProductApiConstants.dividendPeriodEndDateParamName, ShareProductApiConstants.dividendAmountParamName));
 
     @Autowired
     public ShareProductDataSerializer(final FromJsonHelper fromApiJsonHelper, final ChargeRepositoryWrapper chargeRepository,
@@ -119,10 +118,11 @@ public class ShareProductDataSerializer {
         final String shortName = this.fromApiJsonHelper.extractStringNamed(ShareProductApiConstants.shortname_paramname, element);
         baseDataValidator.reset().parameter(ShareProductApiConstants.shortname_paramname).value(shortName).notBlank()
                 .notExceedingLengthOf(4);
-        String description = null;
-        if (this.fromApiJsonHelper.parameterExists(ShareProductApiConstants.description_paramname, element)) {
-            description = this.fromApiJsonHelper.extractStringNamed(ShareProductApiConstants.description_paramname, element);
-        }
+        
+		final String description = this.fromApiJsonHelper
+				.extractStringNamed(ShareProductApiConstants.description_paramname, element);
+		baseDataValidator.reset().parameter(ShareProductApiConstants.description_paramname).value(description)
+				.notBlank().notExceedingLengthOf(500);
 
         String externalId = this.fromApiJsonHelper.extractStringNamed(ShareProductApiConstants.externalid_paramname, element);
         // baseDataValidator.reset().parameter(ShareProductApiConstants.externalid_paramname).value(externalId).notBlank();
@@ -496,10 +496,6 @@ public class ShareProductDataSerializer {
                 ShareProductApiConstants.dividendAmountParamName, element);
         baseDataValidator.reset().parameter(ShareProductApiConstants.dividendAmountParamName).value(dividendAmount).notBlank()
                 .positiveAmount();
-        final String dividendDistribution = this.fromApiJsonHelper.extractStringNamed(
-                ServiceChargeApiConstants.dividendDistribution, element);
-        baseDataValidator.reset().parameter(ServiceChargeApiConstants.dividendDistribution).value(dividendDistribution).notBlank();
-        
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
     }
 

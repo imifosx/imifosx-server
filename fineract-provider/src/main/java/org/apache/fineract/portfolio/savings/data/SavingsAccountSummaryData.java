@@ -67,7 +67,7 @@ public class SavingsAccountSummaryData {
         this.availableBalance = availableBalance;
     }
 
-	public BigDecimal getAvailableBalance() {
-		return availableBalance;
-	}
+    public BigDecimal getAvailableBalance() {
+        return this.availableBalance;
+    }
 }
