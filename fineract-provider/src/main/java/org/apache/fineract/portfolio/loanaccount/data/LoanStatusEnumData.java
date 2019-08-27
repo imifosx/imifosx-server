@@ -61,8 +61,4 @@ public class LoanStatusEnumData {
     public String value() {
         return this.value;
     }
-    
-    public boolean isClosed() {
-    	return closed;
-    }
 }

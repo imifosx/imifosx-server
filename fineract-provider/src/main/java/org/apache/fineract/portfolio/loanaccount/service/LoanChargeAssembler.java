@@ -145,9 +145,9 @@ public class LoanChargeAssembler {
                             chargePaymentModeEnum = ChargePaymentMode.fromInt(chargePaymentMode);
                         }
                         String chargeName = chargeDefinition.getName();
-						if (ServiceChargeApiConstants.SERVICE_CHARGE_NAME.equals(chargeName)) {
-							amount = serviceChargeCalculator.calculateServiceChargeForPrincipal(principal, numberOfRepayments);
-						}
+                        if (ServiceChargeApiConstants.SERVICE_CHARGE_NAME.equals(chargeName)) {
+                            amount = serviceChargeCalculator.calculateServiceChargeForPrincipal(principal, numberOfRepayments);
+                        }
                         if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);

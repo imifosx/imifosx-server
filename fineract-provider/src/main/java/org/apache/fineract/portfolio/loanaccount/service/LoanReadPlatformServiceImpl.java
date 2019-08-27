@@ -301,47 +301,57 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         extraCriterias.add(hierarchySearchString);
         extraCriterias.add(hierarchySearchString);
 
-        String sqlQueryCriteria = searchParameters.getSqlSearch();
-        if (StringUtils.isNotBlank(sqlQueryCriteria)) {
-        	SQLInjectionValidator.validateSQLInput(sqlQueryCriteria);
-            sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
-            this.columnValidator.validateSqlInjection(sqlBuilder.toString(), sqlQueryCriteria);
-            sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
-        }
+        if (searchParameters!=null) {
 
-        if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
-            sqlBuilder.append(" and l.external_id = ?");
-            extraCriterias.add(searchParameters.getExternalId());
-            arrayPos = arrayPos + 1;
-        }
+            String sqlQueryCriteria = searchParameters.getSqlSearch();
+            if (StringUtils.isNotBlank(sqlQueryCriteria)) {
+                SQLInjectionValidator.validateSQLInput(sqlQueryCriteria);
+                sqlQueryCriteria = sqlQueryCriteria.replace("accountNo", "l.account_no");
+                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), sqlQueryCriteria);
+                sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+            }
 
-        if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
-            sqlBuilder.append(" and l.account_no = ?");
-            extraCriterias.add(searchParameters.getAccountNo());
-            arrayPos = arrayPos + 1;
-        }
+            if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
+                sqlBuilder.append(" and l.external_id = ?");
+                extraCriterias.add(searchParameters.getExternalId());
+                arrayPos = arrayPos + 1;
+            }
+            if(searchParameters.getOfficeId()!=null){
+                sqlBuilder.append("and c.office_id =?");
+                extraCriterias.add(searchParameters.getOfficeId());
+                arrayPos = arrayPos + 1;
+            }
 
-        if (searchParameters.isOrderByRequested()) {
-            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+            if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
+                sqlBuilder.append(" and l.account_no = ?");
+                extraCriterias.add(searchParameters.getAccountNo());
+                arrayPos = arrayPos + 1;
+            }
 
-            if (searchParameters.isSortOrderProvided()) {
-                sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+            if (searchParameters.isOrderByRequested()) {
+                sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
+
+                if (searchParameters.isSortOrderProvided()) {
+                    sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+                    this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
+                }
+            }
+
+            if (searchParameters.isLimited()) {
+                sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+                if (searchParameters.isOffset()) {
+                    sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+                }
             }
         }
-
-        if (searchParameters.isLimited()) {
-            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
-            if (searchParameters.isOffset()) {
-                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
-            }
-        }
-
         final Object[] objectArray = extraCriterias.toArray();
         final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
         final String sqlCountRows = "SELECT FOUND_ROWS()";
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray,
                 this.loaanLoanMapper);
     }
+
 
     @Override
     public LoanAccountData retrieveTemplateWithClientAndProductDetails(final Long clientId, final Long productId) {
@@ -563,7 +573,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " l.nominal_interest_rate_per_period as interestRatePerPeriod, l.annual_nominal_interest_rate as annualInterestRate, "
                     + " l.repayment_period_frequency_enum as repaymentFrequencyType, l.interest_period_frequency_enum as interestRateFrequencyType, "
                     + " l.term_frequency as termFrequency, l.term_period_frequency_enum as termPeriodFrequencyType, "
-                    + " l.amortization_method_enum as amortizationType, l.interest_method_enum as interestType, l.interest_calculated_in_period_enum as interestCalculationPeriodType,"
+                    + " l.amortization_method_enum as amortizationType, l.interest_method_enum as interestType, l.is_equal_amortization as isEqualAmortization, l.interest_calculated_in_period_enum as interestCalculationPeriodType,"
                     + " l.allow_partial_period_interest_calcualtion as allowPartialPeriodInterestCalcualtion,"
                     + " l.loan_status_id as lifeCycleStatusId, l.loan_transaction_strategy_id as transactionStrategyId, "
                     + " lps.name as transactionStrategyName, "
@@ -790,7 +800,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final int amortizationTypeInt = JdbcSupport.getInteger(rs, "amortizationType");
             final int interestTypeInt = JdbcSupport.getInteger(rs, "interestType");
             final int interestCalculationPeriodTypeInt = JdbcSupport.getInteger(rs, "interestCalculationPeriodType");
-
+            final boolean isEqualAmortization = rs.getBoolean("isEqualAmortization");
             final EnumOptionData amortizationType = LoanEnumerations.amortizationType(amortizationTypeInt);
             final EnumOptionData interestType = LoanEnumerations.interestType(interestTypeInt);
             final EnumOptionData interestCalculationPeriodType = LoanEnumerations
@@ -965,7 +975,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     loanProductCounter, multiDisburseLoan, canDefineInstallmentAmount, fixedEmiAmount, outstandingLoanBalance, inArrears,
                     graceOnArrearsAgeing, isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
                     interestRecalculationData, createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap,
-                    maximumGap, loanSubStatus, canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount);
+                    maximumGap, loanSubStatus, canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization);
         }
     }
 
@@ -1520,7 +1530,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public Collection<DisbursementData> retrieveLoanDisbursementDetails(final Long loanId) {
         final LoanDisbursementDetailMapper rm = new LoanDisbursementDetailMapper();
-        final String sql = "select " + rm.schema() + " where dd.loan_id=? group by dd.id order by dd.expected_disburse_date";
+        final String sql = "select " + rm.schema() + " where dd.loan_id=? group by dd.id, lc.amount_waived_derived order by dd.expected_disburse_date";
         return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
     }
 
@@ -1552,7 +1562,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public DisbursementData retrieveLoanDisbursementDetail(Long loanId, Long disbursementId) {
         final LoanDisbursementDetailMapper rm = new LoanDisbursementDetailMapper();
-        final String sql = "select " + rm.schema() + " where dd.loan_id=? and dd.id=?";
+        final String sql = "select " + rm.schema() + " where dd.loan_id=? and dd.id=? group by dd.id, lc.amount_waived_derived";
         return this.jdbcTemplate.queryForObject(sql, rm, new Object[] { loanId, disbursementId });
     }
 
@@ -2187,5 +2197,24 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         }
 
     }
-    
+
+	@Override
+	public Long retrieveLoanIdByAccountNumber(String loanAccountNumber) {
+		try {
+			return this.jdbcTemplate.queryForObject("select l.id from m_loan l where l.account_no = ?",
+					new Object[] { loanAccountNumber }, Long.class);
+
+		} catch (final EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	public String retrieveAccountNumberByAccountId(Long accountId) {
+		try {
+			final String sql = "select loan.account_no from m_loan loan where loan.id = ?";
+			return this.jdbcTemplate.queryForObject(sql, new Object[] { accountId }, String.class);
+		} catch (final EmptyResultDataAccessException e) {
+			throw new LoanNotFoundException(accountId);
+		}
+	}
 }

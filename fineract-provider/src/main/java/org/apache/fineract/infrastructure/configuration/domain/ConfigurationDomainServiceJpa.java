@@ -203,9 +203,7 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         if (property.isEnabled()) {
             int value = property.getValue().intValue();
-            if (value < 0 || value > 6) {
-                return defaultValue;
-            }
+            if (value < 0 || value > 6) { return defaultValue; }
             return value;
         }
         return defaultValue;
@@ -232,13 +230,13 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return property.getDateValue();
     }
 
-	@Override
-	public boolean isPaymnetypeApplicableforDisbursementCharge() {
-		final String propertyName = "paymenttype-applicable-for-disbursement-charges";
+    @Override
+    public boolean isPaymnetypeApplicableforDisbursementCharge() {
+        final String propertyName = "paymenttype-applicable-for-disbursement-charges";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.isEnabled();
-	}
-	
+    }
+
     @Override
     public boolean isSkippingMeetingOnFirstDayOfMonthEnabled() {
         return getGlobalConfigurationPropertyData("skip-repayment-on-first-day-of-month").isEnabled();
@@ -258,7 +256,7 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.isEnabled();
     }
-    
+
     @Override
     public boolean isChangeEmiIfRepaymentDateSameAsDisbursementDateEnabled() {
         final String propertyName = "change-emi-if-repaymentdate-same-as-disbursementdate";
@@ -266,19 +264,19 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         return property.isEnabled();
     }
 
-	@Override
-	public boolean isDailyTPTLimitEnabled() {
+    @Override
+    public boolean isDailyTPTLimitEnabled() {
         final String propertyName = "daily-tpt-limit";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.isEnabled();
-	}
+    }
 
-	@Override
-	public Long getDailyTPTLimit() {
+    @Override
+    public Long getDailyTPTLimit() {
         final String propertyName = "daily-tpt-limit";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.getValue();
-	}
+    }
 
     @Override
     public void removeGlobalConfigurationPropertyDataFromCache(final String propertyName) {
@@ -286,54 +284,39 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         String key = identifier + "_" + propertyName;
         configurations.remove(key);
     }
-    
+
     @Override
-	public boolean isShareWithdrawalLimitEnabled() {
-    	final String propertyName = "Share-Withdrawal-Limit";
+    public boolean isSMSOTPDeliveryEnabled() {
+        final String propertyName = "use-sms-for-2fa";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.isEnabled();
-    }
-    
-    @Override
-    public Integer retrieveShareWithdrawalLimitPercent() {
-    	 final String propertyName = "Share-Withdrawal-Limit";
-         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-         return property.getValue().intValue();
-    }
-    
-    @Override
-	public boolean isShareBuyingLimitEnabled() {
-    	final String propertyName = "Share-Buying-Limit";
-        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-        return property.isEnabled();
-    }
-    
-    @Override
-    public Integer retrieveShareBuyingLimitPercent() {
-    	 final String propertyName = "Share-Buying-Limit";
-         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-         return property.getValue().intValue();
     }
 
     @Override
-    public boolean isMaxDepositLimitEnabled() {
-    	final String propertyName = "Limit-Max-Deposit-With-Multiplier";
+    public boolean isEmailOTPDeliveryEnabled() {
+        final String propertyName = "use-email-for-2fa";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
         return property.isEnabled();
     }
-    
+
     @Override
-    public Integer retrieveMaxDepositMultiplier() {
-    	final String propertyName = "Limit-Max-Deposit-With-Multiplier";
+    public Integer retrieveOTPCharacterLength() {
+        final String propertyName = "otp-character-length";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-        return property.getValue().intValue();
+        int defaultValue = 6;
+        int value = property.getValue().intValue();
+        if (value < 1) return defaultValue;
+        return value;
     }
 
     @Override
-    public Long retrieveAvgDepositInSavings() {
-    	final String propertyName = "Avg-Deposit-In-Savings";
+    public Integer retrieveOTPLiveTime() {
+        final String propertyName = "otp-validity-period";
         final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
-        return property.getValue();
+        int defaultValue = 300;
+        int value = property.getValue().intValue();
+        if (value < 1) { return defaultValue; }
+        return value;
     }
 
     private GlobalConfigurationPropertyData getGlobalConfigurationPropertyData(final String propertyName) {
@@ -345,4 +328,54 @@ public class ConfigurationDomainServiceJpa implements ConfigurationDomainService
         }
         return configurations.get(key);
     }
+
+    @Override
+    public boolean isShareWithdrawalLimitEnabled() {
+        final String propertyName = "Share-Withdrawal-Limit";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+
+    @Override
+    public Integer retrieveShareWithdrawalLimitPercent() {
+        final String propertyName = "Share-Withdrawal-Limit";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.getValue().intValue();
+    }
+
+    @Override
+    public boolean isShareBuyingLimitEnabled() {
+        final String propertyName = "Share-Buying-Limit";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+
+    @Override
+    public Integer retrieveShareBuyingLimitPercent() {
+        final String propertyName = "Share-Buying-Limit";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.getValue().intValue();
+    }
+
+    @Override
+    public boolean isMaxDepositLimitEnabled() {
+        final String propertyName = "Limit-Max-Deposit-With-Multiplier";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.isEnabled();
+    }
+
+    @Override
+    public Integer retrieveMaxDepositMultiplier() {
+        final String propertyName = "Limit-Max-Deposit-With-Multiplier";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.getValue().intValue();
+    }
+
+    @Override
+    public Long retrieveAvgDepositInSavings() {
+        final String propertyName = "Avg-Deposit-In-Savings";
+        final GlobalConfigurationPropertyData property = getGlobalConfigurationPropertyData(propertyName);
+        return property.getValue();
+    }
+
 }

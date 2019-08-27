@@ -943,20 +943,25 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
                     + " l.nominal_interest_rate_per_period as interestRatePerPeriod, l.annual_nominal_interest_rate as annualInterestRate, "
                     + " l.repayment_period_frequency_enum as repaymentFrequencyType, l.interest_period_frequency_enum as interestRateFrequencyType, "
                     + " l.term_frequency as termFrequency, l.term_period_frequency_enum as termPeriodFrequencyType, "
-                    + " l.amortization_method_enum as amortizationType, l.interest_method_enum as interestType, l.interest_calculated_in_period_enum as interestCalculationPeriodType,"
+                    + " l.amortization_method_enum as amortizationType, l.interest_method_enum as interestType, l.is_equal_amortization as isEqualAmortization, l.interest_calculated_in_period_enum as interestCalculationPeriodType,"
                     + " l.allow_partial_period_interest_calcualtion as allowPartialPeriodInterestCalcualtion,"
                     + " l.loan_status_id as lifeCycleStatusId, l.loan_transaction_strategy_id as transactionStrategyId, "
                     + " lps.name as transactionStrategyName, "
                     + " l.currency_code as currencyCode, l.currency_digits as currencyDigits, l.currency_multiplesof as inMultiplesOf, rc.`name` as currencyName, rc.display_symbol as currencyDisplaySymbol, rc.internationalized_name_code as currencyNameCode, "
                     + " l.loan_officer_id as loanOfficerId, s.display_name as loanOfficerName, "
-                    + " l.principal_disbursed_derived as principalDisbursed," + " l.principal_repaid_derived as principalPaid,"
+                    + " l.principal_disbursed_derived as principalDisbursed,"
+                    + " l.principal_repaid_derived as principalPaid,"
                     + " l.principal_writtenoff_derived as principalWrittenOff,"
-                    + " l.principal_outstanding_derived as principalOutstanding," + " l.interest_charged_derived as interestCharged,"
-                    + " l.interest_repaid_derived as interestPaid," + " l.interest_waived_derived as interestWaived,"
-                    + " l.interest_writtenoff_derived as interestWrittenOff," + " l.interest_outstanding_derived as interestOutstanding,"
+                    + " l.principal_outstanding_derived as principalOutstanding,"
+                    + " l.interest_charged_derived as interestCharged,"
+                    + " l.interest_repaid_derived as interestPaid,"
+                    + " l.interest_waived_derived as interestWaived,"
+                    + " l.interest_writtenoff_derived as interestWrittenOff,"
+                    + " l.interest_outstanding_derived as interestOutstanding,"
                     + " l.fee_charges_charged_derived as feeChargesCharged,"
                     + " l.total_charges_due_at_disbursement_derived as feeChargesDueAtDisbursementCharged,"
-                    + " l.fee_charges_repaid_derived as feeChargesPaid," + " l.fee_charges_waived_derived as feeChargesWaived,"
+                    + " l.fee_charges_repaid_derived as feeChargesPaid,"
+                    + " l.fee_charges_waived_derived as feeChargesWaived,"
                     + " l.fee_charges_writtenoff_derived as feeChargesWrittenOff,"
                     + " l.fee_charges_outstanding_derived as feeChargesOutstanding,"
                     + " l.penalty_charges_charged_derived as penaltyChargesCharged,"
@@ -964,15 +969,24 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
                     + " l.penalty_charges_waived_derived as penaltyChargesWaived,"
                     + " l.penalty_charges_writtenoff_derived as penaltyChargesWrittenOff,"
                     + " l.penalty_charges_outstanding_derived as penaltyChargesOutstanding,"
-                    + " l.total_expected_repayment_derived as totalExpectedRepayment," + " l.total_repayment_derived as totalRepayment,"
-                    + " l.total_expected_costofloan_derived as totalExpectedCostOfLoan," + " l.total_costofloan_derived as totalCostOfLoan,"
-                    + " l.total_waived_derived as totalWaived," + " l.total_writtenoff_derived as totalWrittenOff,"
-                    + " l.writeoff_reason_cv_id as writeoffReasonId," + " codev.code_value as writeoffReason,"
-                    + " l.total_outstanding_derived as totalOutstanding," + " l.total_overpaid_derived as totalOverpaid,"
-                    + " l.fixed_emi_amount as fixedEmiAmount," + " l.max_outstanding_loan_balance as outstandingLoanBalance,"
-                    + " l.loan_sub_status_id as loanSubStatusId," + " la.principal_overdue_derived as principalOverdue,"
-                    + " la.interest_overdue_derived as interestOverdue," + " la.fee_charges_overdue_derived as feeChargesOverdue,"
-                    + " la.penalty_charges_overdue_derived as penaltyChargesOverdue," + " la.total_overdue_derived as totalOverdue,"
+                    + " l.total_expected_repayment_derived as totalExpectedRepayment,"
+                    + " l.total_repayment_derived as totalRepayment,"
+                    + " l.total_expected_costofloan_derived as totalExpectedCostOfLoan,"
+                    + " l.total_costofloan_derived as totalCostOfLoan,"
+                    + " l.total_waived_derived as totalWaived,"
+                    + " l.total_writtenoff_derived as totalWrittenOff,"
+                    + " l.writeoff_reason_cv_id as writeoffReasonId,"
+                    + " codev.code_value as writeoffReason,"
+                    + " l.total_outstanding_derived as totalOutstanding,"
+                    + " l.total_overpaid_derived as totalOverpaid,"
+                    + " l.fixed_emi_amount as fixedEmiAmount,"
+                    + " l.max_outstanding_loan_balance as outstandingLoanBalance,"
+                    + " l.loan_sub_status_id as loanSubStatusId,"
+                    + " la.principal_overdue_derived as principalOverdue,"
+                    + " la.interest_overdue_derived as interestOverdue,"
+                    + " la.fee_charges_overdue_derived as feeChargesOverdue,"
+                    + " la.penalty_charges_overdue_derived as penaltyChargesOverdue,"
+                    + " la.total_overdue_derived as totalOverdue,"
                     + " la.overdue_since_date_derived as overdueSinceDate,"
                     + " l.sync_disbursement_with_meeting as syncDisbursementWithMeeting,"
                     + " l.loan_counter as loanCounter, l.loan_product_counter as loanProductCounter,"
@@ -993,8 +1007,12 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
                     + " l.interest_rate_differential as interestRateDifferential, "
                     + " l.create_standing_instruction_at_disbursement as createStandingInstructionAtDisbursement, "
                     + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap, "
-                    + " lp.can_use_for_topup as canUseForTopup, " + " l.is_topup as isTopup, " + " topup.closure_loan_id as closureLoanId, "
-                    + " topuploan.account_no as closureLoanAccountNo, " + " topup.topup_amount as topupAmount " + " from m_loan l" //
+                    + " lp.can_use_for_topup as canUseForTopup, "
+                    + " l.is_topup as isTopup, "
+                    + " topup.closure_loan_id as closureLoanId, "
+                    + " topuploan.account_no as closureLoanAccountNo, "
+                    + " topup.topup_amount as topupAmount "
+                    + " from m_loan l" //
                     + " join m_product_loan lp on lp.id = l.product_id" //
                     + " left join m_loan_recalculation_details lir on lir.loan_id = l.id "
                     + " join m_currency rc on rc.`code` = l.currency_code" //
@@ -1007,7 +1025,8 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
                     + " left join m_appuser rbu on rbu.id = l.rejectedon_userid"
                     + " left join m_appuser wbu on wbu.id = l.withdrawnon_userid"
                     + " left join m_appuser abu on abu.id = l.approvedon_userid"
-                    + " left join m_appuser dbu on dbu.id = l.disbursedon_userid" + " left join m_appuser cbu on cbu.id = l.closedon_userid"
+                    + " left join m_appuser dbu on dbu.id = l.disbursedon_userid"
+                    + " left join m_appuser cbu on cbu.id = l.closedon_userid"
                     + " left join m_code_value cv on cv.id = l.loanpurpose_cv_id"
                     + " left join m_code_value codev on codev.id = l.writeoff_reason_cv_id"
                     + " left join ref_loan_transaction_processing_strategy lps on lps.id = l.loan_transaction_strategy_id"
@@ -1130,8 +1149,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
             final boolean isFloatingInterestRate = rs.getBoolean("isFloatingInterestRate");
 
             final Integer graceOnPrincipalPayment = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "graceOnPrincipalPayment");
-            final Integer recurringMoratoriumOnPrincipalPeriods = JdbcSupport.getIntegerDefaultToNullIfZero(rs,
-                    "recurringMoratoriumOnPrincipalPeriods");
+            final Integer recurringMoratoriumOnPrincipalPeriods = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "recurringMoratoriumOnPrincipalPeriods");
             final Integer graceOnInterestPayment = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "graceOnInterestPayment");
             final Integer graceOnInterestCharged = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "graceOnInterestCharged");
             final Integer graceOnArrearsAgeing = JdbcSupport.getIntegerDefaultToNullIfZero(rs, "graceOnArrearsAgeing");
@@ -1152,7 +1170,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
             final int amortizationTypeInt = JdbcSupport.getInteger(rs, "amortizationType");
             final int interestTypeInt = JdbcSupport.getInteger(rs, "interestType");
             final int interestCalculationPeriodTypeInt = JdbcSupport.getInteger(rs, "interestCalculationPeriodType");
-
+            final boolean isEqualAmortization = rs.getBoolean("isEqualAmortization");
             final EnumOptionData amortizationType = LoanEnumerations.amortizationType(amortizationTypeInt);
             final EnumOptionData interestType = LoanEnumerations.interestType(interestTypeInt);
             final EnumOptionData interestCalculationPeriodType = LoanEnumerations
@@ -1228,7 +1246,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
                         feeChargesWaived, feeChargesWrittenOff, feeChargesOutstanding, feeChargesOverdue, penaltyChargesCharged,
                         penaltyChargesPaid, penaltyChargesWaived, penaltyChargesWrittenOff, penaltyChargesOutstanding,
                         penaltyChargesOverdue, totalExpectedRepayment, totalRepayment, totalExpectedCostOfLoan, totalCostOfLoan,
-                        totalWaived, totalWrittenOff, totalOutstanding, totalOverdue, overdueSinceDate, writeoffReasonId, writeoffReason);
+                        totalWaived, totalWrittenOff, totalOutstanding, totalOverdue, overdueSinceDate,writeoffReasonId, writeoffReason);
             }
 
             GroupGeneralData groupData = null;
@@ -1323,11 +1341,11 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
                     interestType, isFloatingInterestRate, interestRateDifferential, interestCalculationPeriodType,
                     allowPartialPeriodInterestCalcualtion, expectedFirstRepaymentOnDate, graceOnPrincipalPayment,
                     recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged, interestChargedFromDate,
-                    timeline, loanSummary, feeChargesDueAtDisbursementCharged, syncDisbursementWithMeeting, loanCounter, loanProductCounter,
-                    multiDisburseLoan, canDefineInstallmentAmount, fixedEmiAmount, outstandingLoanBalance, inArrears, graceOnArrearsAgeing,
-                    isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, interestRecalculationData,
-                    createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap, maximumGap, loanSubStatus,
-                    canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount);
+                    timeline, loanSummary, feeChargesDueAtDisbursementCharged, syncDisbursementWithMeeting, loanCounter,
+                    loanProductCounter, multiDisburseLoan, canDefineInstallmentAmount, fixedEmiAmount, outstandingLoanBalance, inArrears,
+                    graceOnArrearsAgeing, isNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                    interestRecalculationData, createStandingInstructionAtDisbursement, isvariableInstallmentsAllowed, minimumGap,
+                    maximumGap, loanSubStatus, canUseForTopup, isTopup, closureLoanId, closureLoanAccountNo, topupAmount, isEqualAmortization);
         }
     }
 }

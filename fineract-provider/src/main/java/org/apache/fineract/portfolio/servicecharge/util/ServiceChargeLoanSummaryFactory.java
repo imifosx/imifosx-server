@@ -467,7 +467,7 @@ public class ServiceChargeLoanSummaryFactory {
                     }
                     // Before starting the iterator determine the number of
                     // times the loop has to run
-                    firstDayOfMonth = DateUtils.determineSCLoopEndDate(firstDayOfMonth, lastDayOfRange, getDisbursmentDate());
+                    firstDayOfMonth = ServiceChargeDateUtils.determineSCLoopEndDate(firstDayOfMonth, lastDayOfRange, getDisbursmentDate());
                     Iterator<Date> dateIterator = new DateIterator(lastDayOfRange, firstDayOfMonth, true);
                     BigDecimal summationOfDailyOutstanding = BigDecimal.ZERO;
                     Date dateMarker = lastDayOfRange;

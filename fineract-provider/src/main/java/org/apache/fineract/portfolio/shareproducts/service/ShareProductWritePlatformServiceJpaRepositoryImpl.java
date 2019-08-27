@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.shareproducts.service;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.persistence.PersistenceException;
@@ -30,10 +31,10 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
-import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
-import org.apache.fineract.portfolio.servicecharge.saving.SavingAccountsCalculationPlatformService;
-import org.apache.fineract.portfolio.servicecharge.share.ShareDividendAsSharesTransferService;
+import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_ENTITY;
+import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants.BUSINESS_EVENTS;
+import org.apache.fineract.portfolio.common.BusinessEventNotificationConstants;
+import org.apache.fineract.portfolio.common.service.BusinessEventNotifierService;
 import org.apache.fineract.portfolio.shareproducts.constants.ShareProductApiConstants;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProduct;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProductDividendPayOutDetails;
@@ -57,9 +58,7 @@ public class ShareProductWritePlatformServiceJpaRepositoryImpl implements ShareP
     private final ShareProductDividentPayOutDetailsRepositoryWrapper shareProductDividentPayOutDetailsRepository;
     private final ShareProductDividendAssembler shareProductDividendAssembler;
     private final ProductToGLAccountMappingWritePlatformService accountMappingWritePlatformService;
-    private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
-    private final SavingAccountsCalculationPlatformService savingAccountsCalculationPlatformService;
-    private final ShareDividendAsSharesTransferService shareDividendAsSharesTransferService;
+    private final BusinessEventNotifierService businessEventNotifierService;
 
     @Autowired
     public ShareProductWritePlatformServiceJpaRepositoryImpl(final ShareProductRepositoryWrapper repository,
@@ -67,18 +66,14 @@ public class ShareProductWritePlatformServiceJpaRepositoryImpl implements ShareP
             final ShareProductDividentPayOutDetailsRepositoryWrapper shareProductDividentPayOutDetailsRepositor,
             final ShareProductDividendAssembler shareProductDividendAssembler,
             final ProductToGLAccountMappingWritePlatformService accountMappingWritePlatformService,
-            final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
-            final SavingAccountsCalculationPlatformService savingAccountsCalculationPlatformService,
-            final ShareDividendAsSharesTransferService shareDividendAsSharesTransferService) {
+            final BusinessEventNotifierService businessEventNotifierService) {
         this.repository = repository;
         this.serializer = serializer;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.shareProductDividentPayOutDetailsRepository = shareProductDividentPayOutDetailsRepositor;
         this.shareProductDividendAssembler = shareProductDividendAssembler;
         this.accountMappingWritePlatformService = accountMappingWritePlatformService;
-        this.savingsAccountWritePlatformService = savingsAccountWritePlatformService;
-        this.savingAccountsCalculationPlatformService = savingAccountsCalculationPlatformService;
-        this.shareDividendAsSharesTransferService = shareDividendAsSharesTransferService;
+        this.businessEventNotifierService = businessEventNotifierService;
     }
 
     @Override
@@ -94,13 +89,13 @@ public class ShareProductWritePlatformServiceJpaRepositoryImpl implements ShareP
                     .withCommandId(jsonCommand.commandId()) //
                     .withEntityId(product.getId()) //
                     .build();
-        } catch (DataIntegrityViolationException dve) {
+        }catch (DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(jsonCommand, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        } catch (PersistenceException dve) {
-            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleDataIntegrityIssues(jsonCommand, throwable, dve);
-            return CommandProcessingResult.empty();
+        }catch (PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(jsonCommand, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
 
     }
@@ -125,13 +120,13 @@ public class ShareProductWritePlatformServiceJpaRepositoryImpl implements ShareP
                     .withEntityId(productId) //
                     .with(changes) //
                     .build();
-        } catch (DataIntegrityViolationException dve) {
+        }catch (DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(jsonCommand, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        } catch (PersistenceException dve) {
-            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
-            handleDataIntegrityIssues(jsonCommand, throwable, dve);
-            return CommandProcessingResult.empty();
+        }catch (PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(jsonCommand, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -140,23 +135,22 @@ public class ShareProductWritePlatformServiceJpaRepositoryImpl implements ShareP
         try {
             this.serializer.validateDividendDetails(jsonCommand);
             JsonElement element = jsonCommand.parsedJson();
-            final LocalDate dividendPeriodStartDate = this.fromApiJsonHelper
-                    .extractLocalDateNamed(ShareProductApiConstants.dividendPeriodStartDateParamName, element);
-            final LocalDate dividendPeriodEndDate = this.fromApiJsonHelper
-                    .extractLocalDateNamed(ShareProductApiConstants.dividendPeriodEndDateParamName, element);
-            final BigDecimal dividendAmount = this.fromApiJsonHelper
-                    .extractBigDecimalWithLocaleNamed(ShareProductApiConstants.dividendAmountParamName, element);
+            final LocalDate dividendPeriodStartDate = this.fromApiJsonHelper.extractLocalDateNamed(
+                    ShareProductApiConstants.dividendPeriodStartDateParamName, element);
+            final LocalDate dividendPeriodEndDate = this.fromApiJsonHelper.extractLocalDateNamed(
+                    ShareProductApiConstants.dividendPeriodEndDateParamName, element);
+            final BigDecimal dividendAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(
+                    ShareProductApiConstants.dividendAmountParamName, element);
 
-            ShareProductDividendPayOutDetails dividendPayOutDetails = this.shareProductDividendAssembler.calculateDividends(productId,
-                    dividendAmount, dividendPeriodStartDate, dividendPeriodEndDate);
+            final ShareProductDividendPayOutDetails dividendPayOutDetails = this.shareProductDividendAssembler.calculateDividends(
+                    productId, dividendAmount, dividendPeriodStartDate, dividendPeriodEndDate);
             if (dividendPayOutDetails == null) { throw new DividentProcessingException("eligible.shares.not.found",
                     "No eligible shares for creating dividends"); }
-
-            dividendPayOutDetails = shareDividendAsSharesTransferService.transferSharesAndReturnRemainingDividend(
-                    this.fromApiJsonHelper.extractStringNamed(ServiceChargeApiConstants.dividendDistribution, element), productId,
-                    dividendPayOutDetails);
-
             this.shareProductDividentPayOutDetailsRepository.save(dividendPayOutDetails);
+
+
+            this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.SHARE_PRODUCT_DIVIDENDS_CREATE,
+                    constructEntityMap(BUSINESS_ENTITY.SHARE_PRODUCT, productId));
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(jsonCommand.commandId()) //
@@ -192,8 +186,8 @@ public class ShareProductWritePlatformServiceJpaRepositoryImpl implements ShareP
         try {
             ShareProductDividendPayOutDetails dividendPayOutDetails = this.shareProductDividentPayOutDetailsRepository
                     .findOneWithNotFoundDetection(PayOutDetailId);
-            if (dividendPayOutDetails.getStatus()
-                    .isApproved()) { throw new DividentProcessingException("alreay.approved", "Can't delete already appoved  dividends "); }
+            if (dividendPayOutDetails.getStatus().isApproved()) { throw new DividentProcessingException("alreay.approved",
+                    "Can't delete already appoved  dividends "); }
             this.shareProductDividentPayOutDetailsRepository.delete(dividendPayOutDetails);
             return new CommandProcessingResultBuilder() //
                     .withEntityId(PayOutDetailId) //
@@ -209,16 +203,23 @@ public class ShareProductWritePlatformServiceJpaRepositoryImpl implements ShareP
                 "Unknown data integrity issue with resource.");
     }
 
+    
     private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
         if (realCause.getMessage().contains("'name'")) {
             final String name = command.stringValueOfParameterNamed(ShareProductApiConstants.name_paramname);
-            throw new PlatformDataIntegrityException("error.msg.shareproduct.duplicate.name",
-                    "Share Product with name `" + name + "` already exists", "name", name);
-        }
+            throw new PlatformDataIntegrityException("error.msg.shareproduct.duplicate.name", "Share Product with name `" + name
+                    + "` already exists", "name", name);
+        } 
 
         throw new PlatformDataIntegrityException("error.msg.shareproduct.unknown.data.integrity.issue",
                 "Unknown data integrity issue with resource.");
+    }
+
+    private Map<BusinessEventNotificationConstants.BUSINESS_ENTITY, Object> constructEntityMap(final BusinessEventNotificationConstants.BUSINESS_ENTITY entityEvent, Object entity) {
+        Map<BusinessEventNotificationConstants.BUSINESS_ENTITY, Object> map = new HashMap<>(1);
+        map.put(entityEvent, entity);
+        return map;
     }
 
 }

@@ -134,6 +134,11 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
 
     public static LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command) {
         final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
+        if (chargeDefinition.getChargeTimeType().equals(ChargeTimeType.SPECIFIED_DUE_DATE.getValue()) && dueDate == null) {
+            final String defaultUserMessage = "Loan charge is missing due date.";
+            throw new LoanChargeWithoutMandatoryFieldException("loanCharge", "dueDate", defaultUserMessage, chargeDefinition.getId(),
+                    chargeDefinition.getName());
+        }
         return createNewFromJson(loan, chargeDefinition, command, dueDate);
     }
 
@@ -912,10 +917,6 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
     public BigDecimal amountOrPercentage() {
         return this.amountOrPercentage;
     }
-    
-    public void updateAmountOrPercentage(BigDecimal amountOrPercentage) {
-        this.amountOrPercentage = amountOrPercentage;
-    }
 
     public BigDecimal chargeAmount() {
         BigDecimal totalChargeAmount = this.amountOutstanding;
@@ -1038,4 +1039,8 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
     public boolean isDueDateCharge() {
         return this.dueDate != null;
     }
+
+    public void updateAmountOrPercentage(BigDecimal amountOrPercentage) {
+        this.amountOrPercentage = amountOrPercentage;
+    } 
 }

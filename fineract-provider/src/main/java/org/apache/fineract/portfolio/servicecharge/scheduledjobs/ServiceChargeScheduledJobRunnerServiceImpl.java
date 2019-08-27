@@ -64,7 +64,7 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
     }
 
     @Override
-    @CronTarget(jobName = JobName.GENERATE_SERVICECHARGE)
+    // @CronTarget(jobName = JobName.GENERATE_SERVICECHARGE)
     public void generateServiceCharge() {
         logger.info("ServiceChargeScheduledJobRunnerServiceImpl::generateServiceCharge: Inside Generate Service Charge");
 

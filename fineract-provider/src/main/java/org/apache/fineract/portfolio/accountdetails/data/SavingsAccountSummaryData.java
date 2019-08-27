@@ -70,12 +70,4 @@ public class SavingsAccountSummaryData {
         this.subStatus = subStatus;
         this.lastActiveTransactionDate = lastActiveTransactionDate;
     }
-
-    public SavingsAccountStatusEnumData getStatus() {
-		return status;
-	}
-
-	public String getAccountNo() {
-		return accountNo;
-	}
 }

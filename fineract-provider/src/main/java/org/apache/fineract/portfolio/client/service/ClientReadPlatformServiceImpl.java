@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -51,6 +52,7 @@ import org.apache.fineract.portfolio.address.data.AddressData;
 import org.apache.fineract.portfolio.address.service.AddressReadPlatformService;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.client.data.ClientFamilyMembersData;
 import org.apache.fineract.portfolio.client.data.ClientNonPersonData;
 import org.apache.fineract.portfolio.client.data.ClientTimelineData;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
@@ -58,7 +60,11 @@ import org.apache.fineract.portfolio.client.domain.ClientStatus;
 import org.apache.fineract.portfolio.client.domain.LegalForm;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.savings.SavingsAccountTransactionType;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountStatusType;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
@@ -84,8 +90,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
     private final ClientLookupMapper lookupMapper = new ClientLookupMapper();
     private final ClientMembersOfGroupMapper membersOfGroupMapper = new ClientMembersOfGroupMapper();
     private final ParentGroupsMapper clientGroupsMapper = new ParentGroupsMapper();
-    
+
     private final AddressReadPlatformService addressReadPlatformService;
+    private final ClientFamilyMembersReadPlatformService clientFamilyMembersReadPlatformService;
     private final ConfigurationReadPlatformService configurationReadPlatformService;
     private final EntityDatatableChecksReadService entityDatatableChecksReadService;
     private final ColumnValidator columnValidator;
@@ -95,21 +102,22 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final OfficeReadPlatformService officeReadPlatformService, final StaffReadPlatformService staffReadPlatformService,
             final CodeValueReadPlatformService codeValueReadPlatformService,
             final SavingsProductReadPlatformService savingsProductReadPlatformService,
-            final AddressReadPlatformService addressReadPlatformService,
+            final AddressReadPlatformService addressReadPlatformService,final ClientFamilyMembersReadPlatformService clientFamilyMembersReadPlatformService,
             final ConfigurationReadPlatformService configurationReadPlatformService,
             final EntityDatatableChecksReadService entityDatatableChecksReadService,
-            final ColumnValidator columnValidator) {
-        this.context = context;
+			final ColumnValidator columnValidator) {
+		this.context = context;
         this.officeReadPlatformService = officeReadPlatformService;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.staffReadPlatformService = staffReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.savingsProductReadPlatformService = savingsProductReadPlatformService;
         this.addressReadPlatformService=addressReadPlatformService;
+        this.clientFamilyMembersReadPlatformService=clientFamilyMembersReadPlatformService;
         this.configurationReadPlatformService=configurationReadPlatformService;
         this.entityDatatableChecksReadService = entityDatatableChecksReadService;
         this.columnValidator = columnValidator;
-    }
+	}
 
     @Override
     public ClientData retrieveTemplate(final Long officeId, final boolean staffInSelectedOfficeOnly) {
@@ -121,16 +129,16 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final Collection<OfficeData> offices = this.officeReadPlatformService.retrieveAllOfficesForDropdown();
 
         final Collection<SavingsProductData> savingsProductDatas = this.savingsProductReadPlatformService.retrieveAllForLookupByType(null);
-        
+
         final GlobalConfigurationPropertyData configuration=this.configurationReadPlatformService.retrieveGlobalConfiguration("Enable-Address");
-        
-        final Boolean isAddressEnabled=configuration.isEnabled(); 
+
+        final Boolean isAddressEnabled=configuration.isEnabled();
         if(isAddressEnabled)
         {
         	 address = this.addressReadPlatformService.retrieveTemplate();
         }
-        
-       
+
+        final ClientFamilyMembersData familyMemberOptions=this.clientFamilyMembersReadPlatformService.retrieveTemplate();
 
         Collection<StaffData> staffOptions = null;
 
@@ -152,13 +160,13 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
         final List<CodeValueData> clientClassificationOptions = new ArrayList<>(
                 this.codeValueReadPlatformService.retrieveCodeValuesByCode(ClientApiConstants.CLIENT_CLASSIFICATION));
-        
+
         final List<CodeValueData> clientNonPersonConstitutionOptions = new ArrayList<>(
                 this.codeValueReadPlatformService.retrieveCodeValuesByCode(ClientApiConstants.CLIENT_NON_PERSON_CONSTITUTION));
-        
+
         final List<CodeValueData> clientNonPersonMainBusinessLineOptions = new ArrayList<>(
                 this.codeValueReadPlatformService.retrieveCodeValuesByCode(ClientApiConstants.CLIENT_NON_PERSON_MAIN_BUSINESS_LINE));
-        
+
         final List<EnumOptionData> clientLegalFormOptions = ClientEnumerations.legalForm(LegalForm.values());
 
         final List<DatatableData> datatableTemplates = this.entityDatatableChecksReadService
@@ -166,8 +174,9 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
 
         return ClientData.template(defaultOfficeId, new LocalDate(), offices, staffOptions, null, genderOptions, savingsProductDatas,
                 clientTypeOptions, clientClassificationOptions, clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions,
-                clientLegalFormOptions,address,isAddressEnabled, datatableTemplates);
-    }
+				clientLegalFormOptions, familyMemberOptions, new ArrayList<AddressData>(Arrays.asList(address)),
+				isAddressEnabled, datatableTemplates);
+	}
 
     @Override
    // @Transactional(readOnly=true)
@@ -186,33 +195,35 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
         sqlBuilder.append(this.clientMapper.schema());
         sqlBuilder.append(" where (o.hierarchy like ? or transferToOffice.hierarchy like ?) ");
-        
-        if(searchParameters.isSelfUser()){
-        	sqlBuilder.append(" and c.id in (select umap.client_id from m_selfservice_user_client_mapping as umap where umap.appuser_id = ? ) ");
-        	paramList.add(appUserID);
-        }
 
-        final String extraCriteria = buildSqlStringFromClientCriteria(this.clientMapper.schema(), searchParameters, paramList);
-        
-        if (StringUtils.isNotBlank(extraCriteria)) {
-            sqlBuilder.append(" and (").append(extraCriteria).append(")");
-        }
+        if(searchParameters!=null) {
+            if (searchParameters.isSelfUser()) {
+                sqlBuilder.append(" and c.id in (select umap.client_id from m_selfservice_user_client_mapping as umap where umap.appuser_id = ? ) ");
+                paramList.add(appUserID);
+            }
 
-        if (searchParameters.isOrderByRequested()) {
-            sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+            final String extraCriteria = buildSqlStringFromClientCriteria(this.clientMapper.schema(), searchParameters, paramList);
 
-            if (searchParameters.isSortOrderProvided()) {
-                sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+            if (StringUtils.isNotBlank(extraCriteria)) {
+                sqlBuilder.append(" and (").append(extraCriteria).append(")");
+            }
+
+            if (searchParameters.isOrderByRequested()) {
+                sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
+                if (searchParameters.isSortOrderProvided()) {
+                    sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+                    this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
+                }
+            }
+
+            if (searchParameters.isLimited()) {
+                sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+                if (searchParameters.isOffset()) {
+                    sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+                }
             }
         }
-
-        if (searchParameters.isLimited()) {
-            sqlBuilder.append(" limit ").append(searchParameters.getLimit());
-            if (searchParameters.isOffset()) {
-                sqlBuilder.append(" offset ").append(searchParameters.getOffset());
-            }
-        }
-
         final String sqlCountRows = "SELECT FOUND_ROWS()";
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), paramList.toArray(), this.clientMapper);
     }
@@ -240,7 +251,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         if (externalId != null) {
-        	paramList.add(ApiParameterHelper.sqlEncodeString(externalId));
+        	paramList.add(externalId);
             extraCriteria += " and c.external_id like ? " ;
         }
 
@@ -251,20 +262,20 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         if (firstname != null) {
-        	paramList.add(ApiParameterHelper.sqlEncodeString(firstname));
+        	paramList.add(firstname);
             extraCriteria += " and c.firstname like ? " ;
         }
 
         if (lastname != null) {
-        	paramList.add(ApiParameterHelper.sqlEncodeString(lastname));
+        	paramList.add(lastname);
             extraCriteria += " and c.lastname like ? ";
         }
 
         if (searchParameters.isScopedByOfficeHierarchy()) {
-        	paramList.add(ApiParameterHelper.sqlEncodeString(searchParameters.getHierarchy() + "%"));
+        	paramList.add(searchParameters.getHierarchy() + "%");
             extraCriteria += " and o.hierarchy like ? ";
         }
-        
+
         if(searchParameters.isOrphansOnly()){
         	extraCriteria += " and c.id NOT IN (select client_id from m_group_client) ";
         }
@@ -306,7 +317,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         if (StringUtils.isNotBlank(extraCriteria)) {
             sql += " and (" + extraCriteria + ")";
             this.columnValidator.validateSqlInjection(sql, extraCriteria);
-        }        
+        }
         return this.jdbcTemplate.query(sql, this.lookupMapper, new Object[] {});
     }
 
@@ -360,6 +371,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             sqlBuilder.append("c.fullname as fullname, c.display_name as displayName, ");
             sqlBuilder.append("c.mobile_no as mobileNo, ");
 			sqlBuilder.append("c.is_staff as isStaff, ");
+			sqlBuilder.append("c.email_address as emailAddress, ");
             sqlBuilder.append("c.date_of_birth as dateOfBirth, ");
             sqlBuilder.append("c.gender_cv_id as genderId, ");
             sqlBuilder.append("cv.code_value as genderValue, ");
@@ -386,7 +398,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             sqlBuilder.append("acu.username as activatedByUsername, ");
             sqlBuilder.append("acu.firstname as activatedByFirstname, ");
             sqlBuilder.append("acu.lastname as activatedByLastname, ");
-            
+
             sqlBuilder.append("cnp.constitution_cv_id as constitutionId, ");
             sqlBuilder.append("cvConstitution.code_value as constitutionValue, ");
             sqlBuilder.append("cnp.incorp_no as incorpNo, ");
@@ -421,7 +433,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         @Override
-        public ClientData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+        public ClientData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
 
             final String accountNo = rs.getString("accountNo");
 
@@ -449,6 +461,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String externalId = rs.getString("externalId");
             final String mobileNo = rs.getString("mobileNo");
 			final boolean isStaff = rs.getBoolean("isStaff");
+			final String emailAddress = rs.getString("emailAddress");
             final LocalDate dateOfBirth = JdbcSupport.getLocalDate(rs, "dateOfBirth");
             final Long genderId = JdbcSupport.getLong(rs, "genderId");
             final String genderValue = rs.getString("genderValue");
@@ -485,22 +498,22 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String activatedByUsername = rs.getString("activatedByUsername");
             final String activatedByFirstname = rs.getString("activatedByFirstname");
             final String activatedByLastname = rs.getString("activatedByLastname");
-            
+
             final Integer legalFormEnum = JdbcSupport.getInteger(rs, "legalFormEnum");
             EnumOptionData legalForm = null;
             if(legalFormEnum != null)
             		legalForm = ClientEnumerations.legalForm(legalFormEnum);
-            
+
             final Long constitutionId = JdbcSupport.getLong(rs, "constitutionId");
             final String constitutionValue = rs.getString("constitutionValue");
             final CodeValueData constitution = CodeValueData.instance(constitutionId, constitutionValue);
             final String incorpNo = rs.getString("incorpNo");
             final LocalDate incorpValidityTill = JdbcSupport.getLocalDate(rs, "incorpValidityTill");
-            final Long mainBusinessLineId = JdbcSupport.getLong(rs, "mainBusinessLineId");            
+            final Long mainBusinessLineId = JdbcSupport.getLong(rs, "mainBusinessLineId");
             final String mainBusinessLineValue = rs.getString("mainBusinessLineValue");
             final CodeValueData mainBusinessLine = CodeValueData.instance(mainBusinessLineId, mainBusinessLineValue);
             final String remarks = rs.getString("remarks");
-            
+
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill, mainBusinessLine, remarks);
 
             final ClientTimelineData timeline = new ClientTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
@@ -508,7 +521,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
-                    firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, dateOfBirth, gender, activationDate,
+                    firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender, activationDate,
                     imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId, clienttype,
                     classification, legalForm, clientNonPerson, isStaff);
 
@@ -544,6 +557,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("c.fullname as fullname, c.display_name as displayName, ");
             builder.append("c.mobile_no as mobileNo, ");
 			builder.append("c.is_staff as isStaff, ");
+			builder.append("c.email_address as emailAddress, ");
             builder.append("c.date_of_birth as dateOfBirth, ");
             builder.append("c.gender_cv_id as genderId, ");
             builder.append("cv.code_value as genderValue, ");
@@ -567,7 +581,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             builder.append("acu.username as activatedByUsername, ");
             builder.append("acu.firstname as activatedByFirstname, ");
             builder.append("acu.lastname as activatedByLastname, ");
-            
+
             builder.append("cnp.constitution_cv_id as constitutionId, ");
             builder.append("cvConstitution.code_value as constitutionValue, ");
             builder.append("cnp.incorp_no as incorpNo, ");
@@ -604,7 +618,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         @Override
-        public ClientData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+        public ClientData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
 
             final String accountNo = rs.getString("accountNo");
 
@@ -632,6 +646,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String externalId = rs.getString("externalId");
             final String mobileNo = rs.getString("mobileNo");
 			final boolean isStaff = rs.getBoolean("isStaff");
+			final String emailAddress = rs.getString("emailAddress");
             final LocalDate dateOfBirth = JdbcSupport.getLocalDate(rs, "dateOfBirth");
             final Long genderId = JdbcSupport.getLong(rs, "genderId");
             final String genderValue = rs.getString("genderValue");
@@ -667,22 +682,22 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
             final String activatedByUsername = rs.getString("activatedByUsername");
             final String activatedByFirstname = rs.getString("activatedByFirstname");
             final String activatedByLastname = rs.getString("activatedByLastname");
-            
+
             final Integer legalFormEnum = JdbcSupport.getInteger(rs, "legalFormEnum");
             EnumOptionData legalForm = null;
             if(legalFormEnum != null)
             		legalForm = ClientEnumerations.legalForm(legalFormEnum);
-            
+
             final Long constitutionId = JdbcSupport.getLong(rs, "constitutionId");
             final String constitutionValue = rs.getString("constitutionValue");
             final CodeValueData constitution = CodeValueData.instance(constitutionId, constitutionValue);
             final String incorpNo = rs.getString("incorpNo");
             final LocalDate incorpValidityTill = JdbcSupport.getLocalDate(rs, "incorpValidityTill");
-            final Long mainBusinessLineId = JdbcSupport.getLong(rs, "mainBusinessLineId");            
+            final Long mainBusinessLineId = JdbcSupport.getLong(rs, "mainBusinessLineId");
             final String mainBusinessLineValue = rs.getString("mainBusinessLineValue");
             final CodeValueData mainBusinessLine = CodeValueData.instance(mainBusinessLineId, mainBusinessLineValue);
             final String remarks = rs.getString("remarks");
-            
+
             final ClientNonPersonData clientNonPerson = new ClientNonPersonData(constitution, incorpNo, incorpValidityTill, mainBusinessLine, remarks);
 
             final ClientTimelineData timeline = new ClientTimelineData(submittedOnDate, submittedByUsername, submittedByFirstname,
@@ -690,7 +705,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return ClientData.instance(accountNo, status, subStatus, officeId, officeName, transferToOfficeId, transferToOfficeName, id,
-                    firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, dateOfBirth, gender, activationDate,
+                    firstname, middlename, lastname, fullname, displayName, externalId, mobileNo, emailAddress, dateOfBirth, gender, activationDate,
                     imageId, staffId, staffName, timeline, savingsProductId, savingsProductName, savingsAccountId, clienttype,
                     classification, legalForm, clientNonPerson, isStaff);
 
@@ -705,7 +720,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         @Override
-        public GroupGeneralData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+        public GroupGeneralData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
 
             final Long groupId = JdbcSupport.getLong(rs, "groupId");
             final String groupName = rs.getString("groupName");
@@ -735,7 +750,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         @Override
-        public ClientData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+        public ClientData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
 
             final Long id = rs.getLong("id");
             final String displayName = rs.getString("displayName");
@@ -769,7 +784,7 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         }
 
         @Override
-        public ClientData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+        public ClientData mapRow(final ResultSet rs, final int rowNum) throws SQLException {
 
             final Long id = rs.getLong("id");
             final String accountNo = rs.getString("accountNo");
@@ -803,8 +818,29 @@ public class ClientReadPlatformServiceImpl implements ClientReadPlatformService 
         final Collection<CodeValueData> clientNonPersonConstitutionOptions = null;
         final Collection<CodeValueData> clientNonPersonMainBusinessLineOptions = null;
         final List<EnumOptionData> clientLegalFormOptions = null;
-        return ClientData.template(null, null, null, null, narrations, null, null, clientTypeOptions, clientClassificationOptions, 
-        		clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions, clientLegalFormOptions,null,null, null);
+        return ClientData.template(null, null, null, null, narrations, null, null, clientTypeOptions, clientClassificationOptions,
+        		clientNonPersonConstitutionOptions, clientNonPersonMainBusinessLineOptions, clientLegalFormOptions,null,null,null, null);
     }
+
+	@Override
+	public Date retrieveClientTransferProposalDate(Long clientId) {
+		validateClient(clientId);
+		final String sql = "SELECT cl.proposed_transfer_date FROM m_client cl WHERE cl.id =? ";
+		try {
+			return this.jdbcTemplate.queryForObject(sql, Date.class, clientId);
+		} catch (final EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	@Override
+	public void validateClient(Long clientId) {
+		try {
+			final String sql = "SELECT cl.id FROM m_client cl WHERE cl.id =? ";
+			this.jdbcTemplate.queryForObject(sql, Long.class, clientId);
+		} catch (final EmptyResultDataAccessException e) {
+			throw new ClientNotFoundException(clientId);
+		}
+	}
 
 }
