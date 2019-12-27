@@ -40,8 +40,8 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanTrancheDisbursementC
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.exception.LoanProductNotFoundException;
-import org.apache.fineract.portfolio.servicecharge.constants.ServiceChargeApiConstants;
-import org.apache.fineract.portfolio.servicecharge.service.ServiceChargeCalculationPlatformService;
+import org.ideoholic.fineract.servicecharge.constants.ServiceChargeApiConstants;
+import org.ideoholic.fineract.servicecharge.service.ServiceChargeCalculationPlatformService;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
