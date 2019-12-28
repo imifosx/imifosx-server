@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
+import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountApplicationTimelineData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountStatusEnumData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountSubStatusEnumData;
@@ -69,5 +70,13 @@ public class SavingsAccountSummaryData {
         this.depositType = depositType;
         this.subStatus = subStatus;
         this.lastActiveTransactionDate = lastActiveTransactionDate;
+    }
+
+    public String getAccountNumber() {
+        return accountNo;
+    }
+
+    public SavingsAccountStatusEnumData getStatus() {
+        return status;
     }
 }

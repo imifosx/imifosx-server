@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
+import org.apache.fineract.portfolio.shareaccounts.data.ShareAccountStatusEnumData;
 
 /**
  * Immutable data object for loan accounts.
@@ -62,5 +63,13 @@ public class LoanAccountSummaryData {
         this.loanBalance = loanBalance;
         this.originalLoan = originalLoan;
         this.amountPaid = amountPaid;
+    }
+
+    public String getAccountNumber() {
+        return accountNo;
+    }
+
+    public LoanStatusEnumData getStatus() {
+        return status;
     }
 }

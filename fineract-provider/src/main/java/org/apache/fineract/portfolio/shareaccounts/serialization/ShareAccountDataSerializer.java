@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.shareaccounts.serialization;
 
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +63,12 @@ import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountStatusType
 import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountTransaction;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProduct;
 import org.apache.fineract.portfolio.shareproducts.domain.ShareProductRepositoryWrapper;
+import org.apache.fineract.portfolio.accountdetails.data.AccountSummaryCollectionData;
+import org.apache.fineract.portfolio.accountdetails.data.LoanAccountSummaryData;
+import org.apache.fineract.portfolio.accountdetails.data.SavingsAccountSummaryData;
+import org.apache.fineract.portfolio.accountdetails.data.ShareAccountSummaryData;
+import org.apache.fineract.portfolio.accountdetails.service.AccountDetailsReadPlatformService;
+import org.ideoholic.fineract.share.ShareLimitingService;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
@@ -91,6 +98,10 @@ public class ShareAccountDataSerializer {
 
     private final SavingsAccountReadPlatformService savingsAccountReadPlatformService ;
 
+    private final AccountDetailsReadPlatformService accountDetailsReadPlatformService;
+
+    private final ShareLimitingService shareLimitingService;
+
     private static final Set<String> approvalParameters = new HashSet<>(Arrays.asList(ShareAccountApiConstants
                     .locale_paramname,
             ShareAccountApiConstants.dateformat_paramname, ShareAccountApiConstants.approveddate_paramname,
@@ -115,7 +126,8 @@ public class ShareAccountDataSerializer {
     public ShareAccountDataSerializer(final PlatformSecurityContext platformSecurityContext, final FromJsonHelper fromApiJsonHelper,
             final ChargeRepositoryWrapper chargeRepository, final SavingsAccountRepositoryWrapper savingsAccountRepositoryWrapper,
             final ClientRepositoryWrapper clientRepositoryWrapper, final ShareProductRepositoryWrapper shareProductRepository,
-            final SavingsAccountReadPlatformService savingsAccountReadPlatformService) {
+            final SavingsAccountReadPlatformService savingsAccountReadPlatformService,
+            final AccountDetailsReadPlatformService accountDetailsReadPlatformService, ShareLimitingService shareLimitingService) {
         this.platformSecurityContext = platformSecurityContext;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.chargeRepository = chargeRepository;
@@ -123,6 +135,7 @@ public class ShareAccountDataSerializer {
         this.clientRepositoryWrapper = clientRepositoryWrapper;
         this.shareProductRepository = shareProductRepository;
         this.savingsAccountReadPlatformService = savingsAccountReadPlatformService ;
+        this.accountDetailsReadPlatformService = accountDetailsReadPlatformService;
     }
 
     public ShareAccount validateAndCreate(JsonCommand jsonCommand) {
@@ -492,6 +505,7 @@ public class ShareAccountDataSerializer {
             baseDataValidator.reset().parameter(ShareAccountApiConstants.requestedshares_paramname).value(requested)
             .failWithCodeNoParameterAddedToErrorCode("shares.requested.can.not.be.approved.exceeding.totalshares.issuable");
         }
+        shareLimitingService.validateSharesSubscriptionWithPaidupCapital(account, transaction, baseDataValidator);
     }
     private void updateTotalChargeDerived(final ShareAccount shareAccount) {
         // Set<ShareAccountCharge> charges = shareAccount.getCharges() ;
@@ -858,6 +872,7 @@ public class ShareAccountDataSerializer {
                     .value(redeemTransaction.getTotalShares())
                     .failWithCodeNoParameterAddedToErrorCode("cannot.be.redeemed.due.to.insufficient.shares");
         }
+        shareLimitingService.validateSharesRedemptionWithPaidupCapital(account, redeemTransaction, baseDataValidator);
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
         
         LocalDate redeemDate = new LocalDate(redeemTransaction.getPurchasedDate());
@@ -982,7 +997,7 @@ public class ShareAccountDataSerializer {
             .value(closedDate)
             .failWithCodeNoParameterAddedToErrorCode("share.account.cannot.be.closed.before.existing.transactions");
         }
-        
+        validateIfAllOtherSavingsAndLoansAreClosed(account);
         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
         
         AppUser approvedUser = this.platformSecurityContext.authenticatedUser();
@@ -994,5 +1009,42 @@ public class ShareAccountDataSerializer {
         handleRedeemSharesChargeTransactions(account, transaction);
         actualChanges.put(ShareAccountApiConstants.requestedshares_paramname, transaction);
         return actualChanges;
+    }
+
+    private void validateIfAllOtherSavingsAndLoansAreClosed(ShareAccount account) {
+        final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+        final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors).resource("sharesaccount");
+         Long clientId = account.getClientId();
+         final AccountSummaryCollectionData clientAccount = this.accountDetailsReadPlatformService.retrieveClientAccountDetails(clientId);
+
+         Collection<ShareAccountSummaryData> shareAccounts = clientAccount.getShareAccounts();
+         for (ShareAccountSummaryData shareAccount : shareAccounts) {
+                // This is not the share account that is being testing and it is not closed
+                        if(!shareAccount.getStatus().isClosed()
+                                        && !shareAccount.getAccountNo().equalsIgnoreCase(account.getAccountNumber())) {
+                                // If here then there is another share account and this one can be safely closed
+                                // No further condition check required
+                                return;
+                        }
+                }
+         // If there are any open loans then the share account cannot be closed
+         Collection<LoanAccountSummaryData> loanAccounts = clientAccount.getLoanAccounts();
+         for (LoanAccountSummaryData loanAccount : loanAccounts) {
+                        if(!loanAccount.getStatus().isClosed()) {
+                                baseDataValidator.reset().parameter("Account Name").value(loanAccount.getAccountNumber())
+                                .failWithCodeNoParameterAddedToErrorCode("share.account.cannot.be.closed.before.closing.existing.loan", "Share account cannot be closed before closing existing loan account");
+                                break;
+                        }
+                }
+      // If there are any open loans then the share account cannot be closed
+         Collection<SavingsAccountSummaryData> savingsAccounts = clientAccount.getSavingsAccounts();
+         for (SavingsAccountSummaryData savingsAccount : savingsAccounts) {
+                        if(!savingsAccount.getStatus().isClosed()) {
+                                baseDataValidator.reset().parameter("Account Name").value(savingsAccount.getAccountNumber())
+                                .failWithCodeNoParameterAddedToErrorCode("share.account.cannot.be.closed.before.closing.existing.savings", "Share account cannot be closed before closing existing savings account");
+                                break;
+                        }
+                }
+         if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
     }
 }

@@ -90,4 +90,8 @@ public class AccountSummaryCollectionData {
         }
         return returnCollection;
     }
+
+    public Collection<ShareAccountSummaryData> getShareAccounts() { return shareAccounts; }
+    public Collection<LoanAccountSummaryData> getLoanAccounts(){ return loanAccounts; }
+    public Collection<SavingsAccountSummaryData> getSavingsAccounts(){ return savingsAccounts; }
 }

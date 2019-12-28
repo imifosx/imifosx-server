@@ -65,9 +65,11 @@ public class ShareAccountSummaryData {
 		this.timeline = timeline;
 	}
 
-    
     public String getAccountNo() {
         return this.accountNo;
     }
 
+    public ShareAccountStatusEnumData getStatus() {
+        return status;
+    }
 }
