@@ -136,6 +136,7 @@ public class ShareAccountDataSerializer {
         this.shareProductRepository = shareProductRepository;
         this.savingsAccountReadPlatformService = savingsAccountReadPlatformService ;
         this.accountDetailsReadPlatformService = accountDetailsReadPlatformService;
+        this.shareLimitingService = shareLimitingService;
     }
 
     public ShareAccount validateAndCreate(JsonCommand jsonCommand) {
