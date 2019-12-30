@@ -58,7 +58,7 @@ public class ServiceChargeDateRangeFactory implements ServiceChargeApiConstants 
         String scCalcMethodSystemParam = System.getenv(SC_CALCULATION_METHOD + tenantIdentifier);
         if (null != scCalcMethodSystemParam) {
             scCalcMethodSystemParam = scCalcMethodSystemParam.trim().toUpperCase();
-        }else {
+        } else {
             scCalcMethodSystemParam = "MONTHLY";
         }
 
@@ -78,8 +78,8 @@ public class ServiceChargeDateRangeFactory implements ServiceChargeApiConstants 
         return q;
     }
 
-    public static void setQuarterAndYear(String quarter, int year) {
-        MonthYearHolder.setMonthAndYear(quarter, year);
+    public static void setMonthAndYear(String month, int year) {
+        MonthYearHolder.setMonthAndYear(month, year);
     }
 
     public static boolean checkIfGivenDateIsInCurrentQuarter(Date date) {
@@ -90,11 +90,11 @@ public class ServiceChargeDateRangeFactory implements ServiceChargeApiConstants 
         if ((date.equals(fromDate) || date.after(fromDate)) && (date.before(toDate) || date.equals(toDate))) { return true; }
         return false;
     }
-    
+
     private static void clearSCDateRangeInstance() {
         scDateRangeInstance = null;
     }
-    
+
     private static class MonthYearHolder {
 
         private static String month = StringUtils.EMPTY;
@@ -109,27 +109,21 @@ public class ServiceChargeDateRangeFactory implements ServiceChargeApiConstants 
         static ServiceChargeDateRange getCurrentMonth() {
             logger.debug("MonthYearHolder.getCurrentQuarter: month::" + month + " year::" + year);
             ServiceChargeDateRange q = null;
-            if (month != null && !month.isEmpty()) {
-                q = MonthlyServiceChargeDateRange.getCurrentMonth(month, year);
-            }
+            q = MonthlyServiceChargeDateRange.getCurrentMonth(month, year);
             return q;
         }
 
         static ServiceChargeDateRange getCurrentQuarter() {
             logger.debug("MonthYearHolder.getCurrentQuarter: month::" + month + " year::" + year);
             ServiceChargeDateRange q = null;
-            if (month != null && !month.isEmpty()) {
-                q = QuarterlyServiceChargeDateRange.getCurrentQuarter(month, year);
-            }
+            q = QuarterlyServiceChargeDateRange.getCurrentQuarter(month, year);
             return q;
         }
 
         static ServiceChargeDateRange getCurrentYear() {
             logger.debug("MonthYearHolder.getCurrentQuarter: month::" + month + " year::" + year);
             ServiceChargeDateRange q = null;
-            if (month != null && !month.isEmpty()) {
-                q = YearlyServiceChargeDateRange.getCurrentYear(month, year);
-            }
+            q = YearlyServiceChargeDateRange.getCurrentYear(month, year);
             return q;
         }
 

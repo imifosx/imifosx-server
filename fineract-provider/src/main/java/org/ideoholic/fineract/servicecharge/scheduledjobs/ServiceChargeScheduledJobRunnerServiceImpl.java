@@ -70,7 +70,7 @@ public class ServiceChargeScheduledJobRunnerServiceImpl implements ServiceCharge
 
         ServiceChargeDateRange quarter = ServiceChargeDateRangeFactory.getCurrentDateRange();
         int year = Calendar.getInstance().get(Calendar.YEAR);
-        ServiceChargeDateRangeFactory.setQuarterAndYear(quarter.getName(), year);
+        ServiceChargeDateRangeFactory.setMonthAndYear(quarter.getName(), year);
 
         ServiceChargeData serviceCharge = ServiceChargeOperationUtils.getServiceChargeForCurrentQuarter(scChargeReadPlatformService);
         if (serviceCharge != null) {

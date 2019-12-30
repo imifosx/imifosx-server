@@ -126,7 +126,7 @@ public class ServiceChargeApiResource {
             @QueryParam("year") final int year, @QueryParam("table") final boolean displayTable) {
         String result = null;
         ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
-        ServiceChargeDateRangeFactory.setQuarterAndYear(quarter, year);
+        ServiceChargeDateRangeFactory.setMonthAndYear(quarter, year);
         scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
         if (!displayTable) {
             result = finalSheetData.getResultsDataMap().toString();
@@ -142,7 +142,7 @@ public class ServiceChargeApiResource {
     @Path("recalculateServiceCharge")
     @Consumes({ MediaType.APPLICATION_JSON })
     public String recalculateServiceCharge(@QueryParam("quarter") final String quarter, @QueryParam("year") final int year) {
-        ServiceChargeDateRangeFactory.setQuarterAndYear(quarter, year);
+        ServiceChargeDateRangeFactory.setMonthAndYear(quarter, year);
         scCalculator.recalculateServiceChargeForAllLoans();
         return "Service Recalculation for the given quarter: " + quarter + " year: " + year + " completed";
     }
