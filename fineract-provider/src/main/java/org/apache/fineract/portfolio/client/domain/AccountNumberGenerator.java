@@ -25,10 +25,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatEnumerations.AccountNumberPrefixType;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccount;
+import org.ideoholic.fineract.util.DatabaseUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,6 +46,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class AccountNumberGenerator {
 
+    private final JdbcTemplate jdbcTemplate;
+
     private final static int maxLength = 9;
 
     private final static String ID = "id";
@@ -46,11 +55,18 @@ public class AccountNumberGenerator {
     private final static String OFFICE_NAME = "officeName";
     private final static String LOAN_PRODUCT_SHORT_NAME = "loanProductShortName";
     private final static String SAVINGS_PRODUCT_SHORT_NAME = "savingsProductShortName";
-    private final static String SHARE_PRODUCT_SHORT_NAME = "sharesProductShortName" ;
-    
+    private final static String SHARE_PRODUCT_SHORT_NAME = "sharesProductShortName";
+
+    @Autowired
+    public AccountNumberGenerator(final RoutingDataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
     public String generate(Client client, AccountNumberFormat accountNumberFormat) {
         Map<String, String> propertyMap = new HashMap<>();
-        propertyMap.put(ID, client.getId().toString());
+        // propertyMap.put(ID, client.getId().toString());
+        Long generatedId = DatabaseUtils.getNextIdForClient(this.jdbcTemplate) + 1;
+        propertyMap.put(ID, generatedId.toString());
         propertyMap.put(OFFICE_NAME, client.getOffice().getName());
         CodeValue clientType = client.clientType();
         if (clientType != null) {
@@ -61,7 +77,9 @@ public class AccountNumberGenerator {
 
     public String generate(Loan loan, AccountNumberFormat accountNumberFormat) {
         Map<String, String> propertyMap = new HashMap<>();
-        propertyMap.put(ID, loan.getId().toString());
+        // propertyMap.put(ID, loan.getId().toString());
+        Long generatedId = DatabaseUtils.getNextIdForLoan(this.jdbcTemplate) + 1;
+        propertyMap.put(ID, generatedId.toString());
         propertyMap.put(OFFICE_NAME, loan.getOffice().getName());
         propertyMap.put(LOAN_PRODUCT_SHORT_NAME, loan.loanProduct().getShortName());
         return generateAccountNumber(propertyMap, accountNumberFormat);
@@ -69,19 +87,23 @@ public class AccountNumberGenerator {
 
     public String generate(SavingsAccount savingsAccount, AccountNumberFormat accountNumberFormat) {
         Map<String, String> propertyMap = new HashMap<>();
-        propertyMap.put(ID, savingsAccount.getId().toString());
+        // propertyMap.put(ID, savingsAccount.getId().toString());
+        Long generatedId = DatabaseUtils.getNextIdForSavings(this.jdbcTemplate) + 1;
+        propertyMap.put(ID, generatedId.toString());
         propertyMap.put(OFFICE_NAME, savingsAccount.office().getName());
         propertyMap.put(SAVINGS_PRODUCT_SHORT_NAME, savingsAccount.savingsProduct().getShortName());
         return generateAccountNumber(propertyMap, accountNumberFormat);
     }
 
     public String generate(ShareAccount shareaccount, AccountNumberFormat accountNumberFormat) {
-    	Map<String, String> propertyMap = new HashMap<>();
-    	propertyMap.put(ID, shareaccount.getId().toString());
-    	propertyMap.put(SHARE_PRODUCT_SHORT_NAME, shareaccount.getShareProduct().getShortName());
-    	return generateAccountNumber(propertyMap, accountNumberFormat) ;
+        Map<String, String> propertyMap = new HashMap<>();
+        // propertyMap.put(ID, shareaccount.getId().toString());
+        Long generatedId = DatabaseUtils.getNextIdForShare(this.jdbcTemplate) + 1;
+        propertyMap.put(ID, generatedId.toString());
+        propertyMap.put(SHARE_PRODUCT_SHORT_NAME, shareaccount.getShareProduct().getShortName());
+        return generateAccountNumber(propertyMap, accountNumberFormat);
     }
-    
+
     private String generateAccountNumber(Map<String, String> propertyMap, AccountNumberFormat accountNumberFormat) {
         String accountNumber = StringUtils.leftPad(propertyMap.get(ID), AccountNumberGenerator.maxLength, '0');
         if (accountNumberFormat != null && accountNumberFormat.getPrefixEnum() != null) {
@@ -110,7 +132,8 @@ public class AccountNumberGenerator {
             }
 
             // FINERACT-590
-            // Because account_no is limited to 20 chars, we can only use the first 10 chars of prefix - trim if necessary
+            // Because account_no is limited to 20 chars, we can only use the
+            // first 10 chars of prefix - trim if necessary
             if (prefix != null) {
                 prefix = prefix.substring(0, Math.min(prefix.length(), 10));
             }
@@ -119,20 +142,21 @@ public class AccountNumberGenerator {
         }
         return accountNumber;
     }
-    
+
     public String generateGroupAccountNumber(Group group, AccountNumberFormat accountNumberFormat) {
-    	Map<String, String> propertyMap = new HashMap<>();
-        propertyMap.put(ID, group.getId().toString());
-        propertyMap.put(OFFICE_NAME, group.getOffice().getName());        
-        return generateAccountNumber(propertyMap, accountNumberFormat);
-    }
-    
-    public String generateCenterAccountNumber(Group group, AccountNumberFormat accountNumberFormat) {
-    	Map<String, String> propertyMap = new HashMap<>();
-        propertyMap.put(ID, group.getId().toString());
-        propertyMap.put(OFFICE_NAME, group.getOffice().getName());        
+        Map<String, String> propertyMap = new HashMap<>();
+        // propertyMap.put(ID, group.getId().toString());
+        Long generatedId = DatabaseUtils.getNextIdForGroup(this.jdbcTemplate) + 1;
+        propertyMap.put(ID, generatedId.toString());
+        propertyMap.put(OFFICE_NAME, group.getOffice().getName());
         return generateAccountNumber(propertyMap, accountNumberFormat);
     }
 
+    public String generateCenterAccountNumber(Group group, AccountNumberFormat accountNumberFormat) {
+        Map<String, String> propertyMap = new HashMap<>();
+        propertyMap.put(ID, group.getId().toString());
+        propertyMap.put(OFFICE_NAME, group.getOffice().getName());
+        return generateAccountNumber(propertyMap, accountNumberFormat);
+    }
 
 }
