@@ -65,7 +65,7 @@ public class AccountNumberGenerator {
     public String generate(Client client, AccountNumberFormat accountNumberFormat) {
         Map<String, String> propertyMap = new HashMap<>();
         // propertyMap.put(ID, client.getId().toString());
-        Long generatedId = DatabaseUtils.getNextIdForClient(this.jdbcTemplate) + 1;
+        Long generatedId = DatabaseUtils.getNextIdForClient(this.jdbcTemplate);
         propertyMap.put(ID, generatedId.toString());
         propertyMap.put(OFFICE_NAME, client.getOffice().getName());
         CodeValue clientType = client.clientType();
