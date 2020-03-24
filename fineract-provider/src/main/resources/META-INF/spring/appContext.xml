@@ -60,7 +60,7 @@
 										  org.apache.fineract.batch,
 										  org.apache.fineract.adhocquery.*,
 										  org.apache.fineract.infrastructure.campaigns.**,
-										  org.mifosplatform.infrastructure.report.service.*,
+										  org.mifosplatform.infrastructure.report.service.**,
 										  org.ideoholic.fineract.**">
 		<context:exclude-filter expression="org.springframework.stereotype.Controller"
 			type="annotation" />
