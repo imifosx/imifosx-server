@@ -63,7 +63,7 @@ public class ClientToAccountingHeaderTransferApiResource {
 	@ApiImplicitParams({
 			@ApiImplicitParam(paramType = "body", value = "body", dataType = "body", dataTypeClass = TransferEntryCommand.class) })
 	@ApiResponses({
-			@ApiResponse(code = 200, message = "", response = TransferEntriesApiResourceSwagger.PostJournalEntriesResponse.class) })
+			@ApiResponse(code = 200, message = "") })
 	public String createGLJournalEntry(@ApiParam(hidden = true) final String jsonRequestBody) {
 		System.out.println("jsonRequestBody:" + jsonRequestBody);
 		String result = null;

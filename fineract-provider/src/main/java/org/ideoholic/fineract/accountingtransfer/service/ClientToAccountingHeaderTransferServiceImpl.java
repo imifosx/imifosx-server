@@ -42,7 +42,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.ideoholic.fineract.accountingtransfer.command.JECommand;
+import org.ideoholic.fineract.commands.JECommand;
 import org.ideoholic.fineract.commands.JEDebitCreditEntryCommand;
 import org.ideoholic.fineract.commands.TransferDebitCreditEntryCommand;
 import org.ideoholic.fineract.commands.TransferEntryCommand;
