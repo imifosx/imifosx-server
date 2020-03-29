@@ -50,11 +50,6 @@ import org.springframework.stereotype.Component;
 @Scope("singleton")
 public class ServiceChargeApiResource {
 
-    private final Set<String> CHARGES_DATA_PARAMETERS = new HashSet<>(Arrays.asList("id", "name", "amount", "currency", "active",
-            "chargeAppliesTo", "chargeTimeType", "chargeCalculationType", "chargeCalculationTypeOptions", "chargeAppliesToOptions",
-            "chargeTimeTypeOptions", "currencyOptions", "loanChargeCalculationTypeOptions", "loanChargeTimeTypeOptions", "incomeAccount",
-            "clientChargeCalculationTypeOptions", "clientChargeTimeTypeOptions"));
-
     private final ServiceChargeInstallmentCalculatorService scCalculator;
     private final ServiceChargeCalculationPlatformService serviceChargeCalculator;
     private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
