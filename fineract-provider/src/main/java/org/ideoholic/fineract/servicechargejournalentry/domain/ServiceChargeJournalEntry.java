@@ -47,7 +47,7 @@ public class ServiceChargeJournalEntry extends AbstractAuditableCustom<AppUser, 
 	private static final long serialVersionUID = 764856345295446081L;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "gl_transaction_id", nullable = false)
+	@JoinColumn(name = "journal_entry_id", nullable = false)
 	private JournalEntry journalEntry;
 
 	@ManyToOne
