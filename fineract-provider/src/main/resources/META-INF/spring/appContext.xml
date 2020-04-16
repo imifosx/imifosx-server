@@ -90,6 +90,7 @@
 	<jpa:repositories base-package="org.apache.fineract.notification.domain"/>
 	<jpa:repositories base-package="org.apache.fineract.infrastructure.campaigns.email.domain"/>
 	<jpa:repositories base-package="org.apache.fineract.interoperation.domain"/>
+	<jpa:repositories base-package="org.ideoholic.fineract.*.domain"/>
 
 
 	<import resource="infrastructure.xml" />
