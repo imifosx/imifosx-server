@@ -20,8 +20,9 @@ package org.ideoholic.fineract.servicecharge.service;
 
 public interface ServiceChargeInstallmentCalculatorService {
 
-    void recalculateServiceChargeForGivenLoan(Long loanId, Long loanChargeId);
+	void recalculateServiceChargeForGivenLoan(final Long loanId, final Long loanChargeId,
+			final boolean useDirectJournalEntries);
 
-    void recalculateServiceChargeForAllLoans();
+	void recalculateServiceChargeForAllLoans(final boolean useDirectJournalEntries);
 
 }

@@ -24,40 +24,38 @@ import org.ideoholic.fineract.util.daterange.ServiceChargeDateRange;
 
 public interface ServiceChargeCalculationPlatformService {
 
-    /**
-     * Service charge calculation method for a given loan, with the loan being
-     * already saved and is currently active and functional
-     * 
-     * @param loanId
-     *            - Loan ID for which the Service Charge needs to be calculated
-     * @return Service Charge
-     */
-    BigDecimal calculateServiceChargeForLoan(Long loanId);
+	/**
+	 * Service charge calculation method for a given loan, with the loan being
+	 * already saved and is currently active and functional
+	 *
+	 * @param loanId - Loan ID for which the Service Charge needs to be calculated
+	 * @return Service Charge
+	 */
+	BigDecimal calculateServiceChargeForLoan(Long loanId, boolean useDirectJournalEntries);
 
-    /**
-     * Service charge calculation method for a given loan and for the given
-     * quarter and year, with the loan being already saved and is currently
-     * active and functional.
-     * 
-     * @param loanId
-     *            - Loan ID for which the Service Charge needs to be calculated
-     * @param quarter
-     *            - Quarter to be considered for calculation
-     * @param year
-     *            - Year to be considered for the calculation
-     * @return Service Charge
-     */
-    BigDecimal calculateServiceChargeForLoan(Long loanId, ServiceChargeDateRange quarter, int year);
+	/**
+	 * Service charge calculation method for a given loan and for the given quarter
+	 * and year, with the loan being already saved and is currently active and
+	 * functional.
+	 *
+	 * @param loanId  - Loan ID for which the Service Charge needs to be calculated
+	 * @param quarter - Quarter to be considered for calculation
+	 * @param year    - Year to be considered for the calculation
+	 * @return Service Charge
+	 */
+	BigDecimal calculateServiceChargeForLoan(Long loanId, ServiceChargeDateRange quarter, int year,
+			boolean useDirectJournalEntries);
 
-    /**
-     * Service charge calculation method for a given loan, when the loan is yet
-     * being disbursed and hence only the principal amount is known. It assumes
-     * that the loan is disbursed, no repayments yet made and principal amount
-     * is the outstanding amount of the loan.
-     * 
-     * @param principal
-     * @param numberOfRepayments
-     * @return Service Charge - Computed value for the given principal amount
-     */
-    BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer numberOfRepayments);
+	/**
+	 * Service charge calculation method for a given loan, when the loan is yet
+	 * being disbursed and hence only the principal amount is known. It assumes that
+	 * the loan is disbursed, no repayments yet made and principal amount is the
+	 * outstanding amount of the loan.
+	 *
+	 * @param principal
+	 * @param numberOfRepayments
+	 * @return Service Charge - Computed value for the given principal amount
+	 */
+	BigDecimal calculateServiceChargeForPrincipal(BigDecimal principal, Integer numberOfRepayments,
+			boolean useDirectJournalEntries);
 }
