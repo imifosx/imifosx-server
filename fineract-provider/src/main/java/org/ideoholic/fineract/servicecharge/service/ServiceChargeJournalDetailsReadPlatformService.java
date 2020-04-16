@@ -27,5 +27,6 @@ public interface ServiceChargeJournalDetailsReadPlatformService {
 	BigDecimal FOUR = new BigDecimal(4);
 
 	// Add Journal related Service Charge methods here
-	ServiceChargeFinalSheetData generatefinalSheetData(ServiceChargeFinalSheetData finalSheetData);
+	ServiceChargeFinalSheetData generatefinalSheetData(ServiceChargeFinalSheetData finalSheetData,
+			boolean useDirectJournalEntries);
 }

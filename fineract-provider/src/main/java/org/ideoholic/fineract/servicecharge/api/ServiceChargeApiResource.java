@@ -19,9 +19,6 @@
 package org.ideoholic.fineract.servicecharge.api;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -31,6 +28,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 
 import org.ideoholic.fineract.servicecharge.constants.ServiceChargeApiConstants;
@@ -50,95 +48,111 @@ import org.springframework.stereotype.Component;
 @Scope("singleton")
 public class ServiceChargeApiResource {
 
-    private final ServiceChargeInstallmentCalculatorService scCalculator;
-    private final ServiceChargeCalculationPlatformService serviceChargeCalculator;
-    private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
-    @Autowired
-    private ApplicationContext appContext;
+	private final ServiceChargeInstallmentCalculatorService scCalculator;
+	private final ServiceChargeCalculationPlatformService serviceChargeCalculator;
+	private final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService;
+	@Autowired
+	private ApplicationContext appContext;
 
-    @Autowired
-    public ServiceChargeApiResource(final ServiceChargeInstallmentCalculatorService scCalculator,
-            final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
-            final ServiceChargeCalculationPlatformService serviceChargeCalculator) {
-        this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
-        this.serviceChargeCalculator = serviceChargeCalculator;
-        this.scCalculator = scCalculator;
-    }
+	@Autowired
+	public ServiceChargeApiResource(final ServiceChargeInstallmentCalculatorService scCalculator,
+			final ServiceChargeJournalDetailsReadPlatformService scJournalDetailsReadPlatformService,
+			final ServiceChargeCalculationPlatformService serviceChargeCalculator) {
+		this.scJournalDetailsReadPlatformService = scJournalDetailsReadPlatformService;
+		this.serviceChargeCalculator = serviceChargeCalculator;
+		this.scCalculator = scCalculator;
+	}
 
-    @GET
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveServiceCharge(@Context final UriInfo uriInfo) {
-        ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
-        scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
+	@GET
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String retrieveServiceCharge(@Context final UriInfo uriInfo) {
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext
+				.getBean("serviceChargeFinalSheetData");
 
-        BigDecimal disbursmentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
-        BigDecimal mobilizationCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I, 0);
-        BigDecimal repaymentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
+		final MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		boolean useDirectJournalEntries = queryParams.get("useJournalEntries") != null;
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData, useDirectJournalEntries);
 
-        StringBuffer result = new StringBuffer();
-        result.append("{");
-        result.append("Disbursement:").append(disbursmentCost.toPlainString());
-        result.append(",");
-        result.append("Mobilisation:").append(mobilizationCost.toPlainString());
-        result.append(",");
-        result.append("Repayment:").append(repaymentCost.toPlainString());
-        result.append("}");
-        return result.toString();
-    }
+		BigDecimal disbursmentCost = finalSheetData
+				.getColumnValue(ServiceChargeReportTableHeaders.LOAN_SERVICING_PER_LOAN, 0);
+		BigDecimal mobilizationCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.ANNUALIZED_COST_I,
+				0);
+		BigDecimal repaymentCost = finalSheetData.getColumnValue(ServiceChargeReportTableHeaders.REPAYMENT_PER_100, 0);
 
-    @GET
-    @Path("{loandId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public String retrieveServiceChargeForGivenLoan(@PathParam("loandId") final Long loanId, @Context final UriInfo uriInfo) {
-        BigDecimal serviceCharge = serviceChargeCalculator.calculateServiceChargeForLoan(loanId);
+		StringBuffer result = new StringBuffer();
+		result.append("{");
+		result.append("Disbursement:").append(disbursmentCost.toPlainString());
+		result.append(",");
+		result.append("Mobilisation:").append(mobilizationCost.toPlainString());
+		result.append(",");
+		result.append("Repayment:").append(repaymentCost.toPlainString());
+		result.append("}");
+		return result.toString();
+	}
 
-        return serviceCharge.toPlainString();
-    }
+	@GET
+	@Path("{loandId}")
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String retrieveServiceChargeForGivenLoan(@PathParam("loandId") final Long loanId,
+			@Context final UriInfo uriInfo) {
+		final MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		boolean useDirectJournalEntries = queryParams.get("useJournalEntries") != null;
+		BigDecimal serviceCharge = serviceChargeCalculator.calculateServiceChargeForLoan(loanId,
+				useDirectJournalEntries);
 
-    @GET
-    @Path("getJournalEntries")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("table") final boolean displayTable) {
-        String result = null;
-        ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
-        scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
-        if (!displayTable) {
-            result = finalSheetData.getResultsDataMap().toString();
-        } else {
-            result = finalSheetData.generateResultAsHTMLTable(false).toString();
-        }
-        return result;
-    }
+		return serviceCharge.toPlainString();
+	}
 
-    @GET
-    @Path("getQuarterJournalEntries")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("quarter") final String quarter,
-            @QueryParam("year") final int year, @QueryParam("table") final boolean displayTable) {
-        String result = null;
-        ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext.getBean("serviceChargeFinalSheetData");
-        ServiceChargeDateRangeFactory.setMonthAndYear(quarter, year);
-        scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData);
-        if (!displayTable) {
-            result = finalSheetData.getResultsDataMap().toString();
-        } else {
-            result = finalSheetData.generateResultAsHTMLTable(false).toString();
-            result = result.replace("\"", "'");
-        }
-        result = "{\"html\":\"" + result + "\"}";
-        return result;
-    }
+	@GET
+	@Path("getServiceChargeTable")
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("table") final boolean displayTable,
+			@QueryParam("useJournalEntries") final boolean useDirectJournalEntries) {
+		String result = null;
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext
+				.getBean("serviceChargeFinalSheetData");
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData, useDirectJournalEntries);
+		if (!displayTable) {
+			result = finalSheetData.getResultsDataMap().toString();
+		} else {
+			result = finalSheetData.generateResultAsHTMLTable(false).toString();
+		}
+		return result;
+	}
 
-    @GET
-    @Path("recalculateServiceCharge")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    public String recalculateServiceCharge(@QueryParam("quarter") final String quarter, @QueryParam("year") final int year) {
-        ServiceChargeDateRangeFactory.setMonthAndYear(quarter, year);
-        scCalculator.recalculateServiceChargeForAllLoans();
-        return "Service Recalculation for the given quarter: " + quarter + " year: " + year + " completed";
-    }
+	@GET
+	@Path("getServiceChargeTableForMonthYear")
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String printJournalEntries(@Context final UriInfo uriInfo, @QueryParam("quarter") final String quarter,
+			@QueryParam("year") final int year, @QueryParam("table") final boolean displayTable,
+			@QueryParam("useJournalEntries") final boolean useDirectJournalEntries) {
+		String result = null;
+		ServiceChargeFinalSheetData finalSheetData = (ServiceChargeFinalSheetData) appContext
+				.getBean("serviceChargeFinalSheetData");
+		ServiceChargeDateRangeFactory.setMonthAndYear(quarter, year);
+		scJournalDetailsReadPlatformService.generatefinalSheetData(finalSheetData, useDirectJournalEntries);
+		if (!displayTable) {
+			result = finalSheetData.getResultsDataMap().toString();
+		} else {
+			result = finalSheetData.generateResultAsHTMLTable(false).toString();
+			result = result.replace("\"", "'");
+		}
+		result = "{\"html\":\"" + result + "\"}";
+		return result;
+	}
+
+	@GET
+	@Path("recalculateServiceCharge")
+	@Consumes({ MediaType.APPLICATION_JSON })
+	public String recalculateServiceCharge(@QueryParam("quarter") final String quarter,
+			@QueryParam("year") final int year,
+			@QueryParam("useJournalEntries") final boolean useDirectJournalEntries) {
+		ServiceChargeDateRangeFactory.setMonthAndYear(quarter, year);
+		scCalculator.recalculateServiceChargeForAllLoans(useDirectJournalEntries);
+		return "Service Recalculation for the given quarter: " + quarter + " year: " + year + " completed";
+	}
 }

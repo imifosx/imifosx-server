@@ -19,9 +19,12 @@
 package org.ideoholic.fineract.servicechargejournalentry.service;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.apache.fineract.accounting.journalentry.command.SingleDebitOrCreditEntryCommand;
 import org.apache.fineract.accounting.journalentry.domain.JournalEntry;
 import org.apache.fineract.accounting.journalentry.domain.JournalEntryRepository;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
@@ -30,15 +33,17 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
-import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
-import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
+import org.apache.fineract.organisation.office.domain.Office;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ideoholic.fineract.commands.JECommand;
 import org.ideoholic.fineract.commands.JEDebitCreditEntryCommand;
 import org.ideoholic.fineract.commands.ServiceChargeJournalEntryCommand;
+import org.ideoholic.fineract.servicecharge.constants.ServiceChargeApiConstants;
+import org.ideoholic.fineract.servicechargejournalentry.domain.ServiceChargeJournalEntry;
+import org.ideoholic.fineract.servicechargejournalentry.domain.ServiceChargeJournalEntryRepository;
 import org.ideoholic.fineract.servicechargejournalentry.serialization.ServiceChargeJournalEntryCommandFromApiJsonDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,25 +54,28 @@ import com.google.gson.JsonElement;
 
 @Service
 public class ServiceChargeJournalEntryCreationPlatformServiceImpl
-		implements ServiceChargeJournalEntryCreationPlatformService {
+		implements ServiceChargeJournalEntryCreationPlatformService, ServiceChargeApiConstants {
 	private final static Logger logger = LoggerFactory
 			.getLogger(ServiceChargeJournalEntryCreationPlatformServiceImpl.class);
 
 	private final FromJsonHelper fromApiJsonHelper;
+	private final JournalEntryRepository journalEntryRepository;
 	private final JournalEntryWritePlatformService jeWritePlatformService;
 	private final DefaultToApiJsonSerializer<Object> apiJsonSerializerService;
-	 private final ServiceChargeJournalEntryCommandFromApiJsonDeserializer fromApiJsonDeserializer;
+	private final ServiceChargeJournalEntryRepository serviceChargeJERepository;
+	private final ServiceChargeJournalEntryCommandFromApiJsonDeserializer fromApiJsonDeserializer;
 
 	@Autowired
 	public ServiceChargeJournalEntryCreationPlatformServiceImpl(final FromJsonHelper fromApiJsonHelper,
-			final SavingsAccountAssembler savingsAccountAssembler,
-			final JournalEntryRepository glJournalEntryRepository,
-			final SavingsAccountDomainService savingsAccountDomainService,
+			final JournalEntryRepository journalEntryRepository,
 			final JournalEntryWritePlatformService jeWritePlatformService,
+			final ServiceChargeJournalEntryRepository serviceChargeJERepository,
 			final DefaultToApiJsonSerializer<Object> toApiJsonSerializer,
 			final ServiceChargeJournalEntryCommandFromApiJsonDeserializer fromApiJsonDeserializer) {
 		this.fromApiJsonHelper = fromApiJsonHelper;
 		this.jeWritePlatformService = jeWritePlatformService;
+		this.journalEntryRepository = journalEntryRepository;
+		this.serviceChargeJERepository = serviceChargeJERepository;
 		this.apiJsonSerializerService = toApiJsonSerializer;
 		this.fromApiJsonDeserializer = fromApiJsonDeserializer;
 	}
@@ -93,34 +101,49 @@ public class ServiceChargeJournalEntryCreationPlatformServiceImpl
 			// Convert passed JSON into our own TransferEntryCommand
 			final ServiceChargeJournalEntryCommand scJECommand = fromApiJsonDeserializer.commandFromApiJson(json);
 			logger.debug(
-					"ServiceChargeJournalEntryCreationPlatformServiceImpl.createServiceChargeJournalEntry:: transferCommand:"
+					"ServiceChargeJournalEntryCreationPlatformServiceImpl.createServiceChargeJournalEntry:: ServiceChargeJournalEntryCommand:"
 							+ scJECommand);
 			// Validate before creation for any error in data that has been sent
 			scJECommand.validateForCreate();
 
 			// From the transfer command get our own JECommand which is a map of
 			// JournalEntry command
-			jeCommand = getJECommandFromServiceChargeJECommand(scJECommand, null);
+			jeCommand = getJECommandFromServiceChargeJECommand(scJECommand);
 			// ObjectMapper is needed to convert object to JSON and JSON to object
 			jeJson = new ObjectMapper().writeValueAsString(jeCommand);
 
 			final JsonElement parsedCommand = this.fromApiJsonHelper.parse(jeJson);
-			logger.debug("ServiceChargeJournalEntryCreationPlatformServiceImpl.createTransferEntry:: parsed Command:"
-					+ parsedCommand);
+			logger.debug(
+					"ServiceChargeJournalEntryCreationPlatformServiceImpl.createServiceChargeJournalEntry:: parsed Command:"
+							+ parsedCommand);
 
-			transferAmountWithAccountingHeader(parsedCommand, jeJson);
+			result = createJournalEntryUsingJSON(parsedCommand, jeJson);
+			final String transactionID = result.getTransactionId();
+			logger.debug(
+					"ServiceChargeJournalEntryCreationPlatformServiceImpl.createServiceChargeJournalEntry:: transactionID:"
+							+ transactionID);
+			final List<JournalEntry> jeList = journalEntryRepository
+					.findUnReversedManualJournalEntriesByTransactionId(transactionID);
+
+			final JournalEntry singleJE = jeList.get(0);
+
+			ServiceChargeJournalEntry singleSCJE = createServiceChargeJournalEntryFromJournalEntry(scJECommand,
+					singleJE);
+
+			serviceChargeJERepository.saveAndFlush(singleSCJE);
 
 		} catch (JsonParseException | JsonMappingException e) {
 			logger.error(
 					"ServiceChargeJournalEntryCreationPlatformServiceImpl.createServiceChargeJournalEntry:: JsonParseException | JsonMappingException:"
 							+ e);
+			logger.error("JsonParseException | JsonMappingException:", e);
 			e.printStackTrace();
 			error = true;
 		} catch (IOException | NullPointerException e) {
 			logger.error(
 					"ServiceChargeJournalEntryCreationPlatformServiceImpl.createServiceChargeJournalEntry:: IOException | NullPointerException:"
 							+ e);
-			logger.error("IOException:" + e);
+			logger.error("IOException:", e);
 			e.printStackTrace();
 			error = true;
 		}
@@ -134,8 +157,31 @@ public class ServiceChargeJournalEntryCreationPlatformServiceImpl
 		return this.apiJsonSerializerService.serialize(result);
 	}
 
-	private CommandProcessingResult transferAmountWithAccountingHeader(final JsonElement parsedCommand,
-			final String jeJson) {
+	private ServiceChargeJournalEntry createServiceChargeJournalEntryFromJournalEntry(
+			final ServiceChargeJournalEntryCommand serviceChargeJournalEntry, final JournalEntry journalEntry) {
+		final Office office = journalEntry.getOffice();
+		final Date transactionDate = journalEntry.getTransactionDate();
+		final AppUser createdBy = journalEntry.getCreatedBy();
+		final BigDecimal amount = journalEntry.getAmount();
+
+		final BigDecimal mobilizationPercent = new BigDecimal(serviceChargeJournalEntry.getMobilization());
+		final BigDecimal servicingPercent = new BigDecimal(serviceChargeJournalEntry.getServicing());
+		final BigDecimal investmentPercent = new BigDecimal(serviceChargeJournalEntry.getInvestment());
+		final BigDecimal overheadsPercent = new BigDecimal(serviceChargeJournalEntry.getOverheads());
+		// Formula to find divided-amount is (Part-Percentage * Amount) / 100
+		final BigDecimal mobilizationAmount = mobilizationPercent.multiply(amount).divide(HUNDRED);
+		final BigDecimal servicingAmount = servicingPercent.multiply(amount).divide(HUNDRED);
+		final BigDecimal investmentAmount = investmentPercent.multiply(amount).divide(HUNDRED);
+		final BigDecimal overheadsAmount = overheadsPercent.multiply(amount).divide(HUNDRED);
+
+		ServiceChargeJournalEntry singleSCJE = ServiceChargeJournalEntry.createNew(journalEntry, office,
+				transactionDate, mobilizationPercent, servicingPercent, investmentPercent, overheadsPercent,
+				mobilizationAmount, servicingAmount, investmentAmount, overheadsAmount, createdBy);
+
+		return singleSCJE;
+	}
+
+	private CommandProcessingResult createJournalEntryUsingJSON(final JsonElement parsedCommand, final String jeJson) {
 		// Constants values defined here to understand the name of value being passed
 		final Long loanId = null;
 		final Long savingsId = null;
@@ -145,7 +191,7 @@ public class ServiceChargeJournalEntryCreationPlatformServiceImpl
 		final String href = "/servicechargejournalentries";
 
 		System.out.println(
-				"ServiceChargeJournalEntryCreationPlatformServiceImpl.createTransferEntry:: final JE Json that will be passed to create JsonCommand:"
+				"ServiceChargeJournalEntryCreationPlatformServiceImpl.createJournalEntryUsingJSON:: final JE Json that will be passed to create JsonCommand:"
 						+ jeJson);
 
 		final JsonCommand command = JsonCommand.from(jeJson, parsedCommand, this.fromApiJsonHelper, entityName, null,
@@ -165,8 +211,10 @@ public class ServiceChargeJournalEntryCreationPlatformServiceImpl
 	 *                     reversed to TransferEntryCommand
 	 * @return JECommand
 	 */
-	private JECommand getJECommandFromServiceChargeJECommand(ServiceChargeJournalEntryCommand scJECommand,
-			JournalEntry additionalJe) {
+	private JECommand getJECommandFromServiceChargeJECommand(ServiceChargeJournalEntryCommand scJECommand) {
+		System.out.println(
+				"ServiceChargeJournalEntryCreationPlatformServiceImpl.getJECommandFromServiceChargeJECommand::scJECommand:"
+						+ scJECommand);
 		JECommand jeCommand = new JECommand();
 		jeCommand.setLocale(scJECommand.getLocale());
 		jeCommand.setDateFormat(scJECommand.getDateFormat());
@@ -186,76 +234,26 @@ public class ServiceChargeJournalEntryCreationPlatformServiceImpl
 		List<JEDebitCreditEntryCommand> jeDebits = new ArrayList<JEDebitCreditEntryCommand>();
 		List<JEDebitCreditEntryCommand> jeCredits = new ArrayList<JEDebitCreditEntryCommand>();
 
-		for (JEDebitCreditEntryCommand debitCommand : scJECommand.getDebits()) {
-			jeDebits.add(debitCommand);
+		for (SingleDebitOrCreditEntryCommand debitCommand : scJECommand.getDebits()) {
+			JEDebitCreditEntryCommand jeDebitCommand = new JEDebitCreditEntryCommand();
+			jeDebitCommand.setGlAccountId(debitCommand.getGlAccountId());
+			jeDebitCommand.setAmount(debitCommand.getAmount());
+			jeDebitCommand.setComments(debitCommand.getComments());
+			jeDebits.add(jeDebitCommand);
 		}
 
-		for (JEDebitCreditEntryCommand creditCommand : scJECommand.getCredits()) {
-			jeDebits.add(creditCommand);
+		for (SingleDebitOrCreditEntryCommand creditCommand : scJECommand.getCredits()) {
+			JEDebitCreditEntryCommand jeCreditCommand = new JEDebitCreditEntryCommand();
+			jeCreditCommand.setGlAccountId(creditCommand.getGlAccountId());
+			jeCreditCommand.setAmount(creditCommand.getAmount());
+			jeCreditCommand.setComments(creditCommand.getComments());
+			jeCredits.add(jeCreditCommand);
 		}
 
 		jeCommand.setDebits(jeDebits.toArray(new JEDebitCreditEntryCommand[jeDebits.size()]));
 		jeCommand.setCredits(jeCredits.toArray(new JEDebitCreditEntryCommand[jeCredits.size()]));
 
 		return jeCommand;
-	}
-
-	/**
-	 * Helper method to convert data in a journal entry to a string format for
-	 * easier printing. This is used for debugging purpose of accounting
-	 * information.
-	 * 
-	 * @param je JournalEntry that needs to be converted
-	 * @return JournalEntry data in a string format
-	 */
-	private String getJournalEntryAsString(JournalEntry je) {
-		StringBuffer sb = new StringBuffer();
-		sb.append("{");
-		sb.append("isDebitEntry: " + je.isDebitEntry());
-		sb.append("\n");
-		sb.append("getType: " + je.getType());
-		sb.append("\n");
-		sb.append("getOffice: " + je.getOffice());
-		sb.append("\n");
-		sb.append("getGlAccount: " + je.getGlAccount());
-		sb.append("\n");
-		sb.append("getTransactionDate: " + je.getTransactionDate());
-		sb.append("\n");
-		sb.append("getAmount: " + je.getAmount());
-		sb.append("\n");
-		sb.append("getReferenceNumber: " + je.getReferenceNumber());
-		sb.append("\n");
-		sb.append("getCurrencyCode: " + je.getCurrencyCode());
-		sb.append("\n");
-		if (je.getLoanTransaction() != null) {
-			sb.append("getLoanTransaction.id: " + je.getLoanTransaction().getId());
-			sb.append("\n");
-		}
-		if (je.getSavingsTransaction() != null) {
-			sb.append("getLoanTransaction.id: " + je.getSavingsTransaction().getId());
-			sb.append("\n");
-		}
-
-		PaymentDetail pd = je.getPaymentDetails();
-		if (pd != null) {
-			sb.append("PaymentDetail.getReceiptNumber: " + pd.getReceiptNumber());
-			sb.append("\n");
-			sb.append("PaymentDetail.getRoutingCode: " + pd.getRoutingCode());
-			sb.append("\n");
-			sb.append("PaymentDetail.isCashPayment: " + pd.getPaymentType().isCashPayment());
-			sb.append("\n");
-		}
-		sb.append("getTransactionId: " + je.getTransactionId());
-		sb.append("\n");
-		sb.append("getClientTransaction: " + je.getClientTransaction());
-		sb.append("\n");
-		sb.append("getEntityId: " + je.getEntityId());
-		sb.append("\n");
-		sb.append("getEntityType: " + je.getEntityType());
-		sb.append("\n");
-		sb.append("getShareTransactionId: " + je.getShareTransactionId());
-		sb.append("}");
-		return sb.toString();
 	}
 
 }
