@@ -21,6 +21,7 @@ package org.ideoholic.fineract.commands;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.fineract.accounting.journalentry.command.SingleDebitOrCreditEntryCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -40,6 +41,8 @@ import org.joda.time.LocalDate;
  */
 public class ServiceChargeJournalEntryCommand {
 
+	private final Locale locale;
+	private final String dateFormat;
 	private final Long officeId;
 	private final LocalDate transactionDate;
 	private final String currencyCode;
@@ -61,12 +64,15 @@ public class ServiceChargeJournalEntryCommand {
 	private final SingleDebitOrCreditEntryCommand[] credits;
 	private final SingleDebitOrCreditEntryCommand[] debits;
 
-	public ServiceChargeJournalEntryCommand(final Long officeId, final String currencyCode,
-			final LocalDate transactionDate, final String comments, final SingleDebitOrCreditEntryCommand[] credits,
-			final SingleDebitOrCreditEntryCommand[] debits, final String referenceNumber, final Long accountingRuleId,
-			final BigDecimal amount, final Long paymentTypeId, final String accountNumber, final String checkNumber,
-			final String receiptNumber, final String bankNumber, final String routingCode, final Float mobilization,
-			final Float servicing, final Float investment, final Float overheads) {
+	public ServiceChargeJournalEntryCommand(final Locale locale, final String dateFormat, final Long officeId,
+			final String currencyCode, final LocalDate transactionDate, final String comments,
+			final SingleDebitOrCreditEntryCommand[] credits, final SingleDebitOrCreditEntryCommand[] debits,
+			final String referenceNumber, final Long accountingRuleId, final BigDecimal amount,
+			final Long paymentTypeId, final String accountNumber, final String checkNumber, final String receiptNumber,
+			final String bankNumber, final String routingCode, final Float mobilization, final Float servicing,
+			final Float investment, final Float overheads) {
+		this.locale = locale;
+		this.dateFormat = dateFormat;
 		this.officeId = officeId;
 		this.currencyCode = currencyCode;
 		this.transactionDate = transactionDate;
@@ -161,6 +167,14 @@ public class ServiceChargeJournalEntryCommand {
 				.notNull().zeroOrPositiveAmount();
 	}
 
+	public String getLocale() {
+		return locale.getLanguage();
+	}
+
+	public String getDateFormat() {
+		return dateFormat;
+	}
+
 	public Long getOfficeId() {
 		return this.officeId;
 	}
@@ -239,7 +253,9 @@ public class ServiceChargeJournalEntryCommand {
 
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("officeId:").append(this.getOfficeId());
+		sb.append("locale:").append(this.getLocale());
+		sb.append(" dateFormat:").append(this.getDateFormat());
+		sb.append(" officeId:").append(this.getOfficeId());
 		sb.append(", currencyCode:").append(this.getCurrencyCode());
 		sb.append(", referenceNumber:").append(this.getReferenceNumber());
 		sb.append(", transactionDate:").append(this.getTransactionDate());
