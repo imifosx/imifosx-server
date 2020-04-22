@@ -91,6 +91,13 @@ dependencies {
                 [group: 'org.apache.poi',name: 'poi-ooxml', version: '3.9'],
                 [group: 'org.apache.poi',name: 'poi-ooxml-schemas', version: '3.9'],
 
+		// Dashboard Dependencies 
+		[group: 'bsf', name: 'bsf', version: '2.4.0'],
+		[group: 'jfree', name: 'jcommon', version: '1.0.14'],
+		[group: 'jfree', name: 'jfreechart', version: '1.0.13'],					
+		[group: 'pentaho-reporting-engine, name: 'pentaho-reporting-engine-legacy-charts', version:'3.9.1-GA'],
+
+
                 [group: 'com.lowagie', name: 'itext', version: '2.1.7'],
                 [group: 'com.lowagie', name: 'itext-rtf', version: '2.1.7'],
                 [group: 'org.mnode.ical4j', name: 'ical4j', version: '1.0.4'],
