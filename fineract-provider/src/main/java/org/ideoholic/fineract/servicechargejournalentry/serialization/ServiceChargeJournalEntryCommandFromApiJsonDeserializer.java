@@ -117,17 +117,14 @@ public final class ServiceChargeJournalEntryCommandFromApiJsonDeserializer
 						ServiceChargeJournalEntryJsonInputParams.DEBITS.getValue());
 			}
 		}
-		final Float mobilization = this.fromApiJsonHelper.extractBigDecimalNamed(
-				ServiceChargeJournalEntryJsonInputParams.MOBILIZATION.getValue(), element, locale).floatValue();
-		final Float servicing = this.fromApiJsonHelper
-				.extractBigDecimalNamed(ServiceChargeJournalEntryJsonInputParams.SERVICING.getValue(), element, locale)
-				.floatValue();
-		final Float investment = this.fromApiJsonHelper
-				.extractBigDecimalNamed(ServiceChargeJournalEntryJsonInputParams.INVESTMENT.getValue(), element, locale)
-				.floatValue();
-		final Float overheads = this.fromApiJsonHelper
-				.extractBigDecimalNamed(ServiceChargeJournalEntryJsonInputParams.OVERHEADS.getValue(), element, locale)
-				.floatValue();
+		final BigDecimal mobilization = this.fromApiJsonHelper.extractBigDecimalNamed(
+				ServiceChargeJournalEntryJsonInputParams.MOBILIZATION.getValue(), element, locale);
+		final BigDecimal servicing = this.fromApiJsonHelper
+				.extractBigDecimalNamed(ServiceChargeJournalEntryJsonInputParams.SERVICING.getValue(), element, locale);
+		final BigDecimal investment = this.fromApiJsonHelper.extractBigDecimalNamed(
+				ServiceChargeJournalEntryJsonInputParams.INVESTMENT.getValue(), element, locale);
+		final BigDecimal overheads = this.fromApiJsonHelper
+				.extractBigDecimalNamed(ServiceChargeJournalEntryJsonInputParams.OVERHEADS.getValue(), element, locale);
 		return new ServiceChargeJournalEntryCommand(locale, dateFormat, officeId, currencyCode, transactionDate,
 				comments, credits, debits, referenceNumber, accountingRuleId, amount, paymentTypeId, accountNumber,
 				checkNumber, receiptNumber, bankNumber, routingCode, mobilization, servicing, investment, overheads);

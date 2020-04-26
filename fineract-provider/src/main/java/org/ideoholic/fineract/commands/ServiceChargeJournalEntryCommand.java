@@ -29,7 +29,7 @@ import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.ideoholic.fineract.servicechargejournalentry.serialization.ServiceChargeJournalEntryJsonInputParams;
 import org.joda.time.LocalDate;
-
+import org.ideoholic.fineract.servicecharge.constants.ServiceChargeApiConstants;
 /**
  * JSON Object mapper Java class that maps to the request of JournalEntry
  * request JSON. This is needed to convert the JSON to object, perform required
@@ -56,10 +56,10 @@ public class ServiceChargeJournalEntryCommand {
 	private final String receiptNumber;
 	private final String bankNumber;
 	private final String routingCode;
-	private final Float mobilization;
-	private final Float servicing;
-	private final Float investment;
-	private final Float overheads;
+	private final BigDecimal mobilization;
+	private final BigDecimal servicing;
+	private final BigDecimal investment;
+	private final BigDecimal overheads;
 
 	private final SingleDebitOrCreditEntryCommand[] credits;
 	private final SingleDebitOrCreditEntryCommand[] debits;
@@ -69,8 +69,8 @@ public class ServiceChargeJournalEntryCommand {
 			final SingleDebitOrCreditEntryCommand[] credits, final SingleDebitOrCreditEntryCommand[] debits,
 			final String referenceNumber, final Long accountingRuleId, final BigDecimal amount,
 			final Long paymentTypeId, final String accountNumber, final String checkNumber, final String receiptNumber,
-			final String bankNumber, final String routingCode, final Float mobilization, final Float servicing,
-			final Float investment, final Float overheads) {
+			final String bankNumber, final String routingCode, final BigDecimal mobilization, final BigDecimal servicing,
+			final BigDecimal investment, final BigDecimal overheads) {
 		this.locale = locale;
 		this.dateFormat = dateFormat;
 		this.officeId = officeId;
@@ -99,7 +99,7 @@ public class ServiceChargeJournalEntryCommand {
 		final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
 		final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
-				.resource("GLJournalEntry");
+				.resource("ServiceChargeJournalEntry");
 
 		baseDataValidator.reset().parameter("transactionDate").value(this.transactionDate).notBlank();
 
@@ -148,9 +148,30 @@ public class ServiceChargeJournalEntryCommand {
 		}
 		baseDataValidator.reset().parameter("amount").value(this.amount).ignoreIfNull().zeroOrPositiveAmount();
 
+		validateForServiceChargeDivision(dataValidationErrors);
+
 		if (!dataValidationErrors.isEmpty()) {
 			throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist",
 					"Validation errors exist.", dataValidationErrors);
+		}
+	}
+
+	private void validateForServiceChargeDivision(List<ApiParameterError> dataValidationErrors) {
+		BigDecimal sum = getInvestment().add(getMobilization()).add(getOverheads()).add(getServicing());
+
+		if (!sum.equals(ServiceChargeApiConstants.HUNDRED)) {
+			StringBuffer message = new StringBuffer();
+			StringBuffer params = new StringBuffer();
+			params.append(getInvestment()).append(',');
+			params.append(getMobilization()).append(',');
+			params.append(getOverheads()).append(',');
+			params.append(getServicing());
+			message.append("The sum of ").append(params);
+			message.append(" servicing charge division entities must be equal to 100");
+			ApiParameterError error = ApiParameterError.parameterError(
+					"validation.msg.servicecharge.division.not.hundered", message.toString(), params.toString(),
+					new Object[] { getInvestment(), getMobilization(), getOverheads(), getServicing() });
+			dataValidationErrors.add(error);
 		}
 	}
 
@@ -235,19 +256,19 @@ public class ServiceChargeJournalEntryCommand {
 		return routingCode;
 	}
 
-	public Float getMobilization() {
+	public BigDecimal getMobilization() {
 		return mobilization;
 	}
 
-	public Float getServicing() {
+	public BigDecimal getServicing() {
 		return servicing;
 	}
 
-	public Float getInvestment() {
+	public BigDecimal getInvestment() {
 		return investment;
 	}
 
-	public Float getOverheads() {
+	public BigDecimal getOverheads() {
 		return overheads;
 	}
 

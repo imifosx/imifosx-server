@@ -164,10 +164,10 @@ public class ServiceChargeJournalEntryCreationPlatformServiceImpl
 		final AppUser createdBy = journalEntry.getCreatedBy();
 		final BigDecimal amount = journalEntry.getAmount();
 
-		final BigDecimal mobilizationPercent = new BigDecimal(serviceChargeJournalEntry.getMobilization());
-		final BigDecimal servicingPercent = new BigDecimal(serviceChargeJournalEntry.getServicing());
-		final BigDecimal investmentPercent = new BigDecimal(serviceChargeJournalEntry.getInvestment());
-		final BigDecimal overheadsPercent = new BigDecimal(serviceChargeJournalEntry.getOverheads());
+		final BigDecimal mobilizationPercent = serviceChargeJournalEntry.getMobilization();
+		final BigDecimal servicingPercent = serviceChargeJournalEntry.getServicing();
+		final BigDecimal investmentPercent = serviceChargeJournalEntry.getInvestment();
+		final BigDecimal overheadsPercent = serviceChargeJournalEntry.getOverheads();
 		// Formula to find divided-amount is (Part-Percentage * Amount) / 100
 		final BigDecimal mobilizationAmount = mobilizationPercent.multiply(amount).divide(HUNDRED);
 		final BigDecimal servicingAmount = servicingPercent.multiply(amount).divide(HUNDRED);
