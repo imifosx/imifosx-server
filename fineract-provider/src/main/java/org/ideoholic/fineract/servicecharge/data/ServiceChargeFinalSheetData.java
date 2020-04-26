@@ -207,7 +207,7 @@ public class ServiceChargeFinalSheetData implements ServiceChargeApiConstants {
             generateInitialCalculationSheet();
             generateFinalCalculationSheet();
         }
-        logger.debug("ServiceChargeFinalSheetData.addTotalLoanRepaymentAmount:: Final Display Result:" + result);
+        logger.debug("ServiceChargeFinalSheetData.generateResultAsHTMLTable:: Final Display Result:" + result);
         return result.toString();
     }
 
@@ -243,7 +243,7 @@ public class ServiceChargeFinalSheetData implements ServiceChargeApiConstants {
                     result.append("<td>");
                     if (element != null) {
                         String elementNumberAsString = String.format("%." + header.getRoundOff() + "f", element);
-                        logger.debug("ServiceChargeFinalSheetData.addTotalLoanRepaymentAmount:: element value:" + elementNumberAsString);
+                        logger.trace("ServiceChargeFinalSheetData.populateTableRowsWithEntriesinResultsMap:: element value:" + elementNumberAsString);
                         result.append(elementNumberAsString);
                     } else {
                         result.append(StringUtils.EMPTY);

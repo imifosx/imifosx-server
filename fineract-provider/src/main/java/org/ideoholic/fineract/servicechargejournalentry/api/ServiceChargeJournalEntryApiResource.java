@@ -62,7 +62,6 @@ public class ServiceChargeJournalEntryApiResource {
 	@ApiResponses({
 			@ApiResponse(code = 200, message = "") })
 	public String createGLJournalEntry(@ApiParam(hidden = true) final String jsonRequestBody) {
-		System.out.println("jsonRequestBody:" + jsonRequestBody);
 		String result = null;
 		result = this.scJeWriter.createServiceChargeJournalEntry(jsonRequestBody);
 

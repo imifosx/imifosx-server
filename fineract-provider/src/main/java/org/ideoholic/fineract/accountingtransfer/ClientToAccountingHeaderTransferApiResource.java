@@ -65,7 +65,6 @@ public class ClientToAccountingHeaderTransferApiResource {
 	@ApiResponses({
 			@ApiResponse(code = 200, message = "") })
 	public String createGLJournalEntry(@ApiParam(hidden = true) final String jsonRequestBody) {
-		System.out.println("jsonRequestBody:" + jsonRequestBody);
 		String result = null;
 		result = this.transferService.createTransferEntry(jsonRequestBody);
 

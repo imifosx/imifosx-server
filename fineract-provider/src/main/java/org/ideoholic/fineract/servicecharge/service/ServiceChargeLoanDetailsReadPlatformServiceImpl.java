@@ -144,43 +144,36 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 		}
 
 		int dataListSize = loanAccountData.getPageItems().size();
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Total number of accounts"
-						+ dataListSize);
+		logger.debug("getAllLoansRepaymentData::Total number of accounts" + dataListSize);
 		for (int i = 0; i < dataListSize; i++) {
 
 			try {
 				Long loanId = loanAccountData.getPageItems().get(i).getId();
 				if (!loanAccountData.getPageItems().get(i).isActive()) {
-					logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Loan ID:"
-							+ loanId + " is inactive!");
+					logger.debug("getAllLoansRepaymentData::Loan ID:" + loanId + " is inactive!");
 					continue;
 				}
-				logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::The loan id is "
-						+ loanId);
+				logger.debug("getAllLoansRepaymentData::The loan id is " + loanId);
 				final Collection<LoanTransactionData> currentLoanRepayments = retrieveLoanTransactionsMonthlyPayments(
 						loanAccountData.getPageItems().get(i).getId(), startDate, endDate);
 
 				for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
 					BigDecimal repaymentAmount = loanTransactionData.getAmount();
-					logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Date = "
-							+ loanTransactionData.dateOf() + "  Repayment Amount = " + repaymentAmount);
+					logger.trace("getAllLoansRepaymentData::Date = " + loanTransactionData.dateOf()
+							+ "  Repayment Amount = " + repaymentAmount);
 
 					// perform add operation on bg1 with augend bg2 and context
 					// mc
 					totalRepayment = totalRepayment.add(repaymentAmount);
 
-					logger.debug(
-							"ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Partial totalRepayment:"
-									+ totalRepayment.toPlainString());
+					logger.trace("getAllLoansRepaymentData::Partial totalRepayment:" + totalRepayment.toPlainString());
 				}
 
 				/*
 				 * Get Loan Charge Name - TODO: Need to decide if we need to identify the loan
 				 * type String loanCharges =
 				 * getLoanChargeName(loanAccountData.getPageItems().get(i).getId ()); logger.
-				 * debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::Loan Charge Name:"
-				 * + loanCharges);
+				 * debug("getAllLoansRepaymentData::Loan Charge Name:" + loanCharges);
 				 */
 
 			} catch (Exception e) {
@@ -189,8 +182,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 				e.printStackTrace();
 			}
 		}
-		logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.getAllLoansRepaymentData::totalRepayment:"
-				+ totalRepayment.toPlainString());
+		logger.debug("getAllLoansRepaymentData::totalRepayment:" + totalRepayment.toPlainString());
 
 		return totalRepayment;
 	}
@@ -208,7 +200,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 	}
 
 	public void populateRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData) {
-		logger.debug("entered into ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData");
+		logger.trace("entered into populateRepaymentsInSheetData");
 		BigDecimal dLtotalOutstandingAmount = BigDecimal.ZERO;
 		BigDecimal nDLtotalOutstandingAmount = BigDecimal.ZERO;
 		int noOfDL = 0;
@@ -222,9 +214,8 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 		Page<SCLoanAccountData> loanAccountDataForOutstandingAmount = null;
 		try {
 			loanAccountDataForOutstandingAmount = retrieveLoansToBeConsideredForTheQuarter(strStartDate, strEndDate);
-			logger.debug(
-					"ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Total Filtered Records-"
-							+ loanAccountDataForOutstandingAmount.getTotalFilteredRecords());
+			logger.debug("populateRepaymentsInSheetData::Total Filtered Records-"
+					+ loanAccountDataForOutstandingAmount.getTotalFilteredRecords());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -236,13 +227,11 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 				LoanProductData loanProduct = loanProductReadPlatformService
 						.retrieveLoanProduct(loanAccData.getLoanProductId());
 
-				// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Total
+				// logger.debug("populateRepaymentsInSheetData::Total
 				// Outstanding Amount " +
 				// loanAccData.getTotalOutstandingAmount());
-				logger.debug(
-						"ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Account Loan id "
-								+ loanAccData.getId());
-				// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Outstanding
+				logger.trace("populateRepaymentsInSheetData::Account Loan id " + loanAccData.getId());
+				// logger.trace("populateRepaymentsInSheetData::Outstanding
 				// Amount: " + loanAccData.getTotalOutstandingAmount());
 				ServiceChargeLoanProductSummary loanSummary = loanSummaryFactory.getLoanSummaryObject(this, loanAccData,
 						loanProduct);
@@ -270,18 +259,12 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 		// dLtotalOutstandingAmount = dLtotalOutstandingAmount.divide(new
 		// BigDecimal(3), roundingMode);
 		sheetData.setLoanOutstandingAmount(dLtotalOutstandingAmount, nDLtotalOutstandingAmount);
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::totalOutstanding DL Amount:"
-						+ dLtotalOutstandingAmount);
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::totalOutstanding Non DL Amount:"
-						+ nDLtotalOutstandingAmount);
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData:: DL Monthly cost list:"
-						+ loanSummaryFactory.getMonthWiseOutstandingAmount(true));
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData:: Non-DL Monthly cost list:"
-						+ loanSummaryFactory.getMonthWiseOutstandingAmount(false));
+		logger.debug("populateRepaymentsInSheetData::totalOutstanding DL Amount:" + dLtotalOutstandingAmount);
+		logger.debug("populateRepaymentsInSheetData::totalOutstanding Non DL Amount:" + nDLtotalOutstandingAmount);
+		logger.debug("populateRepaymentsInSheetData:: DL Monthly cost list:"
+				+ loanSummaryFactory.getMonthWiseOutstandingAmount(true));
+		logger.debug("populateRepaymentsInSheetData:: Non-DL Monthly cost list:"
+				+ loanSummaryFactory.getMonthWiseOutstandingAmount(false));
 	}
 
 	public void getRepaymentsInSheetData(ServiceChargeFinalSheetData sheetData) {
@@ -308,15 +291,11 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 				LoanProductData loanProduct = loanProductReadPlatformService
 						.retrieveLoanProduct(loanAccData.getLoanProductId());
 
-				// logger.debug("ServiceChargeLoanDetailsReadPlatformServiceImpl.populateRepaymentsInSheetData::Total
+				// logger.debug("populateRepaymentsInSheetData::Total
 				// Outstanding Amount " +
 				// loanAccData.getTotalOutstandingAmount());
-				logger.debug(
-						"ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData::Account Loan id "
-								+ loanAccData.getId());
-				logger.debug(
-						"ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData::Outstanding Amount: "
-								+ loanAccData.getPrincipalOutstanding());
+				logger.debug("getRepaymentsInSheetData::Account Loan id " + loanAccData.getId());
+				logger.debug("getRepaymentsInSheetData::Outstanding Amount: " + loanAccData.getPrincipalOutstanding());
 
 				boolean isDemandLaon = ServiceChargeOperationUtils.checkDemandLaon(loanProduct);
 				loanRepaymentAmount = getRepaymentAmount(sheetData, loanAccData, startDate, endDate);
@@ -335,12 +314,8 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 		nDLtotalOutstandingAmount = nDLtotalOutstandingAmount.divide(new BigDecimal(3), roundingMode);
 		dLtotalOutstandingAmount = dLtotalOutstandingAmount.divide(new BigDecimal(3), roundingMode);
 		sheetData.setLoanOutstandingAmount(dLtotalOutstandingAmount, nDLtotalOutstandingAmount);
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData::totalOutstanding DL Amount:"
-						+ dLtotalOutstandingAmount);
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentsInSheetData::totalOutstanding Non DL Amount:"
-						+ nDLtotalOutstandingAmount);
+		logger.debug("getRepaymentsInSheetData::totalOutstanding DL Amount:" + dLtotalOutstandingAmount);
+		logger.debug("getRepaymentsInSheetData::totalOutstanding Non DL Amount:" + nDLtotalOutstandingAmount);
 	}
 
 	private BigDecimal getRepaymentAmount(ServiceChargeFinalSheetData sheetData, SCLoanAccountData loanAccData,
@@ -377,9 +352,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 					BigDecimal repaymentAmount = BigDecimal.ZERO;
 					for (LoanTransactionData loanTransactionData : currentLoanRepayments) {
 						repaymentAmount = repaymentAmount.add(loanTransactionData.getAmount());
-						logger.debug(
-								"ServiceChargeLoanDetailsReadPlatformServiceImpl.getRepaymentAmount::individual repayment:"
-										+ repaymentAmount);
+						logger.debug("getRepaymentAmount::individual repayment:" + repaymentAmount);
 					}
 					sheetData.addTotalLoanRepaymentAmount(repaymentAmount);
 					approvedPricipal = approvedPricipal.subtract(repaymentAmount);
@@ -712,6 +685,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 		}
 	}
 
+	@Override
 	public Collection<LoanTransactionData> retrieveLoanTransactionsMonthlyPayments(Long loanId, String startDate,
 			String endDate) {
 		try {
@@ -730,9 +704,21 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 			// + " where tr.loan_id = ? and tr.transaction_type_enum in (2) and
 			// (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) order
 			// by tr.transaction_date ASC,id ";
-					+ " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) and tr.transaction_date between '"
-					+ startDate + "' and '" + endDate + "'  order by tr.transaction_date ASC,id";
-			return this.jdbcTemplate.query(sql, rm, new Object[] { loanId });
+					+ " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1)"
+					+ " and tr.transaction_date between ? and ?  order by tr.transaction_date ASC,id";
+			return this.jdbcTemplate.query(sql, rm, new Object[] { loanId, startDate, endDate });
+		} catch (final EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	@Override
+	public BigDecimal getTotalLoanRepaymentForLoanAfterGivenDate(Long loanId, Date date) {
+		try {
+			final String sql = "select sum(tr.principal_portion_derived)" + " from m_loan_transaction tr"
+					+ " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) "
+					+ " and tr.transaction_date > ?";
+			return this.jdbcTemplate.queryForObject(sql, new Object[] { loanId, date }, BigDecimal.class);
 		} catch (final EmptyResultDataAccessException e) {
 			return null;
 		}
@@ -777,9 +763,8 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 		// Ensure that either loan is not closed, if closed then closed after start date
 		sqlBuilder.append(" AND (l.closedon_date IS NULL OR l.closedon_date > ? )");
 
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.retrieveLoansToBeConsideredForTheQuarter()::hierarchySearchString: "
-						+ hierarchySearchString + " startDate:" + startDate + " endDate:" + endDate);
+		logger.debug("retrieveLoansToBeConsideredForTheQuarter()::hierarchySearchString: " + hierarchySearchString
+				+ " startDate:" + startDate + " endDate:" + endDate);
 
 		List<Object> extraCriterias = new ArrayList<>();
 		extraCriterias.add(hierarchySearchString);
@@ -789,9 +774,7 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 		extraCriterias.add(startDate);
 		int arrayPos = extraCriterias.size();
 
-		logger.debug(
-				"ServiceChargeLoanDetailsReadPlatformServiceImpl.retrieveLoansToBeConsideredForTheQuarter()::SQL being run is: "
-						+ sqlBuilder.toString());
+		logger.debug("retrieveLoansToBeConsideredForTheQuarter()::SQL being run is: " + sqlBuilder.toString());
 
 		final Object[] objectArray = extraCriterias.toArray();
 		final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
