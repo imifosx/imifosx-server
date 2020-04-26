@@ -19,10 +19,18 @@
 package org.ideoholic.fineract.commands;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.accounting.journalentry.exception.JournalEntryInvalidException;
 import org.apache.fineract.accounting.journalentry.exception.JournalEntryInvalidException.GL_JOURNAL_ENTRY_INVALID_REASON;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
+import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.ideoholic.fineract.servicecharge.constants.ServiceChargeApiConstants;
+import org.ideoholic.fineract.servicechargejournalentry.serialization.ServiceChargeJournalEntryJsonInputParams;
 
 public class TransferEntryCommand {
 
@@ -59,6 +67,14 @@ public class TransferEntryCommand {
 	private String receiptNumber;
 	@JsonProperty("bankNumber")
 	private String bankNumber;
+	@JsonProperty("mobilization")
+	private BigDecimal mobilization;
+	@JsonProperty("servicing")
+	private BigDecimal servicing;
+	@JsonProperty("overheads")
+	private BigDecimal overheads;
+	@JsonProperty("investment")
+	private BigDecimal investment;
 	@JsonProperty("transferDescription")
 	private String transferDescription;
 	// Array of accounting heads that are affected by this transfer action
@@ -66,9 +82,57 @@ public class TransferEntryCommand {
 	private TransferDebitCreditEntryCommand[] accountingHeaders;
 
 	public void validateForCreate() {
+
 		// Check for debit credit amount to match along with the parallel transaction
 		// that is to be take place on the client account
 		checkDebitAndCreditAmounts(getAccountingHeaders(), getAmount());
+
+		final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+
+		final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
+				.resource("ServiceChargeJournalEntry");
+
+		baseDataValidator.reset().parameter("transactionDate").value(this.transactionDate).notBlank();
+
+		baseDataValidator.reset().parameter("officeId").value(this.officeId).notNull().integerGreaterThanZero();
+
+		baseDataValidator.reset().parameter(ServiceChargeJournalEntryJsonInputParams.CURRENCY_CODE.getValue())
+				.value(this.currencyCode).notBlank();
+
+		baseDataValidator.reset().parameter("paymentTypeId").value(this.paymentTypeId).ignoreIfNull()
+				.longGreaterThanZero();
+
+		baseDataValidator.reset().parameter("amount").value(this.amount).ignoreIfNull().zeroOrPositiveAmount();
+
+		validateForServiceChargeDivision(dataValidationErrors);
+
+		if (!dataValidationErrors.isEmpty()) {
+			throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist",
+					"Validation errors exist.", dataValidationErrors);
+		}
+	}
+
+	private void validateForServiceChargeDivision(List<ApiParameterError> dataValidationErrors) {
+		// Check only if either of the value of service charge is not zero
+		if (!getInvestment().equals(BigDecimal.ZERO) || !getMobilization().equals(BigDecimal.ZERO)
+				|| !getOverheads().equals(BigDecimal.ZERO) || !getServicing().equals(BigDecimal.ZERO)) {
+			BigDecimal sum = getInvestment().add(getMobilization()).add(getOverheads()).add(getServicing());
+
+			if (!sum.equals(ServiceChargeApiConstants.HUNDRED)) {
+				StringBuffer message = new StringBuffer();
+				StringBuffer params = new StringBuffer();
+				params.append(getInvestment()).append(',');
+				params.append(getMobilization()).append(',');
+				params.append(getOverheads()).append(',');
+				params.append(getServicing());
+				message.append("The sum of ").append(params);
+				message.append(" - servicing charge division entities must be equal to 100");
+				ApiParameterError error = ApiParameterError.parameterError(
+						"validation.msg.servicecharge.division.not.hundered", message.toString(), params.toString(),
+						new Object[] { getInvestment(), getMobilization(), getOverheads(), getServicing() });
+				dataValidationErrors.add(error);
+			}
+		}
 	}
 
 	/**
@@ -256,6 +320,38 @@ public class TransferEntryCommand {
 		this.bankNumber = bankNumber;
 	}
 
+	public BigDecimal getMobilization() {
+		return mobilization;
+	}
+
+	public void setMobilization(BigDecimal mobilization) {
+		this.mobilization = mobilization;
+	}
+
+	public BigDecimal getServicing() {
+		return servicing;
+	}
+
+	public void setServicing(BigDecimal servicing) {
+		this.servicing = servicing;
+	}
+
+	public BigDecimal getOverheads() {
+		return overheads;
+	}
+
+	public void setOverheads(BigDecimal overheads) {
+		this.overheads = overheads;
+	}
+
+	public BigDecimal getInvestment() {
+		return investment;
+	}
+
+	public void setInvestment(BigDecimal investment) {
+		this.investment = investment;
+	}
+
 	public String getTransferDescription() {
 		return transferDescription;
 	}
@@ -274,13 +370,14 @@ public class TransferEntryCommand {
 
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
+		sb.append("{");
 		sb.append("officeId:").append(this.officeId);
+		sb.append(", locale:").append(this.locale);
+		sb.append(", dateFormat:").append(this.dateFormat);
 		sb.append(", currencyCode:").append(this.currencyCode);
-		sb.append(", toWhomToTransfer:").append(this.toWhomToTransfer);
+		sb.append(", comments:").append(this.transferDescription);
 		sb.append(", transactionDate:").append(this.transactionDate);
-		sb.append(", toClientId:").append(this.toClientId);
-		sb.append(", toAccountType:").append(this.toAccountType);
-		sb.append(", toAccountId:").append(this.toAccountId);
+
 		sb.append(", amount:").append(this.amount);
 		sb.append(", paymentTypeId:").append(this.paymentTypeId);
 		sb.append(", accountNumber:").append(this.accountNumber);
@@ -288,7 +385,15 @@ public class TransferEntryCommand {
 		sb.append(", routingCode:").append(this.routingCode);
 		sb.append(", receiptNumber:").append(this.receiptNumber);
 		sb.append(", bankNumber:").append(this.bankNumber);
-		sb.append(", transferDescription:").append(this.transferDescription);
+		sb.append(", mobilization:").append(this.mobilization);
+		sb.append(", servicing:").append(this.servicing);
+		sb.append(", overheads:").append(this.overheads);
+		sb.append(", investment:").append(this.investment);
+		
+		sb.append(", useAccountingRule:").append(StringUtils.EMPTY);
+		// sb.append(", credits:").append(this.getCredits());
+		// sb.append(", debits:").append(this.getDebits());
+		
 		return sb.toString();
 	}
 

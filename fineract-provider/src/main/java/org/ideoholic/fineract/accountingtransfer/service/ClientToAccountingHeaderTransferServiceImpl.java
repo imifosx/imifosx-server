@@ -21,6 +21,7 @@ package org.ideoholic.fineract.accountingtransfer.service;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,13 +33,16 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
+import org.apache.fineract.portfolio.paymenttype.domain.PaymentTypeRepositoryWrapper;
 import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -46,6 +50,9 @@ import org.ideoholic.fineract.commands.JECommand;
 import org.ideoholic.fineract.commands.JEDebitCreditEntryCommand;
 import org.ideoholic.fineract.commands.TransferDebitCreditEntryCommand;
 import org.ideoholic.fineract.commands.TransferEntryCommand;
+import org.ideoholic.fineract.servicecharge.constants.ServiceChargeApiConstants;
+import org.ideoholic.fineract.servicechargejournalentry.domain.ServiceChargeJournalEntry;
+import org.ideoholic.fineract.servicechargejournalentry.domain.ServiceChargeJournalEntryRepository;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -57,7 +64,8 @@ import org.springframework.stereotype.Service;
 import com.google.gson.JsonElement;
 
 @Service
-public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAccountingHeaderTransferService {
+public class ClientToAccountingHeaderTransferServiceImpl
+		implements ClientToAccountingHeaderTransferService, ServiceChargeApiConstants {
 	private final static Logger logger = LoggerFactory.getLogger(ClientToAccountingHeaderTransferServiceImpl.class);
 
 	private final FromJsonHelper fromApiJsonHelper;
@@ -65,7 +73,9 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 	private final JournalEntryRepository glJournalEntryRepository;
 	private final SavingsAccountDomainService savingsAccountDomainService;
 	private final JournalEntryWritePlatformService jeWritePlatformService;
+	private final PaymentTypeRepositoryWrapper paymentTypeRepositoryWrapper;
 	private final DefaultToApiJsonSerializer<Object> apiJsonSerializerService;
+	private final ServiceChargeJournalEntryRepository serviceChargeJERepository;
 
 	@Autowired
 	public ClientToAccountingHeaderTransferServiceImpl(final FromJsonHelper fromApiJsonHelper,
@@ -73,13 +83,17 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 			final JournalEntryRepository glJournalEntryRepository,
 			final SavingsAccountDomainService savingsAccountDomainService,
 			final JournalEntryWritePlatformService jeWritePlatformService,
-			final DefaultToApiJsonSerializer<Object> toApiJsonSerializer) {
+			final PaymentTypeRepositoryWrapper paymentTypeRepositoryWrapper,
+			final DefaultToApiJsonSerializer<Object> toApiJsonSerializer,
+			final ServiceChargeJournalEntryRepository serviceChargeJERepository) {
 		this.fromApiJsonHelper = fromApiJsonHelper;
 		this.savingsAccountAssembler = savingsAccountAssembler;
 		this.glJournalEntryRepository = glJournalEntryRepository;
 		this.savingsAccountDomainService = savingsAccountDomainService;
 		this.jeWritePlatformService = jeWritePlatformService;
 		this.apiJsonSerializerService = toApiJsonSerializer;
+		this.serviceChargeJERepository = serviceChargeJERepository;
+		this.paymentTypeRepositoryWrapper = paymentTypeRepositoryWrapper;
 	}
 
 	/*
@@ -125,21 +139,23 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 					+ parsedCommand);
 
 			/* This is the first step in transfer, deposit or withdraw from client */
-			final SavingsAccountTransaction transaction = transferAmountWithClientAccount(transferCommand, jeJson,
+			final SavingsAccountTransaction transaction = createTransferEntryWithClientSavings(transferCommand, jeJson,
 					parsedCommand);
 
 			final JournalEntry pendingTransfer = getIntermediateJEWhereClientTransferAmountIsParked(transaction);
 
-			System.out
-					.println("ClientToAccountingHeaderTransferServiceImpl.createTransferEntry:: pending journal entry:"
-							+ getJournalEntryAsString(pendingTransfer));
+			logger.debug("ClientToAccountingHeaderTransferServiceImpl.createTransferEntry:: pending journal entry:"
+					+ getJournalEntryAsString(pendingTransfer));
 
 			// Get the JECommand that also includes the pending transfer liability account
 			jeCommand = getJECommandFromTransferCommand(transferCommand, pendingTransfer);
 			jeJson = mapper.writeValueAsString(jeCommand);
 
 			/* The second step in transfer, credit or debit appropriate journal ledger */
-			result = transferAmountWithAccountingHeader(transferCommand, parsedCommand, jeJson, transaction);
+			result = createJournalEntryWithPendingTransferHeader(transferCommand, parsedCommand, jeJson, transaction);
+
+			/* The thrid step in case there is service charge division added */
+			createEntryInServiceChargeTableIfDivisionValuesPassed(transferCommand, pendingTransfer);
 		} catch (JsonParseException | JsonMappingException e) {
 			logger.error(
 					"ClientToAccountingHeaderTransferServiceImpl.createTransferEntry:: JsonParseException | JsonMappingException:"
@@ -164,6 +180,42 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 		return this.apiJsonSerializerService.serialize(result);
 	}
 
+	private void createEntryInServiceChargeTableIfDivisionValuesPassed(TransferEntryCommand transferCommand,
+			JournalEntry singleJE) {
+		if (!transferCommand.getInvestment().equals(BigDecimal.ZERO) || !transferCommand.getMobilization().equals(BigDecimal.ZERO)
+				|| !transferCommand.getOverheads().equals(BigDecimal.ZERO)
+				|| !transferCommand.getServicing().equals(BigDecimal.ZERO)) {
+			ServiceChargeJournalEntry singleSCJE = createServiceChargeJournalEntryFromTransferCommand(transferCommand,
+					singleJE);
+
+			serviceChargeJERepository.saveAndFlush(singleSCJE);
+		}
+	}
+
+	private ServiceChargeJournalEntry createServiceChargeJournalEntryFromTransferCommand(
+			TransferEntryCommand transferCommand, JournalEntry journalEntry) {
+		final Office office = journalEntry.getOffice();
+		final Date transactionDate = journalEntry.getTransactionDate();
+		final AppUser createdBy = journalEntry.getCreatedBy();
+		final BigDecimal amount = journalEntry.getAmount();
+
+		final BigDecimal mobilizationPercent = transferCommand.getMobilization();
+		final BigDecimal servicingPercent = transferCommand.getServicing();
+		final BigDecimal investmentPercent = transferCommand.getInvestment();
+		final BigDecimal overheadsPercent = transferCommand.getOverheads();
+		// Formula to find divided-amount is (Part-Percentage * Amount) / 100
+		final BigDecimal mobilizationAmount = mobilizationPercent.multiply(amount).divide(HUNDRED);
+		final BigDecimal servicingAmount = servicingPercent.multiply(amount).divide(HUNDRED);
+		final BigDecimal investmentAmount = investmentPercent.multiply(amount).divide(HUNDRED);
+		final BigDecimal overheadsAmount = overheadsPercent.multiply(amount).divide(HUNDRED);
+
+		ServiceChargeJournalEntry singleSCJE = ServiceChargeJournalEntry.createNew(journalEntry, office,
+				transactionDate, mobilizationPercent, servicingPercent, investmentPercent, overheadsPercent,
+				mobilizationAmount, servicingAmount, investmentAmount, overheadsAmount, createdBy);
+
+		return singleSCJE;
+	}
+
 	/**
 	 * This method transfer the amount from the client savings account to accounting
 	 * header that has been mapped in Financial Activity Mappings as Liability
@@ -175,7 +227,7 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 	 * 
 	 * @return transaction ID generated for the transfer transaction
 	 */
-	private SavingsAccountTransaction transferAmountWithClientAccount(TransferEntryCommand transferCommand,
+	private SavingsAccountTransaction createTransferEntryWithClientSavings(TransferEntryCommand transferCommand,
 			String jeJson, JsonElement parsedCommand) {
 		// Constants values defined here to understand the name of value being passed
 		final Long loanId = null;
@@ -248,8 +300,9 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 		return pendingTransferJE;
 	}
 
-	private CommandProcessingResult transferAmountWithAccountingHeader(final TransferEntryCommand transferCommand,
-			final JsonElement parsedCommand, final String jeJson, final SavingsAccountTransaction transaction) {
+	private CommandProcessingResult createJournalEntryWithPendingTransferHeader(
+			final TransferEntryCommand transferCommand, final JsonElement parsedCommand, final String jeJson,
+			final SavingsAccountTransaction transaction) {
 		// Constants values defined here to understand the name of value being passed
 		final Long loanId = null;
 		final String entityName = "JOURNALENTRY";
@@ -257,7 +310,7 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 		final Long savingsId = transaction.getSavingsAccount().getId();
 		final Long productId = transaction.getSavingsAccount().productId();
 
-		System.out.println(
+		logger.debug(
 				"ClientToAccountingHeaderTransferServiceImpl.createTransferEntry:: final JE Json that will be passed to create JsonCommand:"
 						+ jeJson);
 
@@ -268,16 +321,22 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 	}
 
 	private PaymentDetail generatePaymentDetailUsingTransferEntryCommand(TransferEntryCommand transferCommand) {
-		final PaymentType paymentType = null;
-		final String accountNumber = transferCommand.getAccountNumber();
-		final String checkNumber = transferCommand.getCheckNumber();
-		final String routingCode = transferCommand.getRoutingCode();
-		final String receiptNumber = transferCommand.getReceiptNumber();
-		final String bankNumber = transferCommand.getBankNumber();
-		PaymentDetail pde = PaymentDetail.instance(paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
-				bankNumber);
-		// Returning null for now until figuring out how to pass correct paymentType
-		return null;
+		PaymentDetail pde = null;
+		final Long paymentTypeId = transferCommand.getPaymentTypeId();
+		if (paymentTypeId != null) {
+			final PaymentType paymentType = this.paymentTypeRepositoryWrapper
+					.findOneWithNotFoundDetection(paymentTypeId);
+
+			final String accountNumber = transferCommand.getAccountNumber();
+			final String checkNumber = transferCommand.getCheckNumber();
+			final String routingCode = transferCommand.getRoutingCode();
+			final String receiptNumber = transferCommand.getReceiptNumber();
+			final String bankNumber = transferCommand.getBankNumber();
+			pde = PaymentDetail.instance(paymentType, accountNumber, checkNumber, routingCode, receiptNumber,
+					bankNumber);
+			// Returning null for now until figuring out how to pass correct paymentType
+		}
+		return pde;
 	}
 
 	/**
@@ -356,47 +415,47 @@ public class ClientToAccountingHeaderTransferServiceImpl implements ClientToAcco
 		StringBuffer sb = new StringBuffer();
 		sb.append("{");
 		sb.append("isDebitEntry: " + je.isDebitEntry());
-		sb.append("\n");
+		sb.append(", ");
 		sb.append("getType: " + je.getType());
-		sb.append("\n");
-		sb.append("getOffice: " + je.getOffice());
-		sb.append("\n");
-		sb.append("getGlAccount: " + je.getGlAccount());
-		sb.append("\n");
+		sb.append(", ");
+		sb.append("getOffice: " + je.getOffice().getName());
+		sb.append(", ");
+		sb.append("getGlAccount: " + je.getGlAccount().getName());
+		sb.append(", ");
 		sb.append("getTransactionDate: " + je.getTransactionDate());
-		sb.append("\n");
+		sb.append(", ");
 		sb.append("getAmount: " + je.getAmount());
-		sb.append("\n");
+		sb.append(", ");
 		sb.append("getReferenceNumber: " + je.getReferenceNumber());
-		sb.append("\n");
+		sb.append(", ");
 		sb.append("getCurrencyCode: " + je.getCurrencyCode());
-		sb.append("\n");
+		sb.append(", ");
 		if (je.getLoanTransaction() != null) {
 			sb.append("getLoanTransaction.id: " + je.getLoanTransaction().getId());
-			sb.append("\n");
+			sb.append(", ");
 		}
 		if (je.getSavingsTransaction() != null) {
 			sb.append("getLoanTransaction.id: " + je.getSavingsTransaction().getId());
-			sb.append("\n");
+			sb.append(", ");
 		}
 
 		PaymentDetail pd = je.getPaymentDetails();
 		if (pd != null) {
 			sb.append("PaymentDetail.getReceiptNumber: " + pd.getReceiptNumber());
-			sb.append("\n");
+			sb.append(", ");
 			sb.append("PaymentDetail.getRoutingCode: " + pd.getRoutingCode());
-			sb.append("\n");
+			sb.append(", ");
 			sb.append("PaymentDetail.isCashPayment: " + pd.getPaymentType().isCashPayment());
-			sb.append("\n");
+			sb.append(", ");
 		}
 		sb.append("getTransactionId: " + je.getTransactionId());
-		sb.append("\n");
+		sb.append(", ");
 		sb.append("getClientTransaction: " + je.getClientTransaction());
-		sb.append("\n");
+		sb.append(", ");
 		sb.append("getEntityId: " + je.getEntityId());
-		sb.append("\n");
+		sb.append(", ");
 		sb.append("getEntityType: " + je.getEntityType());
-		sb.append("\n");
+		sb.append(", ");
 		sb.append("getShareTransactionId: " + je.getShareTransactionId());
 		sb.append("}");
 		return sb.toString();

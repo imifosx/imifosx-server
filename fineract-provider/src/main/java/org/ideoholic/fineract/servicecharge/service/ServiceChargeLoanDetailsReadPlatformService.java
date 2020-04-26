@@ -20,6 +20,7 @@ package org.ideoholic.fineract.servicecharge.service;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Date;
 
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
@@ -52,5 +53,7 @@ public interface ServiceChargeLoanDetailsReadPlatformService {
     Page<SCLoanAccountData> retrieveLoansToBeConsideredForTheCurrentQuarter();
 
     Collection<LoanTransactionData> retrieveLoanTransactionsMonthlyPayments(Long loanId, String startDate, String endDate);
+    
+    BigDecimal getTotalLoanRepaymentForLoanAfterGivenDate(Long loanId, Date date);
 
 }
