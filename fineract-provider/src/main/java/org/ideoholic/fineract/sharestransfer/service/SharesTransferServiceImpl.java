@@ -18,78 +18,24 @@
  */
 package org.ideoholic.fineract.sharestransfer.service;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.fineract.accounting.journalentry.domain.JournalEntry;
-import org.apache.fineract.accounting.journalentry.domain.JournalEntryRepository;
-import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
-import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
-import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
-import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
-import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.organisation.office.domain.Office;
-import org.apache.fineract.portfolio.accounts.constants.ShareAccountApiConstants;
-import org.apache.fineract.portfolio.client.domain.AccountNumberGenerator;
-import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
-import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
-import org.apache.fineract.portfolio.paymenttype.domain.PaymentTypeRepositoryWrapper;
-import org.apache.fineract.portfolio.savings.SavingsTransactionBooleanValues;
-import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
-import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
-import org.apache.fineract.portfolio.savings.domain.SavingsAccountDomainService;
-import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
-import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccount;
-import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountRepositoryWrapper;
-import org.apache.fineract.portfolio.shareaccounts.domain.ShareAccountTransaction;
-import org.apache.fineract.portfolio.shareaccounts.serialization.ShareAccountDataSerializer;
-import org.apache.fineract.portfolio.shareproducts.domain.ShareProduct;
-import org.apache.fineract.portfolio.shareproducts.domain.ShareProductRepositoryWrapper;
-import org.apache.fineract.useradministration.domain.AppUser;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.ideoholic.fineract.commands.JECommand;
-import org.ideoholic.fineract.commands.JEDebitCreditEntryCommand;
-import org.ideoholic.fineract.commands.TransferDebitCreditEntryCommand;
-import org.ideoholic.fineract.commands.TransferEntryCommand;
-import org.ideoholic.fineract.servicecharge.constants.ServiceChargeApiConstants;
-import org.ideoholic.fineract.servicechargejournalentry.domain.ServiceChargeJournalEntry;
-import org.ideoholic.fineract.servicechargejournalentry.domain.ServiceChargeJournalEntryRepository;
 import org.ideoholic.fineract.sharestransfer.constants.SharesTransferApiConstants;
-import org.ideoholic.fineract.sharestransfer.domain.ShareAccountCertificateRepositoryWrapper;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import org.ideoholic.fineract.sharestransfer.domain.ShareAccountCertificateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-
-import com.google.gson.JsonElement;
 
 @Service
 public class SharesTransferServiceImpl
 		implements SharesTransferService, SharesTransferApiConstants {
 	private final static Logger logger = LoggerFactory.getLogger(SharesTransferServiceImpl.class);
 
-	    private final ShareAccountCertificateRepositoryWrapper shareAccountCertificateRepositoryWrapper;
+	private final ShareAccountCertificateRepository shareAccountCertificateRepository;
 
 
 	@Autowired
-	public SharesTransferServiceImpl(final ShareAccountCertificateRepositoryWrapper shareAccountCertificateRepositoryWrapper) {
-		this.shareAccountCertificateRepositoryWrapper = shareAccountCertificateRepositoryWrapper;
+	public SharesTransferServiceImpl(final ShareAccountCertificateRepository shareAccountCertificateRepository) {
+		this.shareAccountCertificateRepository = shareAccountCertificateRepository;
 	}
 
 	/*
@@ -101,9 +47,9 @@ public class SharesTransferServiceImpl
 	@Override
 	public String updateSharesCertificate(String json) {
 		
-		Long shareAccountIdFrom = 0l;
-		Long shareAccountIdTo = 0l;
-		this.shareAccountCertificateRepositoryWrapper.update(shareAccountIdFrom,shareAccountIdTo);
+		Long shareAccountIdFrom = Long.parseLong("18");
+		Long shareAccountIdTo = Long.parseLong("16");
+		this.shareAccountCertificateRepository.update(shareAccountIdFrom,shareAccountIdTo);
 		/*
         try {
         	
