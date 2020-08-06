@@ -27,7 +27,7 @@ import org.springframework.data.repository.query.Param;
 public interface ShareAccountCertificateRepository extends JpaRepository<ShareAccountCertificate, Long>, JpaSpecificationExecutor<ShareAccountCertificate> {
 
 	@Query("update ShareAccountCertificate shareAccountCertificate  set shareAccountCertificate.shareAccountId = :shareAccountIdTo"
-			+ ", shareAccountId = (select id from ShareAccountTransaction shareAccountTransaction where shareAccountTransaction.shareAccount.id = :shareAccountIdTo ORDER BY id DESC LIMIT 1)  where shareAccountCertificate.shareAccountId = :shareAccountIdFrom")
+			+ ", shareAccountCertificate.shareTransactionId = (select id from ShareAccountTransaction shareAccountTransaction where shareAccountTransaction.shareAccount.id = :shareAccountIdTo ORDER BY id DESC LIMIT 1)  where shareAccountCertificate.shareAccountId = :shareAccountIdFrom")
 	void update(@Param("shareAccountIdFrom") Long shareAccountIdFrom,@Param("shareAccountIdTo") Long shareAccountIdTo);
 
 }
