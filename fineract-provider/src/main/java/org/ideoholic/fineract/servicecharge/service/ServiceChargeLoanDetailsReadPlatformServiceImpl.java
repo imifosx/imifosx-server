@@ -718,10 +718,16 @@ public class ServiceChargeLoanDetailsReadPlatformServiceImpl
 			final String sql = "select sum(tr.principal_portion_derived)" + " from m_loan_transaction tr"
 					+ " where tr.loan_id = ? and tr.transaction_type_enum in (2) and  (tr.is_reversed=0 or tr.manually_adjusted_or_reversed = 1) "
 					+ " and tr.transaction_date > ?";
-			return this.jdbcTemplate.queryForObject(sql, new Object[] { loanId, date }, BigDecimal.class);
+			BigDecimal totalPrincipalPortionRepaid = this.jdbcTemplate.queryForObject(sql,
+					new Object[] { loanId, date }, BigDecimal.class);
+			if (totalPrincipalPortionRepaid != null) {
+				return totalPrincipalPortionRepaid;
+			}
 		} catch (final EmptyResultDataAccessException e) {
-			return null;
+			logger.error("getTotalLoanRepaymentForLoanAfterGivenDate(): EmptyResultDataAccessException", e);
 		}
+		// In case there are no transactions for the period then return zero
+		return BigDecimal.ZERO;
 	}
 
 	@Override
